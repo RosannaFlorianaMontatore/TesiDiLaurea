@@ -1,0 +1,757 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=windows-1252"> 
+  <title>Coverage Report > MannWhitneyUTest</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope:     <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">org.apache.commons.statistics.inference</a>
+</div>
+
+<h1>Coverage Summary for Class: MannWhitneyUTest (org.apache.commons.statistics.inference)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">MannWhitneyUTest</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/19)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/137)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">MannWhitneyUTest$Result</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/3)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/4)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/22)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/141)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/*
+&nbsp; * Licensed to the Apache Software Foundation (ASF) under one or more
+&nbsp; * contributor license agreements.  See the NOTICE file distributed with
+&nbsp; * this work for additional information regarding copyright ownership.
+&nbsp; * The ASF licenses this file to You under the Apache License, Version 2.0
+&nbsp; * (the &quot;License&quot;); you may not use this file except in compliance with
+&nbsp; * the License.  You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *      http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;package org.apache.commons.statistics.inference;
+&nbsp;
+&nbsp;import java.lang.ref.SoftReference;
+&nbsp;import java.util.Arrays;
+&nbsp;import java.util.EnumSet;
+&nbsp;import java.util.Objects;
+&nbsp;import java.util.stream.IntStream;
+&nbsp;import org.apache.commons.numbers.combinatorics.BinomialCoefficientDouble;
+&nbsp;import org.apache.commons.statistics.distribution.NormalDistribution;
+&nbsp;import org.apache.commons.statistics.ranking.NaNStrategy;
+&nbsp;import org.apache.commons.statistics.ranking.NaturalRanking;
+&nbsp;import org.apache.commons.statistics.ranking.RankingAlgorithm;
+&nbsp;import org.apache.commons.statistics.ranking.TiesStrategy;
+&nbsp;
+&nbsp;/**
+&nbsp; * Implements the Mann-Whitney U test (also called Wilcoxon rank-sum test).
+&nbsp; *
+&nbsp; * @see &lt;a href=&quot;https://en.wikipedia.org/wiki/Mann%E2%80%93Whitney_U_test&quot;&gt;
+&nbsp; * Mann-Whitney U test (Wikipedia)&lt;/a&gt;
+&nbsp; * @since 1.1
+&nbsp; */
+&nbsp;public final class MannWhitneyUTest {
+&nbsp;    /** Limit on sample size for the exact p-value computation for the auto mode. */
+&nbsp;    private static final int AUTO_LIMIT = 50;
+&nbsp;    /** Ranking instance. */
+<b class="nc">&nbsp;    private static final RankingAlgorithm RANKING = new NaturalRanking(NaNStrategy.FAILED, TiesStrategy.AVERAGE);</b>
+&nbsp;    /** Value for an unset f computation. */
+&nbsp;    private static final double UNSET = -1;
+&nbsp;    /** An object to use for synchonization when accessing the cache of F. */
+<b class="nc">&nbsp;    private static final Object LOCK = new Object();</b>
+&nbsp;    /** A reference to a previously computed storage for f.
+&nbsp;     * Use of a SoftReference ensures this is garbage collected before an OutOfMemoryError.
+&nbsp;     * The value should only be accessed, checked for size and optionally
+&nbsp;     * modified when holding the lock. When the storage is determined to be the correct
+&nbsp;     * size it can be returned for read/write to the array when not holding the lock. */
+<b class="nc">&nbsp;    private static SoftReference&lt;double[][][]&gt; cacheF = new SoftReference&lt;&gt;(null);</b>
+&nbsp;    /** Default instance. */
+<b class="nc">&nbsp;    private static final MannWhitneyUTest DEFAULT = new MannWhitneyUTest(</b>
+&nbsp;        AlternativeHypothesis.TWO_SIDED, PValueMethod.AUTO, true, 0);
+&nbsp;
+&nbsp;    /** Alternative hypothesis. */
+&nbsp;    private final AlternativeHypothesis alternative;
+&nbsp;    /** Method to compute the p-value. */
+&nbsp;    private final PValueMethod pValueMethod;
+&nbsp;    /** Perform continuity correction. */
+&nbsp;    private final boolean continuityCorrection;
+&nbsp;    /** Expected location shift. */
+&nbsp;    private final double mu;
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Result for the Mann-Whitney U test.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;This class is immutable.
+&nbsp;     *
+&nbsp;     * @since 1.1
+&nbsp;     */
+&nbsp;    public static final class Result extends BaseSignificanceResult {
+&nbsp;        /** Flag indicating the data has tied values. */
+&nbsp;        private final boolean tiedValues;
+&nbsp;
+&nbsp;        /**
+&nbsp;         * Create an instance.
+&nbsp;         *
+&nbsp;         * @param statistic Test statistic.
+&nbsp;         * @param tiedValues Flag indicating the data has tied values.
+&nbsp;         * @param p Result p-value.
+&nbsp;         */
+&nbsp;        Result(double statistic, boolean tiedValues, double p) {
+<b class="nc">&nbsp;            super(statistic, p);</b>
+<b class="nc">&nbsp;            this.tiedValues = tiedValues;</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        /**
+&nbsp;         * {@inheritDoc}
+&nbsp;         *
+&nbsp;         * &lt;p&gt;This is the U&lt;sub&gt;1&lt;/sub&gt; statistic. Compute the U&lt;sub&gt;2&lt;/sub&gt; statistic using
+&nbsp;         * the original sample lengths {@code n} and {@code m} using:
+&nbsp;         * &lt;pre&gt;
+&nbsp;         * u2 = (long) n * m - u1;
+&nbsp;         * &lt;/pre&gt;
+&nbsp;         */
+&nbsp;        @Override
+&nbsp;        public double getStatistic() {
+&nbsp;            // Note: This method is here for documentation
+<b class="nc">&nbsp;            return super.getStatistic();</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        /**
+&nbsp;         * Return {@code true} if the data had tied values.
+&nbsp;         *
+&nbsp;         * &lt;p&gt;Note: The exact computation cannot be used when there are tied values.
+&nbsp;         *
+&nbsp;         * @return {@code true} if there were tied values
+&nbsp;         */
+&nbsp;        public boolean hasTiedValues() {
+<b class="nc">&nbsp;            return tiedValues;</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * @param alternative Alternative hypothesis.
+&nbsp;     * @param method P-value method.
+&nbsp;     * @param continuityCorrection true to perform continuity correction.
+&nbsp;     * @param mu Expected location shift.
+&nbsp;     */
+&nbsp;    private MannWhitneyUTest(AlternativeHypothesis alternative, PValueMethod method,
+<b class="nc">&nbsp;        boolean continuityCorrection, double mu) {</b>
+<b class="nc">&nbsp;        this.alternative = alternative;</b>
+<b class="nc">&nbsp;        this.pValueMethod = method;</b>
+<b class="nc">&nbsp;        this.continuityCorrection = continuityCorrection;</b>
+<b class="nc">&nbsp;        this.mu = mu;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Return an instance using the default options.
+&nbsp;     *
+&nbsp;     * &lt;ul&gt;
+&nbsp;     * &lt;li&gt;{@link AlternativeHypothesis#TWO_SIDED}
+&nbsp;     * &lt;li&gt;{@link PValueMethod#AUTO}
+&nbsp;     * &lt;li&gt;{@link ContinuityCorrection#ENABLED}
+&nbsp;     * &lt;li&gt;{@linkplain #withMu(double) mu = 0}
+&nbsp;     * &lt;/ul&gt;
+&nbsp;     *
+&nbsp;     * @return default instance
+&nbsp;     */
+&nbsp;    public static MannWhitneyUTest withDefaults() {
+<b class="nc">&nbsp;        return DEFAULT;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Return an instance with the configured alternative hypothesis.
+&nbsp;     *
+&nbsp;     * @param v Value.
+&nbsp;     * @return an instance
+&nbsp;     */
+&nbsp;    public MannWhitneyUTest with(AlternativeHypothesis v) {
+<b class="nc">&nbsp;        return new MannWhitneyUTest(Objects.requireNonNull(v), pValueMethod, continuityCorrection, mu);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Return an instance with the configured p-value method.
+&nbsp;     *
+&nbsp;     * @param v Value.
+&nbsp;     * @return an instance
+&nbsp;     * @throws IllegalArgumentException if the value is not in the allowed options or is null
+&nbsp;     */
+&nbsp;    public MannWhitneyUTest with(PValueMethod v) {
+<b class="nc">&nbsp;        return new MannWhitneyUTest(alternative,</b>
+<b class="nc">&nbsp;            Arguments.checkOption(v, EnumSet.of(PValueMethod.AUTO, PValueMethod.EXACT, PValueMethod.ASYMPTOTIC)),</b>
+&nbsp;            continuityCorrection, mu);
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Return an instance with the configured continuity correction.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;If {@link ContinuityCorrection#ENABLED ENABLED}, adjust the U rank statistic by
+&nbsp;     * 0.5 towards the mean value when computing the z-statistic if a normal approximation is used
+&nbsp;     * to compute the p-value.
+&nbsp;     *
+&nbsp;     * @param v Value.
+&nbsp;     * @return an instance
+&nbsp;     */
+&nbsp;    public MannWhitneyUTest with(ContinuityCorrection v) {
+<b class="nc">&nbsp;        return new MannWhitneyUTest(alternative, pValueMethod,</b>
+<b class="nc">&nbsp;            Objects.requireNonNull(v) == ContinuityCorrection.ENABLED, mu);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Return an instance with the configured location shift {@code mu}.
+&nbsp;     *
+&nbsp;     * @param v Value.
+&nbsp;     * @return an instance
+&nbsp;     * @throws IllegalArgumentException if the value is not finite
+&nbsp;     */
+&nbsp;    public MannWhitneyUTest withMu(double v) {
+<b class="nc">&nbsp;        return new MannWhitneyUTest(alternative, pValueMethod, continuityCorrection, Arguments.checkFinite(v));</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Computes the Mann-Whitney U statistic comparing two independent
+&nbsp;     * samples possibly of different length.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;This statistic can be used to perform a Mann-Whitney U test evaluating the
+&nbsp;     * null hypothesis that the two independent samples differ by a location shift of {@code mu}.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;This returns the U&lt;sub&gt;1&lt;/sub&gt; statistic. Compute the U&lt;sub&gt;2&lt;/sub&gt; statistic using:
+&nbsp;     * &lt;pre&gt;
+&nbsp;     * u2 = (long) x.length * y.length - u1;
+&nbsp;     * &lt;/pre&gt;
+&nbsp;     *
+&nbsp;     * @param x First sample values.
+&nbsp;     * @param y Second sample values.
+&nbsp;     * @return Mann-Whitney U&lt;sub&gt;1&lt;/sub&gt; statistic
+&nbsp;     * @throws IllegalArgumentException if {@code x} or {@code y} are zero-length; or contain
+&nbsp;     * NaN values.
+&nbsp;     * @see #withMu(double)
+&nbsp;     */
+&nbsp;    public double statistic(double[] x, double[] y) {
+<b class="nc">&nbsp;        checkSamples(x, y);</b>
+&nbsp;
+<b class="nc">&nbsp;        final double[] z = concatenateSamples(mu, x, y);</b>
+<b class="nc">&nbsp;        final double[] ranks = RANKING.apply(z);</b>
+&nbsp;
+&nbsp;        // The ranks for x is in the first x.length entries in ranks because x
+&nbsp;        // is in the first x.length entries in z
+<b class="nc">&nbsp;        final double sumRankX = Arrays.stream(ranks).limit(x.length).sum();</b>
+&nbsp;
+&nbsp;        // U1 = R1 - (n1 * (n1 + 1)) / 2 where R1 is sum of ranks for sample 1,
+&nbsp;        // e.g. x, n1 is the number of observations in sample 1.
+<b class="nc">&nbsp;        return sumRankX - ((long) x.length * (x.length + 1)) * 0.5;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Performs a Mann-Whitney U test comparing the location for two independent
+&nbsp;     * samples. The location is specified using {@link #withMu(double) mu}.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;The test is defined by the {@link AlternativeHypothesis}.
+&nbsp;     * &lt;ul&gt;
+&nbsp;     * &lt;li&gt;&#39;two-sided&#39;: the distribution underlying {@code (x - mu)} is not equal to the
+&nbsp;     * distribution underlying {@code y}.
+&nbsp;     * &lt;li&gt;&#39;greater&#39;: the distribution underlying {@code (x - mu)} is stochastically greater than
+&nbsp;     * the distribution underlying {@code y}.
+&nbsp;     * &lt;li&gt;&#39;less&#39;: the distribution underlying {@code (x - mu)} is stochastically less than
+&nbsp;     * the distribution underlying {@code y}.
+&nbsp;     * &lt;/ul&gt;
+&nbsp;     *
+&nbsp;     * &lt;p&gt;If the p-value method is {@linkplain PValueMethod#AUTO auto} an exact p-value is
+&nbsp;     * computed if the samples contain less than 50 values; otherwise a normal
+&nbsp;     * approximation is used.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;Computation of the exact p-value is only valid if there are no tied
+&nbsp;     * ranks in the data; otherwise the p-value resorts to the asymptotic
+&nbsp;     * approximation using a tie correction and an optional continuity correction.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;&lt;strong&gt;Note: &lt;/strong&gt;
+&nbsp;     * Exact computation requires tabulation of values not exceeding size
+&nbsp;     * {@code (n+1)*(m+1)*(u+1)} where {@code u} is the minimum of the U&lt;sub&gt;1&lt;/sub&gt; and
+&nbsp;     * U&lt;sub&gt;2&lt;/sub&gt; statistics and {@code n} and {@code m} are the sample sizes.
+&nbsp;     * This may use a very large amount of memory and result in an {@link OutOfMemoryError}.
+&nbsp;     * Exact computation requires a finite binomial coefficient {@code binom(n+m, m)}
+&nbsp;     * which is limited to {@code n+m &lt;= 1029} for any {@code n} and {@code m},
+&nbsp;     * or {@code min(n, m) &lt;= 37} for any {@code max(n, m)}.
+&nbsp;     * An {@link OutOfMemoryError} is not expected using the
+&nbsp;     * limits configured for the {@linkplain PValueMethod#AUTO auto} p-value computation
+&nbsp;     * as the maximum required memory is approximately 23 MiB.
+&nbsp;     *
+&nbsp;     * @param x First sample values.
+&nbsp;     * @param y Second sample values.
+&nbsp;     * @return test result
+&nbsp;     * @throws IllegalArgumentException if {@code x} or {@code y} are zero-length; or contain
+&nbsp;     * NaN values.
+&nbsp;     * @throws OutOfMemoryError if the exact computation is &lt;em&gt;user-requested&lt;/em&gt; for
+&nbsp;     * large samples and there is not enough memory.
+&nbsp;     * @see #statistic(double[], double[])
+&nbsp;     * @see #withMu(double)
+&nbsp;     * @see #with(AlternativeHypothesis)
+&nbsp;     * @see #with(ContinuityCorrection)
+&nbsp;     */
+&nbsp;    public Result test(double[] x, double[] y) {
+&nbsp;        // Computation as above. The ranks are required for tie correction.
+<b class="nc">&nbsp;        checkSamples(x, y);</b>
+<b class="nc">&nbsp;        final double[] z = concatenateSamples(mu, x, y);</b>
+<b class="nc">&nbsp;        final double[] ranks = RANKING.apply(z);</b>
+<b class="nc">&nbsp;        final double sumRankX = Arrays.stream(ranks).limit(x.length).sum();</b>
+<b class="nc">&nbsp;        final double u1 = sumRankX - ((long) x.length * (x.length + 1)) * 0.5;</b>
+&nbsp;
+<b class="nc">&nbsp;        final double c = WilcoxonSignedRankTest.calculateTieCorrection(ranks);</b>
+<b class="nc">&nbsp;        final boolean tiedValues = c != 0;</b>
+&nbsp;
+<b class="nc">&nbsp;        PValueMethod method = pValueMethod;</b>
+<b class="nc">&nbsp;        final int n = x.length;</b>
+<b class="nc">&nbsp;        final int m = y.length;</b>
+<b class="nc">&nbsp;        if (method == PValueMethod.AUTO &amp;&amp; Math.max(n, m) &lt; AUTO_LIMIT) {</b>
+<b class="nc">&nbsp;            method = PValueMethod.EXACT;</b>
+&nbsp;        }
+&nbsp;        // Exact p requires no ties.
+&nbsp;        // The method will fail-fast if the computation is not possible due
+&nbsp;        // to the size of the data.
+<b class="nc">&nbsp;        double p = method == PValueMethod.EXACT &amp;&amp; !tiedValues ?</b>
+<b class="nc">&nbsp;            calculateExactPValue(u1, n, m, alternative) : -1;</b>
+<b class="nc">&nbsp;        if (p &lt; 0) {</b>
+<b class="nc">&nbsp;            p = calculateAsymptoticPValue(u1, n, m, c);</b>
+&nbsp;        }
+<b class="nc">&nbsp;        return new Result(u1, tiedValues, p);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Ensures that the provided arrays fulfil the assumptions.
+&nbsp;     *
+&nbsp;     * @param x First sample values.
+&nbsp;     * @param y Second sample values.
+&nbsp;     * @throws IllegalArgumentException if {@code x} or {@code y} are zero-length.
+&nbsp;     */
+&nbsp;    private static void checkSamples(double[] x, double[] y) {
+<b class="nc">&nbsp;        Arguments.checkValuesRequiredSize(x.length, 1);</b>
+<b class="nc">&nbsp;        Arguments.checkValuesRequiredSize(y.length, 1);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Concatenate the samples into one array. Subtract {@code mu} from the first sample.
+&nbsp;     *
+&nbsp;     * @param mu Expected difference between means.
+&nbsp;     * @param x First sample values.
+&nbsp;     * @param y Second sample values.
+&nbsp;     * @return concatenated array
+&nbsp;     */
+&nbsp;    private static double[] concatenateSamples(double mu, double[] x, double[] y) {
+<b class="nc">&nbsp;        final double[] z = new double[x.length + y.length];</b>
+<b class="nc">&nbsp;        System.arraycopy(x, 0, z, 0, x.length);</b>
+<b class="nc">&nbsp;        System.arraycopy(y, 0, z, x.length, y.length);</b>
+<b class="nc">&nbsp;        if (mu != 0) {</b>
+<b class="nc">&nbsp;            for (int i = 0; i &lt; x.length; i++) {</b>
+<b class="nc">&nbsp;                z[i] -= mu;</b>
+&nbsp;            }
+&nbsp;        }
+<b class="nc">&nbsp;        return z;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Calculate the asymptotic p-value using a Normal approximation.
+&nbsp;     *
+&nbsp;     * @param u Mann-Whitney U value.
+&nbsp;     * @param n1 Number of subjects in first sample.
+&nbsp;     * @param n2 Number of subjects in second sample.
+&nbsp;     * @param c Tie-correction
+&nbsp;     * @return two-sided asymptotic p-value
+&nbsp;     */
+&nbsp;    private double calculateAsymptoticPValue(double u, int n1, int n2, double c) {
+&nbsp;        // Use long to avoid overflow
+<b class="nc">&nbsp;        final long n1n2 = (long) n1 * n2;</b>
+<b class="nc">&nbsp;        final long n = (long) n1 + n2;</b>
+&nbsp;
+&nbsp;        // https://en.wikipedia.org/wiki/Mann%E2%80%93Whitney_U_test#Normal_approximation_and_tie_correction
+<b class="nc">&nbsp;        final double e = n1n2 * 0.5;</b>
+<b class="nc">&nbsp;        final double variance = (n1n2 / 12.0) * ((n + 1.0) - c / n / (n - 1));</b>
+&nbsp;
+<b class="nc">&nbsp;        double z = u - e;</b>
+<b class="nc">&nbsp;        if (continuityCorrection) {</b>
+&nbsp;            // +/- 0.5 is a continuity correction towards the expected.
+<b class="nc">&nbsp;            if (alternative == AlternativeHypothesis.GREATER_THAN) {</b>
+<b class="nc">&nbsp;                z -= 0.5;</b>
+<b class="nc">&nbsp;            } else if (alternative == AlternativeHypothesis.LESS_THAN) {</b>
+<b class="nc">&nbsp;                z += 0.5;</b>
+&nbsp;            } else {
+&nbsp;                // two-sided. Shift towards the expected of zero.
+&nbsp;                // Use of signum ignores x==0 (i.e. not copySign(0.5, z))
+<b class="nc">&nbsp;                z -= Math.signum(z) * 0.5;</b>
+&nbsp;            }
+&nbsp;        }
+<b class="nc">&nbsp;        z /= Math.sqrt(variance);</b>
+&nbsp;
+<b class="nc">&nbsp;        final NormalDistribution standardNormal = NormalDistribution.of(0, 1);</b>
+<b class="nc">&nbsp;        if (alternative == AlternativeHypothesis.GREATER_THAN) {</b>
+<b class="nc">&nbsp;            return standardNormal.survivalProbability(z);</b>
+&nbsp;        }
+<b class="nc">&nbsp;        if (alternative == AlternativeHypothesis.LESS_THAN) {</b>
+<b class="nc">&nbsp;            return standardNormal.cumulativeProbability(z);</b>
+&nbsp;        }
+&nbsp;        // two-sided
+<b class="nc">&nbsp;        return 2 * standardNormal.survivalProbability(Math.abs(z));</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Calculate the exact p-value. If the value cannot be computed this returns -1.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;Note: Computation may run out of memory during array allocation, or method
+&nbsp;     * recursion.
+&nbsp;     *
+&nbsp;     * @param u Mann-Whitney U value.
+&nbsp;     * @param m Number of subjects in first sample.
+&nbsp;     * @param n Number of subjects in second sample.
+&nbsp;     * @param alternative Alternative hypothesis.
+&nbsp;     * @return exact p-value (or -1) (two-sided, greater, or less using the options)
+&nbsp;     */
+&nbsp;    // package-private for testing
+&nbsp;    static double calculateExactPValue(double u, int m, int n, AlternativeHypothesis alternative) {
+&nbsp;        // Check the computation can be attempted.
+&nbsp;        // u must be an integer
+<b class="nc">&nbsp;        if ((int) u != u) {</b>
+<b class="nc">&nbsp;            return -1;</b>
+&nbsp;        }
+&nbsp;        // Note: n+m will not overflow as we concatenated the samples to a single array.
+<b class="nc">&nbsp;        final double binom = BinomialCoefficientDouble.value(n + m, m);</b>
+<b class="nc">&nbsp;        if (binom == Double.POSITIVE_INFINITY) {</b>
+<b class="nc">&nbsp;            return -1;</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        // Use u_min for the CDF.
+<b class="nc">&nbsp;        final int u1 = (int) u;</b>
+<b class="nc">&nbsp;        final int u2 = (int) ((long) m * n - u1);</b>
+&nbsp;        // Use m &lt; n to support symmetry.
+<b class="nc">&nbsp;        final int n1 = Math.min(m, n);</b>
+<b class="nc">&nbsp;        final int n2 = Math.max(m, n);</b>
+&nbsp;
+&nbsp;        // Return the correct side:
+<b class="nc">&nbsp;        if (alternative == AlternativeHypothesis.GREATER_THAN) {</b>
+&nbsp;            // sf(u1 - 1)
+<b class="nc">&nbsp;            return sf(u1 - 1, u2 + 1, n1, n2, binom);</b>
+&nbsp;        }
+<b class="nc">&nbsp;        if (alternative == AlternativeHypothesis.LESS_THAN) {</b>
+&nbsp;            // cdf(u1)
+<b class="nc">&nbsp;            return cdf(u1, u2, n1, n2, binom);</b>
+&nbsp;        }
+&nbsp;        // two-sided: 2 * sf(max(u1, u2) - 1) or 2 * cdf(min(u1, u2))
+<b class="nc">&nbsp;        final double p = 2 * computeCdf(Math.min(u1, u2), n1, n2, binom);</b>
+&nbsp;        // Clip to range: [0, 1]
+<b class="nc">&nbsp;        return Math.min(1, p);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Compute the cumulative density function of the Mann-Whitney U1 statistic.
+&nbsp;     * The U2 statistic is passed for convenience to exploit symmetry in the distribution.
+&nbsp;     *
+&nbsp;     * @param u1 Mann-Whitney U1 statistic
+&nbsp;     * @param u2 Mann-Whitney U2 statistic
+&nbsp;     * @param m First sample size.
+&nbsp;     * @param n Second sample size.
+&nbsp;     * @param binom binom(n+m, m) (must be finite)
+&nbsp;     * @return {@code Pr(X &lt;= k)}
+&nbsp;     */
+&nbsp;    private static double cdf(int u1, int u2, int m, int n, double binom) {
+&nbsp;        // Exploit symmetry. Note the distribution is discrete thus requiring (u2 - 1).
+<b class="nc">&nbsp;        return u2 &gt; u1 ?</b>
+<b class="nc">&nbsp;            computeCdf(u1, m, n, binom) :</b>
+<b class="nc">&nbsp;            1 - computeCdf(u2 - 1, m, n, binom);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Compute the survival function of the Mann-Whitney U1 statistic.
+&nbsp;     * The U2 statistic is passed for convenience to exploit symmetry in the distribution.
+&nbsp;     *
+&nbsp;     * @param u1 Mann-Whitney U1 statistic
+&nbsp;     * @param u2 Mann-Whitney U2 statistic
+&nbsp;     * @param m First sample size.
+&nbsp;     * @param n Second sample size.
+&nbsp;     * @param binom binom(n+m, m) (must be finite)
+&nbsp;     * @return {@code Pr(X &gt; k)}
+&nbsp;     */
+&nbsp;    private static double sf(int u1, int u2, int m, int n, double binom) {
+&nbsp;        // Opposite of the CDF
+<b class="nc">&nbsp;        return u2 &gt; u1 ?</b>
+<b class="nc">&nbsp;            1 - computeCdf(u1, m, n, binom) :</b>
+<b class="nc">&nbsp;            computeCdf(u2 - 1, m, n, binom);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Compute the cumulative density function of the Mann-Whitney U statistic.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;This should be called with the lower of U1 or U2 for computational efficiency.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;Uses the recursive formula provided in Bucchianico, A.D, (1999)
+&nbsp;     * Combinatorics, computer algebra and the Wilcoxon-Mann-Whitney test, Journal
+&nbsp;     * of Statistical Planning and Inference, Volume 79, Issue 2, 349-364.
+&nbsp;     *
+&nbsp;     * @param k Mann-Whitney U statistic
+&nbsp;     * @param m First sample size.
+&nbsp;     * @param n Second sample size.
+&nbsp;     * @param binom binom(n+m, m) (must be finite)
+&nbsp;     * @return {@code Pr(X &lt;= k)}
+&nbsp;     */
+&nbsp;    private static double computeCdf(int k, int m, int n, double binom) {
+&nbsp;        // Theorem 2.5:
+&nbsp;        // f(m, n, k) = 0 if k &lt; 0, m &lt; 0, n &lt; 0, k &gt; nm
+<b class="nc">&nbsp;        if (k &lt; 0) {</b>
+<b class="nc">&nbsp;            return 0;</b>
+&nbsp;        }
+&nbsp;        // Recursively compute f(m, n, k)
+<b class="nc">&nbsp;        final double[][][] f = getF(m, n, k);</b>
+&nbsp;
+&nbsp;        // P(X=k) = f(m, n, k) / binom(m+n, m)
+&nbsp;        // P(X&lt;=k) = sum_0^k (P(X=i))
+&nbsp;
+&nbsp;        // Called with k = min(u1, u2) : max(p) ~ 0.5 so no need to clip to [0, 1]
+<b class="nc">&nbsp;        return IntStream.rangeClosed(0, k).mapToDouble(i -&gt; fmnk(f, m, n, i)).sum() / binom;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Gets the storage for f(m, n, k).
+&nbsp;     *
+&nbsp;     * &lt;p&gt;This may be cached for performance.
+&nbsp;     *
+&nbsp;     * @param m M.
+&nbsp;     * @param n N.
+&nbsp;     * @param k K.
+&nbsp;     * @return the storage for f
+&nbsp;     */
+&nbsp;    private static double[][][] getF(int m, int n, int k) {
+&nbsp;        // Obtain any previous computation of f and expand it if required.
+&nbsp;        // F is only modified within this synchronized block.
+&nbsp;        // Any concurrent threads using a reference returned by this method
+&nbsp;        // will not receive an index out-of-bounds as f is only ever expanded.
+<b class="nc">&nbsp;        synchronized (LOCK) {</b>
+&nbsp;            // Note: f(x&lt;m, y&lt;n, z&lt;k) is always the same.
+&nbsp;            // Cache the array and re-use any previous computation.
+<b class="nc">&nbsp;            double[][][] f = cacheF.get();</b>
+&nbsp;
+&nbsp;            // Require:
+&nbsp;            // f = new double[m + 1][n + 1][k + 1]
+&nbsp;            // f(m, n, 0) == 1; otherwise -1 if not computed
+&nbsp;            // m+n &lt;= 1029 for any m,n; k &lt; mn/2 (due to symmetry using min(u1, u2))
+&nbsp;            // Size m=n=515: approximately 516^2 * 515^2/2 = 398868 doubles ~ 3.04 GiB
+<b class="nc">&nbsp;            if (f == null) {</b>
+<b class="nc">&nbsp;                f = new double[m + 1][n + 1][k + 1];</b>
+<b class="nc">&nbsp;                for (final double[][] a : f) {</b>
+<b class="nc">&nbsp;                    for (final double[] b : a) {</b>
+<b class="nc">&nbsp;                        initialize(b);</b>
+&nbsp;                    }
+&nbsp;                }
+&nbsp;                // Cache for reuse.
+<b class="nc">&nbsp;                cacheF = new SoftReference&lt;&gt;(f);</b>
+<b class="nc">&nbsp;                return f;</b>
+&nbsp;            }
+&nbsp;
+&nbsp;            // Grow if required: m1 &lt; m+1 =&gt; m1-(m+1) &lt; 0 =&gt; m1 - m &lt; 1
+<b class="nc">&nbsp;            final int m1 = f.length;</b>
+<b class="nc">&nbsp;            final int n1 = f[0].length;</b>
+<b class="nc">&nbsp;            final int k1 = f[0][0].length;</b>
+<b class="nc">&nbsp;            final boolean growM = m1 - m &lt; 1;</b>
+<b class="nc">&nbsp;            final boolean growN = n1 - n &lt; 1;</b>
+<b class="nc">&nbsp;            final boolean growK = k1 - k &lt; 1;</b>
+<b class="nc">&nbsp;            if (growM | growN | growK) {</b>
+&nbsp;                // Some part of the previous f is too small.
+&nbsp;                // Atomically grow without destroying the previous computation.
+&nbsp;                // Any other thread using the previous f will not go out of bounds
+&nbsp;                // by keeping the new f dimensions at least as large.
+&nbsp;                // Note: Doing this in-place allows the memory to be gradually
+&nbsp;                // increased rather than allocating a new [m + 1][n + 1][k + 1]
+&nbsp;                // and copying all old values.
+<b class="nc">&nbsp;                final int sn = Math.max(n1, n + 1);</b>
+<b class="nc">&nbsp;                final int sk = Math.max(k1, k + 1);</b>
+<b class="nc">&nbsp;                if (growM) {</b>
+&nbsp;                    // Entirely new region
+<b class="nc">&nbsp;                    f = Arrays.copyOf(f, m + 1);</b>
+<b class="nc">&nbsp;                    for (int x = m1; x &lt;= m; x++) {</b>
+<b class="nc">&nbsp;                        f[x] = new double[sn][sk];</b>
+<b class="nc">&nbsp;                        for (final double[] b : f[x]) {</b>
+<b class="nc">&nbsp;                            initialize(b);</b>
+&nbsp;                        }
+&nbsp;                    }
+&nbsp;                }
+&nbsp;                // Expand previous in place if required
+<b class="nc">&nbsp;                if (growN) {</b>
+<b class="nc">&nbsp;                    for (int x = 0; x &lt; m1; x++) {</b>
+<b class="nc">&nbsp;                        f[x] = Arrays.copyOf(f[x], sn);</b>
+<b class="nc">&nbsp;                        for (int y = n1; y &lt; sn; y++) {</b>
+<b class="nc">&nbsp;                            final double[] b = f[x][y] = new double[sk];</b>
+<b class="nc">&nbsp;                            initialize(b);</b>
+&nbsp;                        }
+&nbsp;                    }
+&nbsp;                }
+<b class="nc">&nbsp;                if (growK) {</b>
+<b class="nc">&nbsp;                    for (int x = 0; x &lt; m1; x++) {</b>
+<b class="nc">&nbsp;                        for (int y = 0; y &lt; n1; y++) {</b>
+<b class="nc">&nbsp;                            final double[] b = f[x][y] = Arrays.copyOf(f[x][y], sk);</b>
+<b class="nc">&nbsp;                            for (int z = k1; z &lt; sk; z++) {</b>
+<b class="nc">&nbsp;                                b[z] = UNSET;</b>
+&nbsp;                            }
+&nbsp;                        }
+&nbsp;                    }
+&nbsp;                }
+&nbsp;                // Avoided an OutOfMemoryError. Cache for reuse.
+<b class="nc">&nbsp;                cacheF = new SoftReference&lt;&gt;(f);</b>
+&nbsp;            }
+<b class="nc">&nbsp;            return f;</b>
+<b class="nc">&nbsp;        }</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Initialize the array for f(m, n, x).
+&nbsp;     * Set value to 1 for x=0; otherwise {@link #UNSET}.
+&nbsp;     *
+&nbsp;     * @param fmn Array.
+&nbsp;     */
+&nbsp;    private static void initialize(double[] fmn) {
+<b class="nc">&nbsp;        Arrays.fill(fmn, UNSET);</b>
+&nbsp;        // f(m, n, 0) == 1 if m &gt;= 0, n &gt;= 0
+<b class="nc">&nbsp;        fmn[0] = 1;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Compute f(m; n; k), the number of subsets of {0; 1; ...; n} with m elements such
+&nbsp;     * that the elements of this subset add up to k.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;The function is computed recursively.
+&nbsp;     *
+&nbsp;     * @param f Tabulated values of f[m][n][k].
+&nbsp;     * @param m M
+&nbsp;     * @param n N
+&nbsp;     * @param k K
+&nbsp;     * @return f(m; n; k)
+&nbsp;     */
+&nbsp;    private static double fmnk(double[][][] f, int m, int n, int k) {
+&nbsp;        // Theorem 2.5:
+&nbsp;        // Omit conditions that will not be met: k &gt; mn
+&nbsp;        // f(m, n, k) = 0 if k &lt; 0, m &lt; 0, n &lt; 0
+<b class="nc">&nbsp;        if ((k | m | n) &lt; 0) {</b>
+<b class="nc">&nbsp;            return 0;</b>
+&nbsp;        }
+&nbsp;        // Compute on demand
+<b class="nc">&nbsp;        double fmnk = f[m][n][k];</b>
+<b class="nc">&nbsp;        if (fmnk &lt; 0) {</b>
+&nbsp;            // f(m, n, 0) == 1 if m &gt;= 0, n &gt;= 0
+&nbsp;            // This is already computed.
+&nbsp;
+&nbsp;            // Recursion from formula (3):
+&nbsp;            // f(m, n, k) = f(m-1, n, k-n) + f(m, n-1, k)
+<b class="nc">&nbsp;            f[m][n][k] = fmnk = fmnk(f, m - 1, n, k - n) + fmnk(f, m, n - 1, k);</b>
+&nbsp;        }
+<b class="nc">&nbsp;        return fmnk;</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2023-09-04 19:44</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,411 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=windows-1252"> 
+  <title>Coverage Report > ExtendedPrecision</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope:     <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">org.apache.commons.numbers.core</a>
+</div>
+
+<h1>Coverage Summary for Class: ExtendedPrecision (org.apache.commons.numbers.core)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">ExtendedPrecision</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/7)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/24)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/*
+&nbsp; * Licensed to the Apache Software Foundation (ASF) under one or more
+&nbsp; * contributor license agreements.  See the NOTICE file distributed with
+&nbsp; * this work for additional information regarding copyright ownership.
+&nbsp; * The ASF licenses this file to You under the Apache License, Version 2.0
+&nbsp; * (the &quot;License&quot;); you may not use this file except in compliance with
+&nbsp; * the License.  You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *      http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;package org.apache.commons.numbers.core;
+&nbsp;
+&nbsp;/**
+&nbsp; * Computes extended precision floating-point operations.
+&nbsp; *
+&nbsp; * &lt;p&gt;It is based on the 1971 paper
+&nbsp; * &lt;a href=&quot;https://doi.org/10.1007/BF01397083&quot;&gt;
+&nbsp; * Dekker (1971) A floating-point technique for extending the available precision&lt;/a&gt;.
+&nbsp; */
+&nbsp;final class ExtendedPrecision {
+&nbsp;    /*
+&nbsp;     * Caveat:
+&nbsp;     *
+&nbsp;     * The code below uses many additions/subtractions that may
+&nbsp;     * appear redundant. However, they should NOT be simplified, as they
+&nbsp;     * do use IEEE754 floating point arithmetic rounding properties.
+&nbsp;     *
+&nbsp;     * Algorithms are based on computing the product or sum of two values x and y in
+&nbsp;     * extended precision. The standard result is stored using a double (high part z) and
+&nbsp;     * the round-off error (or low part zz) is stored in a second double, e.g:
+&nbsp;     * x * y = (z, zz); z + zz = x * y
+&nbsp;     * x + y = (z, zz); z + zz = x + y
+&nbsp;     *
+&nbsp;     * To sum multiple (z, zz) results ideally the parts are sorted in order of
+&nbsp;     * non-decreasing magnitude and summed. This is exact if each number&#39;s most significant
+&nbsp;     * bit is below the least significant bit of the next (i.e. does not
+&nbsp;     * overlap). Creating non-overlapping parts requires a rebalancing
+&nbsp;     * of adjacent pairs using a summation z + zz = (z1, zz1) iteratively through the parts
+&nbsp;     * (see Shewchuk (1997) Grow-Expansion and Expansion-Sum [1]).
+&nbsp;     *
+&nbsp;     * [1] Shewchuk (1997): Arbitrary Precision Floating-Point Arithmetic
+&nbsp;     * http://www-2.cs.cmu.edu/afs/cs/project/quake/public/papers/robust-arithmetic.ps
+&nbsp;     */
+&nbsp;
+&nbsp;    /**
+&nbsp;     * The multiplier used to split the double value into high and low parts. From
+&nbsp;     * Dekker (1971): &quot;The constant should be chosen equal to 2^(p - p/2) + 1,
+&nbsp;     * where p is the number of binary digits in the mantissa&quot;. Here p is 53
+&nbsp;     * and the multiplier is {@code 2^27 + 1}.
+&nbsp;     */
+&nbsp;    private static final double MULTIPLIER = 1.0 + 0x1.0p27;
+&nbsp;
+&nbsp;    /**
+&nbsp;     * The upper limit above which a number may overflow during the split into a high part.
+&nbsp;     * Assuming the multiplier is above 2^27 and the maximum exponent is 1023 then a safe
+&nbsp;     * limit is a value with an exponent of (1023 - 27) = 2^996.
+&nbsp;     * 996 is the value obtained from {@code Math.getExponent(Double.MAX_VALUE / MULTIPLIER)}.
+&nbsp;     */
+&nbsp;    private static final double SAFE_UPPER = 0x1.0p996;
+&nbsp;
+&nbsp;    /** The scale to use when down-scaling during a split into a high part.
+&nbsp;     * This must be smaller than the inverse of the multiplier and a power of 2 for exact scaling. */
+&nbsp;    private static final double DOWN_SCALE = 0x1.0p-30;
+&nbsp;
+&nbsp;    /** The scale to use when re-scaling during a split into a high part.
+&nbsp;     * This is the inverse of {@link #DOWN_SCALE}. */
+&nbsp;    private static final double UP_SCALE = 0x1.0p30;
+&nbsp;
+&nbsp;    /** The mask to extract the raw 11-bit exponent.
+&nbsp;     * The value must be shifted 52-bits to remove the mantissa bits. */
+&nbsp;    private static final int EXP_MASK = 0x7ff;
+&nbsp;
+&nbsp;    /** The value 2046 converted for use if using {@link Integer#compareUnsigned(int, int)}.
+&nbsp;     * This requires adding {@link Integer#MIN_VALUE} to 2046. */
+&nbsp;    private static final int CMP_UNSIGNED_2046 = Integer.MIN_VALUE + 2046;
+&nbsp;
+&nbsp;    /** The value -1 converted for use if using {@link Integer#compareUnsigned(int, int)}.
+&nbsp;     * This requires adding {@link Integer#MIN_VALUE} to -1. */
+&nbsp;    private static final int CMP_UNSIGNED_MINUS_1 = Integer.MIN_VALUE - 1;
+&nbsp;
+&nbsp;    /** Private constructor. */
+&nbsp;    private ExtendedPrecision() {
+&nbsp;        // intentionally empty.
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Compute the low part of the double length number {@code (z,zz)} for the exact
+&nbsp;     * product of {@code x} and {@code y}. This is equivalent to computing a {@code double}
+&nbsp;     * containing the magnitude of the rounding error when converting the exact 106-bit
+&nbsp;     * significand of the multiplication result to a 53-bit significand.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;The method is written to be functionally similar to using a fused multiply add (FMA)
+&nbsp;     * operation to compute the low part, for example JDK 9&#39;s Math.fma function (note the sign
+&nbsp;     * change in the input argument for the product):
+&nbsp;     * &lt;pre&gt;
+&nbsp;     *  double x = ...;
+&nbsp;     *  double y = ...;
+&nbsp;     *  double xy = x * y;
+&nbsp;     *  double low1 = Math.fma(x, y, -xy);
+&nbsp;     *  double low2 = productLow(x, y, xy);
+&nbsp;     * &lt;/pre&gt;
+&nbsp;     *
+&nbsp;     * &lt;p&gt;Special cases:
+&nbsp;     *
+&nbsp;     * &lt;ul&gt;
+&nbsp;     *  &lt;li&gt;If {@code x * y} is sub-normal or zero then the result is 0.0.
+&nbsp;     *  &lt;li&gt;If {@code x * y} is infinite or NaN then the result is NaN.
+&nbsp;     * &lt;/ul&gt;
+&nbsp;     *
+&nbsp;     * @param x First factor.
+&nbsp;     * @param y Second factor.
+&nbsp;     * @param xy Product of the factors (x * y).
+&nbsp;     * @return the low part of the product double length number
+&nbsp;     * @see #highPartUnscaled(double)
+&nbsp;     */
+&nbsp;    static double productLow(double x, double y, double xy) {
+&nbsp;        // Verify the input. This must be NaN safe.
+&nbsp;        //assert Double.compare(x * y, xy) == 0
+&nbsp;
+&nbsp;        // If the number is sub-normal, inf or nan there is no round-off.
+<b class="nc">&nbsp;        if (isNotNormal(xy)) {</b>
+&nbsp;            // Returns 0.0 for sub-normal xy, otherwise NaN for inf/nan:
+<b class="nc">&nbsp;            return xy - xy;</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        // The result xy is finite and normal.
+&nbsp;        // Use Dekker&#39;s mul12 algorithm that splits the values into high and low parts.
+&nbsp;        // Dekker&#39;s split using multiplication will overflow if the value is within 2^27
+&nbsp;        // of double max value. It can also produce 26-bit approximations that are larger
+&nbsp;        // than the input numbers for the high part causing overflow in hx * hy when
+&nbsp;        // x * y does not overflow. So we must scale down big numbers.
+&nbsp;        // We only have to scale the largest number as we know the product does not overflow
+&nbsp;        // (if one is too big then the other cannot be).
+&nbsp;        // We also scale if the product is close to overflow to avoid intermediate overflow.
+&nbsp;        // This could be done at a higher limit (e.g. Math.abs(xy) &gt; Double.MAX_VALUE / 4)
+&nbsp;        // but is included here to have a single low probability branch condition.
+&nbsp;
+&nbsp;        // Add the absolute inputs for a single comparison. The sum will not be more than
+&nbsp;        // 3-fold higher than any component.
+<b class="nc">&nbsp;        final double a = Math.abs(x);</b>
+<b class="nc">&nbsp;        final double b = Math.abs(y);</b>
+<b class="nc">&nbsp;        if (a + b + Math.abs(xy) &gt;= SAFE_UPPER) {</b>
+&nbsp;            // Only required to scale the largest number as x*y does not overflow.
+<b class="nc">&nbsp;            if (a &gt; b) {</b>
+<b class="nc">&nbsp;                return productLowUnscaled(x * DOWN_SCALE, y, xy * DOWN_SCALE) * UP_SCALE;</b>
+&nbsp;            }
+<b class="nc">&nbsp;            return productLowUnscaled(x, y * DOWN_SCALE, xy * DOWN_SCALE) * UP_SCALE;</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        // No scaling required
+<b class="nc">&nbsp;        return productLowUnscaled(x, y, xy);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Checks if the number is not normal. This is functionally equivalent to:
+&nbsp;     * &lt;pre&gt;{@code
+&nbsp;     * final double abs = Math.abs(a);
+&nbsp;     * return (abs &lt;= Double.MIN_NORMAL || !(abs &lt;= Double.MAX_VALUE));
+&nbsp;     * }&lt;/pre&gt;
+&nbsp;     *
+&nbsp;     * @param a The value.
+&nbsp;     * @return true if the value is not normal
+&nbsp;     */
+&nbsp;    static boolean isNotNormal(double a) {
+&nbsp;        // Sub-normal numbers have a biased exponent of 0.
+&nbsp;        // Inf/NaN numbers have a biased exponent of 2047.
+&nbsp;        // Catch both cases by extracting the raw exponent, subtracting 1
+&nbsp;        // and compare unsigned (so 0 underflows to a unsigned large value).
+<b class="nc">&nbsp;        final int baisedExponent = ((int) (Double.doubleToRawLongBits(a) &gt;&gt;&gt; 52)) &amp; EXP_MASK;</b>
+&nbsp;        // Pre-compute the additions used by Integer.compareUnsigned
+<b class="nc">&nbsp;        return baisedExponent + CMP_UNSIGNED_MINUS_1 &gt;= CMP_UNSIGNED_2046;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Compute the low part of the double length number {@code (z,zz)} for the exact
+&nbsp;     * product of {@code x} and {@code y} using Dekker&#39;s mult12 algorithm. The standard
+&nbsp;     * precision product {@code x*y} must be provided. The numbers {@code x} and {@code y}
+&nbsp;     * are split into high and low parts using Dekker&#39;s algorithm.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;Warning: This method does not perform scaling in Dekker&#39;s split and large
+&nbsp;     * finite numbers can create NaN results.
+&nbsp;     *
+&nbsp;     * @param x First factor.
+&nbsp;     * @param y Second factor.
+&nbsp;     * @param xy Product of the factors (x * y).
+&nbsp;     * @return the low part of the product double length number
+&nbsp;     * @see #highPartUnscaled(double)
+&nbsp;     * @see #productLow(double, double, double, double, double)
+&nbsp;     */
+&nbsp;    private static double productLowUnscaled(double x, double y, double xy) {
+&nbsp;        // Split the numbers using Dekker&#39;s algorithm without scaling
+<b class="nc">&nbsp;        final double hx = highPartUnscaled(x);</b>
+<b class="nc">&nbsp;        final double lx = x - hx;</b>
+&nbsp;
+<b class="nc">&nbsp;        final double hy = highPartUnscaled(y);</b>
+<b class="nc">&nbsp;        final double ly = y - hy;</b>
+&nbsp;
+<b class="nc">&nbsp;        return productLow(hx, lx, hy, ly, xy);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Compute the low part of the double length number {@code (z,zz)} for the exact
+&nbsp;     * square of {@code x} using Dekker&#39;s mult12 algorithm. The standard precision product
+&nbsp;     * {@code x*x} must be provided. The number {@code x} is split into high and low parts
+&nbsp;     * using Dekker&#39;s algorithm.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;Warning: This method does not perform scaling in Dekker&#39;s split and large
+&nbsp;     * finite numbers can create NaN results.
+&nbsp;     *
+&nbsp;     * @param x Number to square
+&nbsp;     * @param xx Standard precision product {@code x*x}
+&nbsp;     * @return the low part of the square double length number
+&nbsp;     */
+&nbsp;    static double squareLowUnscaled(double x, double xx) {
+&nbsp;        // Split the numbers using Dekker&#39;s algorithm without scaling
+<b class="nc">&nbsp;        final double hx = highPartUnscaled(x);</b>
+<b class="nc">&nbsp;        final double lx = x - hx;</b>
+&nbsp;
+<b class="nc">&nbsp;        return productLow(hx, lx, hx, lx, xx);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Compute the low part of the double length number {@code (z,zz)} for the exact
+&nbsp;     * product of {@code x} and {@code y} using Dekker&#39;s mult12 algorithm. The standard
+&nbsp;     * precision product {@code x*y} must be provided. The numbers {@code x} and {@code y}
+&nbsp;     * should already be split into low and high parts.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;Note: This uses the high part of the result {@code (z,zz)} as {@code x * y} and not
+&nbsp;     * {@code hx * hy + hx * ty + tx * hy} as specified in Dekker&#39;s original paper.
+&nbsp;     * See Shewchuk (1997) for working examples.
+&nbsp;     *
+&nbsp;     * @param hx High part of first factor.
+&nbsp;     * @param lx Low part of first factor.
+&nbsp;     * @param hy High part of second factor.
+&nbsp;     * @param ly Low part of second factor.
+&nbsp;     * @param xy Product of the factors.
+&nbsp;     * @return &lt;code&gt;lx * ly - (((xy - hx * hy) - lx * hy) - hx * ly)&lt;/code&gt;
+&nbsp;     * @see &lt;a href=&quot;http://www-2.cs.cmu.edu/afs/cs/project/quake/public/papers/robust-arithmetic.ps&quot;&gt;
+&nbsp;     * Shewchuk (1997) Theorum 18&lt;/a&gt;
+&nbsp;     */
+&nbsp;    private static double productLow(double hx, double lx, double hy, double ly, double xy) {
+&nbsp;        // Compute the multiply low part:
+&nbsp;        // err1 = xy - hx * hy
+&nbsp;        // err2 = err1 - lx * hy
+&nbsp;        // err3 = err2 - hx * ly
+&nbsp;        // low = lx * ly - err3
+<b class="nc">&nbsp;        return lx * ly - (((xy - hx * hy) - lx * hy) - hx * ly);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Implement Dekker&#39;s method to split a value into two parts. Multiplying by (2^s + 1) creates
+&nbsp;     * a big value from which to derive the two split parts.
+&nbsp;     * &lt;pre&gt;
+&nbsp;     * c = (2^s + 1) * a
+&nbsp;     * a_big = c - a
+&nbsp;     * a_hi = c - a_big
+&nbsp;     * a_lo = a - a_hi
+&nbsp;     * a = a_hi + a_lo
+&nbsp;     * &lt;/pre&gt;
+&nbsp;     *
+&nbsp;     * &lt;p&gt;The multiplicand allows a p-bit value to be split into
+&nbsp;     * (p-s)-bit value {@code a_hi} and a non-overlapping (s-1)-bit value {@code a_lo}.
+&nbsp;     * Combined they have (p-1) bits of significand but the sign bit of {@code a_lo}
+&nbsp;     * contains a bit of information. The constant is chosen so that s is ceil(p/2) where
+&nbsp;     * the precision p for a double is 53-bits (1-bit of the mantissa is assumed to be
+&nbsp;     * 1 for a non sub-normal number) and s is 27.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;This conversion does not use scaling and the result of overflow is NaN. Overflow
+&nbsp;     * may occur when the exponent of the input value is above 996.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;Splitting a NaN or infinite value will return NaN.
+&nbsp;     *
+&nbsp;     * @param value Value.
+&nbsp;     * @return the high part of the value.
+&nbsp;     * @see Math#getExponent(double)
+&nbsp;     */
+&nbsp;    static double highPartUnscaled(double value) {
+<b class="nc">&nbsp;        final double c = MULTIPLIER * value;</b>
+<b class="nc">&nbsp;        return c - (c - value);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Compute the round-off from the sum of two numbers {@code a} and {@code b} using
+&nbsp;     * Knuth&#39;s two-sum algorithm. The values are not required to be ordered by magnitude.
+&nbsp;     * The standard precision sum must be provided.
+&nbsp;     *
+&nbsp;     * @param a First part of sum.
+&nbsp;     * @param b Second part of sum.
+&nbsp;     * @param sum Sum of the parts (a + b).
+&nbsp;     * @return &lt;code&gt;(b - (sum - (sum - b))) + (a - (sum - b))&lt;/code&gt;
+&nbsp;     * @see &lt;a href=&quot;http://www-2.cs.cmu.edu/afs/cs/project/quake/public/papers/robust-arithmetic.ps&quot;&gt;
+&nbsp;     * Shewchuk (1997) Theorum 7&lt;/a&gt;
+&nbsp;     */
+&nbsp;    static double twoSumLow(double a, double b, double sum) {
+<b class="nc">&nbsp;        final double bVirtual = sum - a;</b>
+&nbsp;        // sum - bVirtual == aVirtual.
+&nbsp;        // a - aVirtual == a round-off
+&nbsp;        // b - bVirtual == b round-off
+<b class="nc">&nbsp;        return (a - (sum - bVirtual)) + (b - bVirtual);</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2023-08-18 14:27</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,318 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=windows-1252"> 
+  <title>Coverage Report > FisherExactTest</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope:     <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">org.apache.commons.statistics.inference</a>
+</div>
+
+<h1>Coverage Summary for Class: FisherExactTest (org.apache.commons.statistics.inference)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">FisherExactTest</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/7)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/48)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/*
+&nbsp; * Licensed to the Apache Software Foundation (ASF) under one or more
+&nbsp; * contributor license agreements.  See the NOTICE file distributed with
+&nbsp; * this work for additional information regarding copyright ownership.
+&nbsp; * The ASF licenses this file to You under the Apache License, Version 2.0
+&nbsp; * (the &quot;License&quot;); you may not use this file except in compliance with
+&nbsp; * the License.  You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *      http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;package org.apache.commons.statistics.inference;
+&nbsp;
+&nbsp;import java.util.Objects;
+&nbsp;import org.apache.commons.statistics.distribution.HypergeometricDistribution;
+&nbsp;
+&nbsp;/**
+&nbsp; * Implements Fisher&#39;s exact test.
+&nbsp; *
+&nbsp; * &lt;p&gt;Performs an exact test for the statistical significance of the association (contingency)
+&nbsp; * between two kinds of categorical classification.
+&nbsp; *
+&nbsp; * &lt;p&gt;Fisher&#39;s test applies in the case that the row sums and column sums are fixed in advance
+&nbsp; * and not random.
+&nbsp; *
+&nbsp; * @see &lt;a href=&quot;https://en.wikipedia.org/wiki/Fisher%27s_exact_test&quot;&gt;Fisher&amp;#39;s exact test (Wikipedia)&lt;/a&gt;
+&nbsp; * @since 1.1
+&nbsp; */
+&nbsp;public final class FisherExactTest {
+&nbsp;    /** Default instance. */
+<b class="nc">&nbsp;    private static final FisherExactTest DEFAULT = new FisherExactTest(AlternativeHypothesis.TWO_SIDED);</b>
+&nbsp;
+&nbsp;    /** Alternative hypothesis. */
+&nbsp;    private final AlternativeHypothesis alternative;
+&nbsp;
+&nbsp;    /**
+&nbsp;     * @param alternative Alternative hypothesis.
+&nbsp;     */
+<b class="nc">&nbsp;    private FisherExactTest(AlternativeHypothesis alternative) {</b>
+<b class="nc">&nbsp;        this.alternative = alternative;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Return an instance using the default options.
+&nbsp;     *
+&nbsp;     * &lt;ul&gt;
+&nbsp;     * &lt;li&gt;{@link AlternativeHypothesis#TWO_SIDED}
+&nbsp;     * &lt;/ul&gt;
+&nbsp;     *
+&nbsp;     * @return default instance
+&nbsp;     */
+&nbsp;    public static FisherExactTest withDefaults() {
+<b class="nc">&nbsp;        return DEFAULT;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Return an instance with the configured alternative hypothesis.
+&nbsp;     *
+&nbsp;     * @param v Value.
+&nbsp;     * @return an instance
+&nbsp;     */
+&nbsp;    public FisherExactTest with(AlternativeHypothesis v) {
+<b class="nc">&nbsp;        return new FisherExactTest(Objects.requireNonNull(v));</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Compute the prior odds ratio for the 2-by-2 contingency table. This is the
+&nbsp;     * &quot;sample&quot; or &quot;unconditional&quot; maximum likelihood estimate. For a table of:
+&nbsp;     *
+&nbsp;     * &lt;p&gt;\[ \left[ {\begin{array}{cc}
+&nbsp;     *         a &amp;amp; b \\
+&nbsp;     *         c &amp;amp; d \\
+&nbsp;     *       \end{array} } \right] \]
+&nbsp;     *
+&nbsp;     * &lt;p&gt;this is:
+&nbsp;     *
+&nbsp;     * &lt;p&gt;\[ r = \frac{a d}{b c} \]
+&nbsp;     *
+&nbsp;     * &lt;p&gt;Special cases:
+&nbsp;     * &lt;ul&gt;
+&nbsp;     * &lt;li&gt;If the denominator is zero, the value is {@linkplain Double#POSITIVE_INFINITY infinity}.
+&nbsp;     * &lt;li&gt;If a row or column sum is zero, the value is {@link Double#NaN NaN}.
+&nbsp;     * &lt;/ul&gt;
+&nbsp;     *
+&nbsp;     * &lt;p&gt;Note: This statistic is equal to the statistic computed by the SciPy function
+&nbsp;     * {@code scipy.stats.fisher_exact}. It is different to the conditional maximum
+&nbsp;     * likelihood estimate computed by R function {@code fisher.test}.
+&nbsp;     *
+&nbsp;     * @param table 2-by-2 contingency table.
+&nbsp;     * @return odds ratio
+&nbsp;     * @throws IllegalArgumentException if the {@code table} is not a 2-by-2 table; any
+&nbsp;     * table entry is negative; or the sum of the table is 0 or larger than a 32-bit signed integer.
+&nbsp;     * @see #test(int[][])
+&nbsp;     */
+&nbsp;    public double statistic(int[][] table) {
+<b class="nc">&nbsp;        Arguments.checkTable(table);</b>
+<b class="nc">&nbsp;        final double a = table[0][0];</b>
+<b class="nc">&nbsp;        final double b = table[0][1];</b>
+<b class="nc">&nbsp;        final double c = table[1][0];</b>
+<b class="nc">&nbsp;        final double d = table[1][1];</b>
+<b class="nc">&nbsp;        return (a * d) / (b * c);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Performs Fisher&#39;s exact test on the 2-by-2 contingency table.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;The test statistic is equal to the prior odds ratio. This is the
+&nbsp;     * &quot;sample&quot; or &quot;unconditional&quot; maximum likelihood estimate.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;The test is defined by the {@link AlternativeHypothesis}.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;For a table of [[a, b], [c, d]] the possible values of any table are conditioned
+&nbsp;     * with the same marginals (row and column totals). In this case the possible values {@code x}
+&nbsp;     * of the upper-left element {@code a} are {@code min(0, a - d) &lt;= x &lt;= a + min(b, c)}.
+&nbsp;     * &lt;ul&gt;
+&nbsp;     * &lt;li&gt;&#39;two-sided&#39;: the odds ratio of the underlying population is not one; the p-value
+&nbsp;     * is the probability that a random table has probability equal to or less than the input table.
+&nbsp;     * &lt;li&gt;&#39;greater&#39;: the odds ratio of the underlying population is greater than one; the p-value
+&nbsp;     * is the probability that a random table has {@code x &gt;= a}.
+&nbsp;     * &lt;li&gt;&#39;less&#39;: the odds ratio of the underlying population is less than one; the p-value
+&nbsp;     * is the probability that a random table has {@code x &lt;= a}.
+&nbsp;     * &lt;/ul&gt;
+&nbsp;     *
+&nbsp;     * @param table 2-by-2 contingency table.
+&nbsp;     * @return test result
+&nbsp;     * @throws IllegalArgumentException if the {@code table} is not a 2-by-2 table; any
+&nbsp;     * table entry is negative; or the sum of the table is 0 or larger than a 32-bit signed integer.
+&nbsp;     * @see #with(AlternativeHypothesis)
+&nbsp;     * @see #statistic(int[][])
+&nbsp;     */
+&nbsp;    public SignificanceResult test(int[][] table) {
+<b class="nc">&nbsp;        Arguments.checkTable(table);</b>
+<b class="nc">&nbsp;        final int a = table[0][0];</b>
+<b class="nc">&nbsp;        final int b = table[0][1];</b>
+<b class="nc">&nbsp;        final int c = table[1][0];</b>
+<b class="nc">&nbsp;        final int d = table[1][1];</b>
+&nbsp;
+&nbsp;        // Odd-ratio.
+<b class="nc">&nbsp;        final double statistic = ((double) a * d) / ((double) b * c);</b>
+&nbsp;
+<b class="nc">&nbsp;        final int nn = a + b + c + d;</b>
+<b class="nc">&nbsp;        final int k = a + b;</b>
+<b class="nc">&nbsp;        final int n = a + c;</b>
+&nbsp;
+&nbsp;        // Note: The distribution validates the population size is &gt; 0
+<b class="nc">&nbsp;        final HypergeometricDistribution distribution = HypergeometricDistribution.of(nn, k, n);</b>
+&nbsp;        double p;
+<b class="nc">&nbsp;        if (alternative == AlternativeHypothesis.GREATER_THAN) {</b>
+<b class="nc">&nbsp;            p = distribution.survivalProbability(a - 1);</b>
+<b class="nc">&nbsp;        } else if (alternative == AlternativeHypothesis.LESS_THAN) {</b>
+<b class="nc">&nbsp;            p = distribution.cumulativeProbability(a);</b>
+&nbsp;        } else {
+<b class="nc">&nbsp;            p = twoSidedTest(a, distribution);</b>
+&nbsp;        }
+<b class="nc">&nbsp;        return new BaseSignificanceResult(statistic, p);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Returns the &lt;i&gt;observed significance level&lt;/i&gt;, or p-value, associated with a
+&nbsp;     * two-sided test about the observed value.
+&nbsp;     *
+&nbsp;     * @param k Observed value.
+&nbsp;     * @param distribution Hypergeometric distribution.
+&nbsp;     * @return p-value
+&nbsp;     */
+&nbsp;    private static double twoSidedTest(int k, HypergeometricDistribution distribution) {
+&nbsp;        // Find all i where Pr(X = i) &lt;= Pr(X = k) and sum them.
+&nbsp;        // Exploit the known unimodal distribution to increase the
+&nbsp;        // search speed. Note the search depends only on magnitude differences.
+&nbsp;        // The current HypergeometricDistribution is faster using log probability
+&nbsp;        // as it omits a call to Math.exp.
+&nbsp;
+&nbsp;        // Use the mode as the point of largest probability.
+&nbsp;        // The lower or upper mode is important for the search below.
+<b class="nc">&nbsp;        final int nn = distribution.getPopulationSize();</b>
+<b class="nc">&nbsp;        final int kk = distribution.getNumberOfSuccesses();</b>
+<b class="nc">&nbsp;        final int n = distribution.getSampleSize();</b>
+<b class="nc">&nbsp;        final double v = ((double) n + 1) * ((double) kk + 1) / (nn + 2.0);</b>
+<b class="nc">&nbsp;        final int m1 = (int) Math.ceil(v) - 1;</b>
+<b class="nc">&nbsp;        final int m2 = (int) Math.floor(v);</b>
+<b class="nc">&nbsp;        if (k &lt; m1) {</b>
+<b class="nc">&nbsp;            final double pk = distribution.logProbability(k);</b>
+&nbsp;            // Lower half = cdf(k)
+&nbsp;            // Find upper half. As k &lt; lower mode i should never
+&nbsp;            // reach the lower mode based on the probability alone.
+&nbsp;            // Bracket with the upper mode.
+<b class="nc">&nbsp;            final int i = Searches.searchDescending(m2, distribution.getSupportUpperBound(), pk,</b>
+<b class="nc">&nbsp;                distribution::logProbability);</b>
+<b class="nc">&nbsp;            return distribution.cumulativeProbability(k) +</b>
+<b class="nc">&nbsp;                   distribution.survivalProbability(i - 1);</b>
+<b class="nc">&nbsp;        } else if (k &gt; m2) {</b>
+<b class="nc">&nbsp;            final double pk = distribution.logProbability(k);</b>
+&nbsp;            // Upper half = sf(k - 1)
+&nbsp;            // Find lower half. As k &gt; upper mode i should never
+&nbsp;            // reach the upper mode based on the probability alone.
+&nbsp;            // Bracket with the lower mode.
+<b class="nc">&nbsp;            final int i = Searches.searchAscending(distribution.getSupportLowerBound(), m1, pk,</b>
+<b class="nc">&nbsp;                distribution::logProbability);</b>
+<b class="nc">&nbsp;            return distribution.cumulativeProbability(i) +</b>
+<b class="nc">&nbsp;                   distribution.survivalProbability(k - 1);</b>
+&nbsp;        }
+&nbsp;        // k == mode
+&nbsp;        // Edge case where the sum of probabilities will be either
+&nbsp;        // 1 or 1 - Pr(X = mode) where mode != k
+<b class="nc">&nbsp;        final double pk = distribution.probability(k);</b>
+<b class="nc">&nbsp;        final double pm = distribution.probability(k == m1 ? m2 : m1);</b>
+<b class="nc">&nbsp;        return pm &gt; pk ? 1 - pm : 1;</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2023-09-04 19:44</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,801 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=windows-1252"> 
+  <title>Coverage Report > Precision</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope:     <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">org.apache.commons.numbers.core</a>
+</div>
+
+<h1>Coverage Summary for Class: Precision (org.apache.commons.numbers.core)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">Precision</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/20)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/75)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">Precision$1</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/3)
+  </span>
+</td>
+  </tr>
+  <tr>
+    <td class="name">Precision$DoubleEquivalence</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/7)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/11)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/29)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/89)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/*
+&nbsp; * Licensed to the Apache Software Foundation (ASF) under one or more
+&nbsp; * contributor license agreements.  See the NOTICE file distributed with
+&nbsp; * this work for additional information regarding copyright ownership.
+&nbsp; * The ASF licenses this file to You under the Apache License, Version 2.0
+&nbsp; * (the &quot;License&quot;); you may not use this file except in compliance with
+&nbsp; * the License.  You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *      http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package org.apache.commons.numbers.core;
+&nbsp;
+&nbsp;import java.math.BigDecimal;
+&nbsp;import java.math.RoundingMode;
+&nbsp;
+&nbsp;/**
+&nbsp; * Utilities for comparing numbers.
+&nbsp; */
+&nbsp;public final class Precision {
+&nbsp;    /**
+&nbsp;     * &lt;p&gt;
+&nbsp;     * Largest double-precision floating-point number such that
+&nbsp;     * {@code 1 + EPSILON} is numerically equal to 1. This value is an upper
+&nbsp;     * bound on the relative error due to rounding real numbers to double
+&nbsp;     * precision floating-point numbers.
+&nbsp;     * &lt;/p&gt;
+&nbsp;     * &lt;p&gt;
+&nbsp;     * In IEEE 754 arithmetic, this is 2&lt;sup&gt;-53&lt;/sup&gt;.
+&nbsp;     * &lt;/p&gt;
+&nbsp;     *
+&nbsp;     * @see &lt;a href=&quot;http://en.wikipedia.org/wiki/Machine_epsilon&quot;&gt;Machine epsilon&lt;/a&gt;
+&nbsp;     */
+&nbsp;    public static final double EPSILON;
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Safe minimum, such that {@code 1 / SAFE_MIN} does not overflow.
+&nbsp;     * In IEEE 754 arithmetic, this is also the smallest normalized
+&nbsp;     * number 2&lt;sup&gt;-1022&lt;/sup&gt;.
+&nbsp;     *
+&nbsp;     * @see Double#MIN_NORMAL
+&nbsp;     */
+&nbsp;    public static final double SAFE_MIN = Double.MIN_NORMAL;
+&nbsp;
+&nbsp;    /** Exponent offset in IEEE754 representation. */
+&nbsp;    private static final long EXPONENT_OFFSET = 1023L;
+&nbsp;
+&nbsp;    /** Positive zero. */
+&nbsp;    private static final double POSITIVE_ZERO = 0d;
+&nbsp;
+&nbsp;    static {
+&nbsp;        /*
+&nbsp;         *  This was previously expressed as = 0x1.0p-53
+&nbsp;         *  However, OpenJDK (Sparc Solaris) cannot handle such small
+&nbsp;         *  constants: MATH-721
+&nbsp;         */
+<b class="nc">&nbsp;        EPSILON = Double.longBitsToDouble((EXPONENT_OFFSET - 53L) &lt;&lt; 52);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Private constructor.
+&nbsp;     */
+&nbsp;    private Precision() {}
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Compares two numbers given some amount of allowed error.
+&nbsp;     * The returned value is:
+&nbsp;     * &lt;ul&gt;
+&nbsp;     *  &lt;li&gt;zero if considered equal using {@link #equals(double,double,double) equals(x, y, eps)}
+&nbsp;     *  &lt;li&gt;negative if not equal and {@code x &lt; y}
+&nbsp;     *  &lt;li&gt;positive if not equal and {@code x &gt; y}
+&nbsp;     * &lt;/ul&gt;
+&nbsp;     *
+&nbsp;     * &lt;p&gt;NaN values are handled as if using {@link Double#compare(double, double)} where the
+&nbsp;     * returned value is:
+&nbsp;     * &lt;ul&gt;
+&nbsp;     *  &lt;li&gt;zero if {@code NaN, NaN}
+&nbsp;     *  &lt;li&gt;negative if {@code !NaN, NaN}
+&nbsp;     *  &lt;li&gt;positive if {@code NaN, !NaN}
+&nbsp;     * &lt;/ul&gt;
+&nbsp;     *
+&nbsp;     * @param x First value.
+&nbsp;     * @param y Second value.
+&nbsp;     * @param eps Allowed error when checking for equality.
+&nbsp;     * @return 0 if the value are considered equal, -1 if the first is smaller than
+&nbsp;     * the second, 1 if the first is larger than the second.
+&nbsp;     * @see #equals(double, double, double)
+&nbsp;     */
+&nbsp;    public static int compareTo(double x, double y, double eps) {
+<b class="nc">&nbsp;        if (equals(x, y, eps)) {</b>
+<b class="nc">&nbsp;            return 0;</b>
+<b class="nc">&nbsp;        } else if (x &lt; y) {</b>
+<b class="nc">&nbsp;            return -1;</b>
+<b class="nc">&nbsp;        } else if (x &gt; y) {</b>
+<b class="nc">&nbsp;            return 1;</b>
+&nbsp;        }
+&nbsp;        // NaN input.
+<b class="nc">&nbsp;        return Double.compare(x, y);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Compares two numbers given some amount of allowed error.
+&nbsp;     * The returned value is:
+&nbsp;     * &lt;ul&gt;
+&nbsp;     *  &lt;li&gt;zero if considered equal using {@link #equals(double,double,int) equals(x, y, maxUlps)}
+&nbsp;     *  &lt;li&gt;negative if not equal and {@code x &lt; y}
+&nbsp;     *  &lt;li&gt;positive if not equal and {@code x &gt; y}
+&nbsp;     * &lt;/ul&gt;
+&nbsp;     *
+&nbsp;     * &lt;p&gt;NaN values are handled as if using {@link Double#compare(double, double)} where the
+&nbsp;     * returned value is:
+&nbsp;     * &lt;ul&gt;
+&nbsp;     *  &lt;li&gt;zero if {@code NaN, NaN}
+&nbsp;     *  &lt;li&gt;negative if {@code !NaN, NaN}
+&nbsp;     *  &lt;li&gt;positive if {@code NaN, !NaN}
+&nbsp;     * &lt;/ul&gt;
+&nbsp;     *
+&nbsp;     * @param x First value.
+&nbsp;     * @param y Second value.
+&nbsp;     * @param maxUlps {@code (maxUlps - 1)} is the number of floating point
+&nbsp;     * values between {@code x} and {@code y}.
+&nbsp;     * @return 0 if the value are considered equal, -1 if the first is smaller than
+&nbsp;     * the second, 1 if the first is larger than the second.
+&nbsp;     * @see #equals(double, double, int)
+&nbsp;     */
+&nbsp;    public static int compareTo(final double x, final double y, final int maxUlps) {
+<b class="nc">&nbsp;        if (equals(x, y, maxUlps)) {</b>
+<b class="nc">&nbsp;            return 0;</b>
+<b class="nc">&nbsp;        } else if (x &lt; y) {</b>
+<b class="nc">&nbsp;            return -1;</b>
+<b class="nc">&nbsp;        } else if (x &gt; y) {</b>
+<b class="nc">&nbsp;            return 1;</b>
+&nbsp;        }
+&nbsp;        // NaN input.
+<b class="nc">&nbsp;        return Double.compare(x, y);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Returns true iff they are equal as defined by
+&nbsp;     * {@link #equals(float,float,int) equals(x, y, 1)}.
+&nbsp;     *
+&nbsp;     * @param x first value
+&nbsp;     * @param y second value
+&nbsp;     * @return {@code true} if the values are equal.
+&nbsp;     */
+&nbsp;    public static boolean equals(float x, float y) {
+<b class="nc">&nbsp;        return equals(x, y, 1);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Returns true if both arguments are NaN or they are
+&nbsp;     * equal as defined by {@link #equals(float,float) equals(x, y, 1)}.
+&nbsp;     *
+&nbsp;     * @param x first value
+&nbsp;     * @param y second value
+&nbsp;     * @return {@code true} if the values are equal or both are NaN.
+&nbsp;     */
+&nbsp;    public static boolean equalsIncludingNaN(float x, float y) {
+<b class="nc">&nbsp;        final boolean xIsNan = Float.isNaN(x);</b>
+<b class="nc">&nbsp;        final boolean yIsNan = Float.isNaN(y);</b>
+&nbsp;        // Combine the booleans with bitwise OR
+<b class="nc">&nbsp;        return (xIsNan | yIsNan) ?</b>
+<b class="nc">&nbsp;            xIsNan == yIsNan :</b>
+<b class="nc">&nbsp;            equals(x, y, 1);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Returns {@code true} if there is no float value strictly between the
+&nbsp;     * arguments or the difference between them is within the range of allowed
+&nbsp;     * error (inclusive). Returns {@code false} if either of the arguments
+&nbsp;     * is NaN.
+&nbsp;     *
+&nbsp;     * @param x first value
+&nbsp;     * @param y second value
+&nbsp;     * @param eps the amount of absolute error to allow.
+&nbsp;     * @return {@code true} if the values are equal or within range of each other.
+&nbsp;     */
+&nbsp;    public static boolean equals(float x, float y, float eps) {
+<b class="nc">&nbsp;        return equals(x, y, 1) || Math.abs(y - x) &lt;= eps;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Returns true if the arguments are both NaN, there are no float value strictly
+&nbsp;     * between the arguments or the difference between them is within the range of allowed
+&nbsp;     * error (inclusive).
+&nbsp;     *
+&nbsp;     * @param x first value
+&nbsp;     * @param y second value
+&nbsp;     * @param eps the amount of absolute error to allow.
+&nbsp;     * @return {@code true} if the values are equal or within range of each other,
+&nbsp;     * or both are NaN.
+&nbsp;     */
+&nbsp;    public static boolean equalsIncludingNaN(float x, float y, float eps) {
+<b class="nc">&nbsp;        return equalsIncludingNaN(x, y, 1) || Math.abs(y - x) &lt;= eps;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Returns true if the arguments are equal or within the range of allowed
+&nbsp;     * error (inclusive). Returns {@code false} if either of the arguments is NaN.
+&nbsp;     * &lt;p&gt;
+&nbsp;     * Two double numbers are considered equal if there are {@code (maxUlps - 1)}
+&nbsp;     * (or fewer) floating point numbers between them, i.e. two adjacent
+&nbsp;     * floating point numbers are considered equal.
+&nbsp;     * &lt;/p&gt;
+&nbsp;     * &lt;p&gt;
+&nbsp;     * Adapted from &lt;a
+&nbsp;     * href=&quot;http://randomascii.wordpress.com/2012/02/25/comparing-floating-point-numbers-2012-edition/&quot;&gt;
+&nbsp;     * Bruce Dawson&lt;/a&gt;.
+&nbsp;     * &lt;/p&gt;
+&nbsp;     *
+&nbsp;     * @param x first value
+&nbsp;     * @param y second value
+&nbsp;     * @param maxUlps {@code (maxUlps - 1)} is the number of floating point
+&nbsp;     * values between {@code x} and {@code y}.
+&nbsp;     * @return {@code true} if there are fewer than {@code maxUlps} floating
+&nbsp;     * point values between {@code x} and {@code y}.
+&nbsp;     */
+&nbsp;    public static boolean equals(final float x, final float y, final int maxUlps) {
+<b class="nc">&nbsp;        final int xInt = Float.floatToRawIntBits(x);</b>
+<b class="nc">&nbsp;        final int yInt = Float.floatToRawIntBits(y);</b>
+&nbsp;
+&nbsp;        final boolean isEqual;
+<b class="nc">&nbsp;        if ((xInt ^ yInt) &lt; 0) {</b>
+&nbsp;            // Numbers have opposite signs, take care of overflow.
+&nbsp;            // Remove the sign bit to obtain the absolute ULP above zero.
+<b class="nc">&nbsp;            final int deltaPlus = xInt &amp; Integer.MAX_VALUE;</b>
+<b class="nc">&nbsp;            final int deltaMinus = yInt &amp; Integer.MAX_VALUE;</b>
+&nbsp;
+&nbsp;            // Avoid possible overflow from adding the deltas by using a long.
+<b class="nc">&nbsp;            isEqual = (long) deltaPlus + deltaMinus &lt;= maxUlps;</b>
+<b class="nc">&nbsp;        } else {</b>
+&nbsp;            // Numbers have same sign, there is no risk of overflow.
+<b class="nc">&nbsp;            isEqual = Math.abs(xInt - yInt) &lt;= maxUlps;</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        return isEqual &amp;&amp; !Float.isNaN(x) &amp;&amp; !Float.isNaN(y);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Returns true if both arguments are NaN or if they are equal as defined
+&nbsp;     * by {@link #equals(float,float,int) equals(x, y, maxUlps)}.
+&nbsp;     *
+&nbsp;     * @param x first value
+&nbsp;     * @param y second value
+&nbsp;     * @param maxUlps {@code (maxUlps - 1)} is the number of floating point
+&nbsp;     * values between {@code x} and {@code y}.
+&nbsp;     * @return {@code true} if both arguments are NaN or if there are less than
+&nbsp;     * {@code maxUlps} floating point values between {@code x} and {@code y}.
+&nbsp;     */
+&nbsp;    public static boolean equalsIncludingNaN(float x, float y, int maxUlps) {
+<b class="nc">&nbsp;        final boolean xIsNan = Float.isNaN(x);</b>
+<b class="nc">&nbsp;        final boolean yIsNan = Float.isNaN(y);</b>
+&nbsp;        // Combine the booleans with bitwise OR
+<b class="nc">&nbsp;        return (xIsNan | yIsNan) ?</b>
+<b class="nc">&nbsp;            xIsNan == yIsNan :</b>
+<b class="nc">&nbsp;            equals(x, y, maxUlps);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Returns true iff they are equal as defined by
+&nbsp;     * {@link #equals(double,double,int) equals(x, y, 1)}.
+&nbsp;     *
+&nbsp;     * @param x first value
+&nbsp;     * @param y second value
+&nbsp;     * @return {@code true} if the values are equal.
+&nbsp;     */
+&nbsp;    public static boolean equals(double x, double y) {
+<b class="nc">&nbsp;        return equals(x, y, 1);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Returns true if the arguments are both NaN or they are
+&nbsp;     * equal as defined by {@link #equals(double,double) equals(x, y, 1)}.
+&nbsp;     *
+&nbsp;     * @param x first value
+&nbsp;     * @param y second value
+&nbsp;     * @return {@code true} if the values are equal or both are NaN.
+&nbsp;     */
+&nbsp;    public static boolean equalsIncludingNaN(double x, double y) {
+<b class="nc">&nbsp;        final boolean xIsNan = Double.isNaN(x);</b>
+<b class="nc">&nbsp;        final boolean yIsNan = Double.isNaN(y);</b>
+&nbsp;        // Combine the booleans with bitwise OR
+<b class="nc">&nbsp;        return (xIsNan | yIsNan) ?</b>
+<b class="nc">&nbsp;            xIsNan == yIsNan :</b>
+<b class="nc">&nbsp;            equals(x, y, 1);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Returns {@code true} if there is no double value strictly between the
+&nbsp;     * arguments or the difference between them is within the range of allowed
+&nbsp;     * error (inclusive). Returns {@code false} if either of the arguments
+&nbsp;     * is NaN.
+&nbsp;     *
+&nbsp;     * @param x First value.
+&nbsp;     * @param y Second value.
+&nbsp;     * @param eps Amount of allowed absolute error.
+&nbsp;     * @return {@code true} if the values are equal or within range of each other.
+&nbsp;     */
+&nbsp;    public static boolean equals(double x, double y, double eps) {
+<b class="nc">&nbsp;        return equals(x, y, 1) || Math.abs(y - x) &lt;= eps;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Returns {@code true} if there is no double value strictly between the
+&nbsp;     * arguments or the relative difference between them is less than or equal
+&nbsp;     * to the given tolerance. Returns {@code false} if either of the arguments
+&nbsp;     * is NaN.
+&nbsp;     *
+&nbsp;     * @param x First value.
+&nbsp;     * @param y Second value.
+&nbsp;     * @param eps Amount of allowed relative error.
+&nbsp;     * @return {@code true} if the values are two adjacent floating point
+&nbsp;     * numbers or they are within range of each other.
+&nbsp;     */
+&nbsp;    public static boolean equalsWithRelativeTolerance(double x, double y, double eps) {
+<b class="nc">&nbsp;        if (equals(x, y, 1)) {</b>
+<b class="nc">&nbsp;            return true;</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        final double absoluteMax = Math.max(Math.abs(x), Math.abs(y));</b>
+<b class="nc">&nbsp;        final double relativeDifference = Math.abs((x - y) / absoluteMax);</b>
+&nbsp;
+<b class="nc">&nbsp;        return relativeDifference &lt;= eps;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Returns true if the arguments are both NaN, there are no double value strictly
+&nbsp;     * between the arguments or the difference between them is within the range of allowed
+&nbsp;     * error (inclusive).
+&nbsp;     *
+&nbsp;     * @param x first value
+&nbsp;     * @param y second value
+&nbsp;     * @param eps the amount of absolute error to allow.
+&nbsp;     * @return {@code true} if the values are equal or within range of each other,
+&nbsp;     * or both are NaN.
+&nbsp;     */
+&nbsp;    public static boolean equalsIncludingNaN(double x, double y, double eps) {
+<b class="nc">&nbsp;        return equalsIncludingNaN(x, y) || Math.abs(y - x) &lt;= eps;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Returns true if the arguments are equal or within the range of allowed
+&nbsp;     * error (inclusive). Returns {@code false} if either of the arguments is NaN.
+&nbsp;     * &lt;p&gt;
+&nbsp;     * Two float numbers are considered equal if there are {@code (maxUlps - 1)}
+&nbsp;     * (or fewer) floating point numbers between them, i.e. two adjacent
+&nbsp;     * floating point numbers are considered equal.
+&nbsp;     * &lt;/p&gt;
+&nbsp;     * &lt;p&gt;
+&nbsp;     * Adapted from &lt;a
+&nbsp;     * href=&quot;http://randomascii.wordpress.com/2012/02/25/comparing-floating-point-numbers-2012-edition/&quot;&gt;
+&nbsp;     * Bruce Dawson&lt;/a&gt;.
+&nbsp;     * &lt;/p&gt;
+&nbsp;     *
+&nbsp;     * @param x first value
+&nbsp;     * @param y second value
+&nbsp;     * @param maxUlps {@code (maxUlps - 1)} is the number of floating point
+&nbsp;     * values between {@code x} and {@code y}.
+&nbsp;     * @return {@code true} if there are fewer than {@code maxUlps} floating
+&nbsp;     * point values between {@code x} and {@code y}.
+&nbsp;     */
+&nbsp;    public static boolean equals(final double x, final double y, final int maxUlps) {
+<b class="nc">&nbsp;        final long xInt = Double.doubleToRawLongBits(x);</b>
+<b class="nc">&nbsp;        final long yInt = Double.doubleToRawLongBits(y);</b>
+&nbsp;
+<b class="nc">&nbsp;        if ((xInt ^ yInt) &lt; 0) {</b>
+&nbsp;            // Numbers have opposite signs, take care of overflow.
+&nbsp;            // Remove the sign bit to obtain the absolute ULP above zero.
+<b class="nc">&nbsp;            final long deltaPlus = xInt &amp; Long.MAX_VALUE;</b>
+<b class="nc">&nbsp;            final long deltaMinus = yInt &amp; Long.MAX_VALUE;</b>
+&nbsp;
+&nbsp;            // Note:
+&nbsp;            // If either value is NaN, the exponent bits are set to (2047L &lt;&lt; 52) and the
+&nbsp;            // distance above 0.0 is always above an integer ULP error. So omit the test
+&nbsp;            // for NaN and return directly.
+&nbsp;
+&nbsp;            // Avoid possible overflow from adding the deltas by splitting the comparison
+<b class="nc">&nbsp;            return deltaPlus &lt;= maxUlps &amp;&amp; deltaMinus &lt;= (maxUlps - deltaPlus);</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        // Numbers have same sign, there is no risk of overflow.
+<b class="nc">&nbsp;        return Math.abs(xInt - yInt) &lt;= maxUlps &amp;&amp; !Double.isNaN(x) &amp;&amp; !Double.isNaN(y);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Returns true if both arguments are NaN or if they are equal as defined
+&nbsp;     * by {@link #equals(double,double,int) equals(x, y, maxUlps)}.
+&nbsp;     *
+&nbsp;     * @param x first value
+&nbsp;     * @param y second value
+&nbsp;     * @param maxUlps {@code (maxUlps - 1)} is the number of floating point
+&nbsp;     * values between {@code x} and {@code y}.
+&nbsp;     * @return {@code true} if both arguments are NaN or if there are less than
+&nbsp;     * {@code maxUlps} floating point values between {@code x} and {@code y}.
+&nbsp;     */
+&nbsp;    public static boolean equalsIncludingNaN(double x, double y, int maxUlps) {
+<b class="nc">&nbsp;        final boolean xIsNan = Double.isNaN(x);</b>
+<b class="nc">&nbsp;        final boolean yIsNan = Double.isNaN(y);</b>
+&nbsp;        // Combine the booleans with bitwise OR
+<b class="nc">&nbsp;        return (xIsNan | yIsNan) ?</b>
+<b class="nc">&nbsp;            xIsNan == yIsNan :</b>
+<b class="nc">&nbsp;            equals(x, y, maxUlps);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Rounds the given value to the specified number of decimal places.
+&nbsp;     * The value is rounded using {@link RoundingMode#HALF_UP}.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;Note: This method is intended to act on the String representation
+&nbsp;     * of the {@code double} argument. See {@link #round(double, int, RoundingMode)}
+&nbsp;     * for details.
+&nbsp;     *
+&nbsp;     * @param x Value to round.
+&nbsp;     * @param scale Number of digits to the right of the decimal point.
+&nbsp;     * @return the rounded value.
+&nbsp;     * @see #round(double, int, RoundingMode)
+&nbsp;     */
+&nbsp;    public static double round(double x, int scale) {
+<b class="nc">&nbsp;        return round(x, scale, RoundingMode.HALF_UP);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Rounds the given value to the specified number of decimal places.
+&nbsp;     * The value is rounded using the given {@link RoundingMode rounding mode}.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;If {@code x} is infinite or {@code NaN}, then the value of {@code x} is
+&nbsp;     * returned unchanged, regardless of the other parameters.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;&lt;b&gt;Note&lt;/b&gt;
+&nbsp;     *
+&nbsp;     * &lt;p&gt;Rounding of a 64-bit base-2 format {@code double} using a decimal representation
+&nbsp;     * may result in rounding during conversion to and/or from a base-10 representation.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;This method is intended to act on the String representation of the {@code double}
+&nbsp;     * argument, i.e. the closest representable decimal value. The argument is converted to
+&nbsp;     * a String (with possible rounding), rounding is performed on the decimal representation,
+&nbsp;     * and the resulting String is returned as the closest representable {@code double}.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;Conversion from base-2 to base-10 format uses the {@link BigDecimal#valueOf(double)}
+&nbsp;     * method. The alternative would be to use
+&nbsp;     * {@link BigDecimal#BigDecimal(double) new BigDecimal(x)} to construct an exact decimal
+&nbsp;     * representation of the value.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;Conversion from base-10 to base-2 format uses the equivalent of
+&nbsp;     * {@link Double#parseDouble(String)} to create the closest representable {@code double}
+&nbsp;     * to the decimal value.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;The following code demonstrates how to eliminate rounding during conversion to a
+&nbsp;     * decimal format. The return conversion to a {@code double} may be inexact:
+&nbsp;     * &lt;pre&gt;
+&nbsp;     * double rounded = new BigDecimal(x).setScale(scale, roundingMode).doubleValue();
+&nbsp;     * &lt;/pre&gt;
+&nbsp;     *
+&nbsp;     * &lt;p&gt;Acting on the String representation of the {@code double} allows this method to
+&nbsp;     * return expected output when rounding {@code double} representations of decimal text.
+&nbsp;     * &lt;pre&gt;
+&nbsp;     * Precision.round(39.245, 2) == 39.25
+&nbsp;     * Precision.round(30.095, 2) == 30.1
+&nbsp;     * Precision.round(30.645, 2) == 30.65
+&nbsp;     * &lt;/pre&gt;
+&nbsp;     *
+&nbsp;     * @param x Value to round.
+&nbsp;     * @param scale Number of digits to the right of the decimal point.
+&nbsp;     * @param roundingMode Rounding mode as defined in {@link BigDecimal}.
+&nbsp;     * @return the rounded value.
+&nbsp;     * @see BigDecimal#doubleValue()
+&nbsp;     * @throws ArithmeticException if {@code roundingMode} is
+&nbsp;     * {@link RoundingMode#UNNECESSARY} and the specified scaling operation
+&nbsp;     * would require rounding.
+&nbsp;     */
+&nbsp;    public static double round(double x,
+&nbsp;                               int scale,
+&nbsp;                               RoundingMode roundingMode) {
+&nbsp;        try {
+<b class="nc">&nbsp;            final double rounded = (new BigDecimal(Double.toString(x))</b>
+<b class="nc">&nbsp;                   .setScale(scale, roundingMode))</b>
+<b class="nc">&nbsp;                   .doubleValue();</b>
+&nbsp;            // MATH-1089: negative values rounded to zero should result in negative zero
+<b class="nc">&nbsp;            return rounded == POSITIVE_ZERO ? POSITIVE_ZERO * x : rounded;</b>
+<b class="nc">&nbsp;        } catch (NumberFormatException ex) {</b>
+<b class="nc">&nbsp;            if (Double.isInfinite(x)) {</b>
+<b class="nc">&nbsp;                return x;</b>
+&nbsp;            }
+<b class="nc">&nbsp;            return Double.NaN;</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Computes a number close to {@code delta} with the property that
+&nbsp;     * {@code (x + delta - x)} is exactly machine-representable.
+&nbsp;     * This is useful when computing numerical derivatives, in order to
+&nbsp;     * reduce roundoff errors.
+&nbsp;     *
+&nbsp;     * @param x Value.
+&nbsp;     * @param delta Offset value.
+&nbsp;     * @return the machine-representable floating number closest to the
+&nbsp;     * difference between {@code x + delta} and {@code x}.
+&nbsp;     */
+&nbsp;    public static double representableDelta(double x,
+&nbsp;                                            double delta) {
+<b class="nc">&nbsp;        return x + delta - x;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Creates a {@link DoubleEquivalence} instance that uses the given epsilon
+&nbsp;     * value for determining equality.
+&nbsp;     *
+&nbsp;     * @param eps Value to use for determining equality.
+&nbsp;     * @return a new instance.
+&nbsp;     */
+&nbsp;    public static DoubleEquivalence doubleEquivalenceOfEpsilon(final double eps) {
+<b class="nc">&nbsp;        if (!Double.isFinite(eps) ||</b>
+&nbsp;            eps &lt; 0d) {
+<b class="nc">&nbsp;            throw new IllegalArgumentException(&quot;Invalid epsilon value: &quot; + eps);</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        return new DoubleEquivalence() {</b>
+&nbsp;            /** Epsilon value. */
+<b class="nc">&nbsp;            private final double epsilon = eps;</b>
+&nbsp;
+&nbsp;            /** {@inheritDoc} */
+&nbsp;            @Override
+&nbsp;            public int compare(double a,
+&nbsp;                               double b) {
+<b class="nc">&nbsp;                return Precision.compareTo(a, b, epsilon);</b>
+&nbsp;            }
+&nbsp;        };
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Interface containing comparison operations for doubles that allow values
+&nbsp;     * to be &lt;em&gt;considered&lt;/em&gt; equal even if they are not exactly equal.
+&nbsp;     * It is intended for comparing outputs of a computation where floating
+&nbsp;     * point errors may have occurred.
+&nbsp;     */
+&nbsp;    public interface DoubleEquivalence {
+&nbsp;        /**
+&nbsp;         * Indicates whether given values are considered equal to each other.
+&nbsp;         *
+&nbsp;         * @param a Value.
+&nbsp;         * @param b Value.
+&nbsp;         * @return true if the given values are considered equal.
+&nbsp;         */
+&nbsp;        default boolean eq(double a, double b) {
+<b class="nc">&nbsp;            return compare(a, b) == 0;</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        /**
+&nbsp;         * Indicates whether the given value is considered equal to zero.
+&nbsp;         * It is a shortcut for {@code eq(a, 0.0)}.
+&nbsp;         *
+&nbsp;         * @param a Value.
+&nbsp;         * @return true if the argument is considered equal to zero.
+&nbsp;         */
+&nbsp;        default boolean eqZero(double a) {
+<b class="nc">&nbsp;            return eq(a, 0d);</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        /**
+&nbsp;         * Indicates whether the first argument is strictly smaller than the second.
+&nbsp;         *
+&nbsp;         * @param a Value.
+&nbsp;         * @param b Value.
+&nbsp;         * @return true if {@code a &lt; b}
+&nbsp;         */
+&nbsp;        default boolean lt(double a, double b) {
+<b class="nc">&nbsp;            return compare(a, b) &lt; 0;</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        /**
+&nbsp;         * Indicates whether the first argument is smaller or considered equal to the second.
+&nbsp;         *
+&nbsp;         * @param a Value.
+&nbsp;         * @param b Value.
+&nbsp;         * @return true if {@code a &lt;= b}
+&nbsp;         */
+&nbsp;        default boolean lte(double a, double b) {
+<b class="nc">&nbsp;            return compare(a, b) &lt;= 0;</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        /**
+&nbsp;         * Indicates whether the first argument is strictly greater than the second.
+&nbsp;         *
+&nbsp;         * @param a Value.
+&nbsp;         * @param b Value.
+&nbsp;         * @return true if {@code a &gt; b}
+&nbsp;         */
+&nbsp;        default boolean gt(double a, double b) {
+<b class="nc">&nbsp;            return compare(a, b) &gt; 0;</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        /**
+&nbsp;         * Indicates whether the first argument is greater than or considered equal to the second.
+&nbsp;         *
+&nbsp;         * @param a Value.
+&nbsp;         * @param b Value.
+&nbsp;         * @return true if {@code a &gt;= b}
+&nbsp;         */
+&nbsp;        default boolean gte(double a, double b) {
+<b class="nc">&nbsp;            return compare(a, b) &gt;= 0;</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        /**
+&nbsp;         * Returns the {@link Math#signum(double) sign} of the argument.
+&nbsp;         * The returned value is
+&nbsp;         * &lt;ul&gt;
+&nbsp;         *  &lt;li&gt;{@code -0.0} if {@code a} is considered equal to zero and negatively signed,&lt;/li&gt;
+&nbsp;         *  &lt;li&gt;{@code +0.0} if {@code a} is considered equal to zero and positively signed,&lt;/li&gt;
+&nbsp;         *  &lt;li&gt;{@code -1.0} if {@code a} is considered less than zero,&lt;/li&gt;
+&nbsp;         *  &lt;li&gt;{@code +1.0} if {@code a} is considered greater than zero.&lt;/li&gt;
+&nbsp;         * &lt;/ul&gt;
+&nbsp;         *
+&nbsp;         * &lt;p&gt;The equality with zero uses the {@link #eqZero(double) eqZero} method.
+&nbsp;         *
+&nbsp;         * @param a Value.
+&nbsp;         * @return the sign (or {@code a} if {@code a == 0} or
+&nbsp;         * {@code a} is NaN).
+&nbsp;         * @see #eqZero(double)
+&nbsp;         */
+&nbsp;        default double signum(double a) {
+<b class="nc">&nbsp;            if (a == 0d || Double.isNaN(a)) {</b>
+<b class="nc">&nbsp;                return a;</b>
+&nbsp;            }
+<b class="nc">&nbsp;            return eqZero(a) ?</b>
+<b class="nc">&nbsp;                Math.copySign(0d, a) :</b>
+<b class="nc">&nbsp;                Math.copySign(1d, a);</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        /**
+&nbsp;         * Compares two values.
+&nbsp;         * The returned value is
+&nbsp;         * &lt;ul&gt;
+&nbsp;         *  &lt;li&gt;{@code 0} if the arguments are considered equal,&lt;/li&gt;
+&nbsp;         *  &lt;li&gt;{@code -1} if {@code a &lt; b},&lt;/li&gt;
+&nbsp;         *  &lt;li&gt;{@code +1} if {@code a &gt; b} or if either value is NaN.&lt;/li&gt;
+&nbsp;         * &lt;/ul&gt;
+&nbsp;         *
+&nbsp;         * @param a Value.
+&nbsp;         * @param b Value.
+&nbsp;         * @return {@code 0} if the values are considered equal, {@code -1}
+&nbsp;         * if the first is smaller than the second, {@code 1} is the first
+&nbsp;         * is larger than the second or either value is NaN.
+&nbsp;         */
+&nbsp;        int compare(double a, double b);
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2023-08-18 14:27</div>
+</div>
+</body>
+</html>

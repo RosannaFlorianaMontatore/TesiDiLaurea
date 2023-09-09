@@ -1,0 +1,412 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=windows-1252"> 
+  <title>Coverage Report > StatisticUtils</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope:     <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">org.apache.commons.statistics.inference</a>
+</div>
+
+<h1>Coverage Summary for Class: StatisticUtils (org.apache.commons.statistics.inference)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">StatisticUtils</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/12)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/63)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/*
+&nbsp; * Licensed to the Apache Software Foundation (ASF) under one or more
+&nbsp; * contributor license agreements.  See the NOTICE file distributed with
+&nbsp; * this work for additional information regarding copyright ownership.
+&nbsp; * The ASF licenses this file to You under the Apache License, Version 2.0
+&nbsp; * (the &quot;License&quot;); you may not use this file except in compliance with
+&nbsp; * the License.  You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *      http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;package org.apache.commons.statistics.inference;
+&nbsp;
+&nbsp;import java.util.Arrays;
+&nbsp;import java.util.Collection;
+&nbsp;import java.util.stream.IntStream;
+&nbsp;import org.apache.commons.numbers.core.DD;
+&nbsp;import org.apache.commons.numbers.core.Precision;
+&nbsp;
+&nbsp;/**
+&nbsp; * Utility computation methods.
+&nbsp; *
+&nbsp; * @since 1.1
+&nbsp; */
+&nbsp;final class StatisticUtils {
+&nbsp;    /** No instances. */
+&nbsp;    private StatisticUtils() {}
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Compute {@code x - y}.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;If {@code y} is zero the original array is returned, else a new array is created
+&nbsp;     * with the difference.
+&nbsp;     *
+&nbsp;     * @param x Array.
+&nbsp;     * @param y Value.
+&nbsp;     * @return x - y
+&nbsp;     * @throws NullPointerException if {@code x} is null and {@code y} is non-zero
+&nbsp;     */
+&nbsp;    static double[] subtract(double[] x, double y) {
+<b class="nc">&nbsp;        return y == 0 ? x : Arrays.stream(x).map(v -&gt; v - y).toArray();</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Compute the degrees of freedom as {@code n - 1 - m}.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;This method is common functionality shared between the Chi-square test and
+&nbsp;     * G-test. The pre-conditions for those tests are performed by this method.
+&nbsp;     *
+&nbsp;     * @param n Number of observations.
+&nbsp;     * @param m Adjustment (assumed to be positive).
+&nbsp;     * @return the degrees of freedom
+&nbsp;     * @throws IllegalArgumentException if the degrees of freedom is not strictly positive
+&nbsp;     */
+&nbsp;    static int computeDegreesOfFreedom(int n, int m) {
+<b class="nc">&nbsp;        final int df = n - 1 - m;</b>
+<b class="nc">&nbsp;        if (df &lt;= 0) {</b>
+<b class="nc">&nbsp;            throw new InferenceException(&quot;Invalid degrees of freedom: &quot; + df);</b>
+&nbsp;        }
+<b class="nc">&nbsp;        return df;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Gets the ratio between the sum of the observed and expected values.
+&nbsp;     * The ratio can be used to scale the expected values to have the same sum
+&nbsp;     * as the observed values:
+&nbsp;     *
+&nbsp;     * &lt;pre&gt;
+&nbsp;     * sum(o) = sum(e * ratio)
+&nbsp;     * &lt;/pre&gt;
+&nbsp;     *
+&nbsp;     * &lt;p&gt;This method is common functionality shared between the Chi-square test and
+&nbsp;     * G-test. The pre-conditions for those tests are performed by this method.
+&nbsp;     *
+&nbsp;     * @param expected Expected values.
+&nbsp;     * @param observed Observed values.
+&nbsp;     * @return the ratio
+&nbsp;     * @throws IllegalArgumentException if the sample size is less than 2; the array
+&nbsp;     * sizes do not match; {@code expected} has entries that are not strictly
+&nbsp;     * positive; {@code observed} has negative entries; or all the observations are zero.
+&nbsp;     */
+&nbsp;    static double computeRatio(double[] expected, long[] observed) {
+<b class="nc">&nbsp;        Arguments.checkValuesRequiredSize(expected.length, 2);</b>
+<b class="nc">&nbsp;        Arguments.checkValuesSizeMatch(expected.length, observed.length);</b>
+<b class="nc">&nbsp;        Arguments.checkStrictlyPositive(expected);</b>
+<b class="nc">&nbsp;        Arguments.checkNonNegative(observed);</b>
+<b class="nc">&nbsp;        DD e = DD.ZERO;</b>
+<b class="nc">&nbsp;        DD o = DD.ZERO;</b>
+<b class="nc">&nbsp;        for (int i = 0; i &lt; observed.length; i++) {</b>
+<b class="nc">&nbsp;            e = e.add(expected[i]);</b>
+<b class="nc">&nbsp;            o = add(o, observed[i]);</b>
+&nbsp;        }
+<b class="nc">&nbsp;        if (o.doubleValue() == 0) {</b>
+<b class="nc">&nbsp;            throw new InferenceException(InferenceException.NO_DATA);</b>
+&nbsp;        }
+&nbsp;        // sum(o) / sum(e)
+<b class="nc">&nbsp;        final double ratio = o.divide(e).doubleValue();</b>
+&nbsp;        // Allow a sum within 1 ulp of 1.0
+<b class="nc">&nbsp;        return Precision.equals(ratio, 1.0, 0) ? 1.0 : ratio;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Adds the value to the sum.
+&nbsp;     *
+&nbsp;     * @param sum Sum.
+&nbsp;     * @param v Value.
+&nbsp;     * @return the new sum
+&nbsp;     */
+&nbsp;    private static DD add(DD sum, long v) {
+&nbsp;        // The condition here is a high probability branch if the sample is
+&nbsp;        // frequency counts which are typically in the 32-bit integer range,
+&nbsp;        // i.e. all the upper bits are zero.
+<b class="nc">&nbsp;        return (v &gt;&gt;&gt; Integer.SIZE) == 0 ?</b>
+<b class="nc">&nbsp;            sum.add(v) :</b>
+<b class="nc">&nbsp;            sum.add(DD.of(v));</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Returns the arithmetic mean of the entries in the input array,
+&nbsp;     * or {@code NaN} if the array is empty.
+&nbsp;     *
+&nbsp;     * @param x Values.
+&nbsp;     * @return the mean of the values or NaN if length = 0
+&nbsp;     */
+&nbsp;    static double mean(long[] x) {
+<b class="nc">&nbsp;        final int n = x.length;</b>
+<b class="nc">&nbsp;        if (n == 0) {</b>
+<b class="nc">&nbsp;            return Double.NaN;</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        // Single pass high accuracy sum. The total cannot be more than 2^63 * 2^31 bits
+&nbsp;        // so can be exactly represented in a double-double. Cumulative error in the sum
+&nbsp;        // is (n-1) * 4eps with eps = 2^-106. The sum should be exact to double precision.
+<b class="nc">&nbsp;        DD dd = DD.ZERO;</b>
+<b class="nc">&nbsp;        for (final long v : x) {</b>
+<b class="nc">&nbsp;            dd = add(dd, v);</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        return dd.divide(n).doubleValue();</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Returns the arithmetic mean of the entries in the input array,
+&nbsp;     * or {@code NaN} if the array is empty.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;A two-pass, corrected algorithm is used, starting with the definitional formula
+&nbsp;     * computed using the array of stored values and then correcting this by adding the
+&nbsp;     * mean deviation of the data values from the arithmetic mean. See, e.g. &quot;Comparison
+&nbsp;     * of Several Algorithms for Computing Sample Means and Variances,&quot; Robert F. Ling,
+&nbsp;     * Journal of the American Statistical Association, Vol. 69, No. 348 (Dec., 1974), pp.
+&nbsp;     * 859-866.
+&nbsp;     *
+&nbsp;     * @param x Values.
+&nbsp;     * @return the mean of the values or NaN if length = 0
+&nbsp;     */
+&nbsp;    static double mean(double[] x) {
+<b class="nc">&nbsp;        final int n = x.length;</b>
+&nbsp;        // No check for n == 0 -&gt; return NaN.
+&nbsp;        // This internal method is only called with non-zero length arrays.
+&nbsp;        // The divide by zero creates NaN anyway.
+&nbsp;
+&nbsp;        // Adapted from org.apache.commons.math4.legacy.stat.descriptive.moment.Mean
+&nbsp;        // Updated to use a stream to support high-precision summation as the stream maintains
+&nbsp;        // a rounding-error term during the aggregation. This is important
+&nbsp;        // when summing differences which can create cancellation: x + -x =&gt; 0.
+&nbsp;
+&nbsp;        // Compute initial estimate using definitional formula
+<b class="nc">&nbsp;        final double mean = Arrays.stream(x).sum() / n;</b>
+&nbsp;
+&nbsp;        // Compute correction factor in second pass
+<b class="nc">&nbsp;        return mean + Arrays.stream(x).map(v -&gt; v - mean).sum() / n;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Returns the arithmetic mean of the entries in the input arrays,
+&nbsp;     * or {@code NaN} if the combined length of the arrays is zero.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;This is the equivalent of using {@link #mean(double[])} with all the samples
+&nbsp;     * concatenated into a single array. Supports a combined length above the maximum array
+&nbsp;     * size.
+&nbsp;     *
+&nbsp;     * @param samples Values.
+&nbsp;     * @return the mean of the values or NaN if length = 0
+&nbsp;     * @see #mean(double[])
+&nbsp;     */
+&nbsp;    static double mean(Collection&lt;double[]&gt; samples) {
+&nbsp;        // See above for computation details
+<b class="nc">&nbsp;        final long n = samples.stream().mapToInt(x -&gt; x.length).sum();</b>
+<b class="nc">&nbsp;        final double mean = samples.stream().flatMapToDouble(Arrays::stream).sum() / n;</b>
+<b class="nc">&nbsp;        return mean + samples.stream().flatMapToDouble(Arrays::stream).map(v -&gt; v - mean).sum() / n;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Returns the variance of the entries in the input array, or {@code NaN} if the array
+&nbsp;     * is empty.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;This method returns the bias-corrected sample variance (using {@code n - 1} in
+&nbsp;     * the denominator).
+&nbsp;     *
+&nbsp;     * &lt;p&gt;Uses a two-pass algorithm. Specifically, these methods use the &quot;corrected
+&nbsp;     * two-pass algorithm&quot; from Chan, Golub, Levesque, &lt;i&gt;Algorithms for Computing the
+&nbsp;     * Sample Variance&lt;/i&gt;, American Statistician, vol. 37, no. 3 (1983) pp.
+&nbsp;     * 242-247.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;Returns 0 for a single-value (i.e. length = 1) sample.
+&nbsp;     *
+&nbsp;     * @param x Values.
+&nbsp;     * @param mean the mean of the input array
+&nbsp;     * @return the variance of the values or NaN if the array is empty
+&nbsp;     */
+&nbsp;    static double variance(double[] x, double mean) {
+<b class="nc">&nbsp;        final int n = x.length;</b>
+&nbsp;        // No check for n == 0 -&gt; return NaN.
+&nbsp;        // This internal method is only called with non-zero length arrays.
+&nbsp;        // The input mean of NaN for zero length creates NaN anyway.
+<b class="nc">&nbsp;        if (n == 1) {</b>
+<b class="nc">&nbsp;            return 0;</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        // Adapted from org.apache.commons.math4.legacy.stat.descriptive.moment.Variance
+&nbsp;        // Use a stream to accumulate the sum of deviations in high precision.
+&nbsp;        // This compensation term for the sum of deviations from the mean -&gt; 0.
+&nbsp;        // We sum the squares in standard precision as there is no cancellation of summands.
+<b class="nc">&nbsp;        final double[] sumSq = {0};</b>
+<b class="nc">&nbsp;        final double sum2 = Arrays.stream(x).map(v -&gt; {</b>
+<b class="nc">&nbsp;            final double dx = v - mean;</b>
+<b class="nc">&nbsp;            sumSq[0] += dx * dx;</b>
+<b class="nc">&nbsp;            return dx;</b>
+<b class="nc">&nbsp;        }).sum();</b>
+&nbsp;
+<b class="nc">&nbsp;        final double sum1 = sumSq[0];</b>
+&nbsp;        // Bias corrected
+&nbsp;        // Note: variance ~ sum1 / (n-1) but with a correction term sum2
+<b class="nc">&nbsp;        return (sum1 - (sum2 * sum2 / n)) / (n - 1);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Returns the mean of the (signed) differences between corresponding elements of the
+&nbsp;     * input arrays.
+&nbsp;     *
+&nbsp;     * &lt;pre&gt;
+&nbsp;     * sum(x[i] - y[i]) / x.length
+&nbsp;     * &lt;/pre&gt;
+&nbsp;     *
+&nbsp;     * &lt;p&gt;This computes the same result as creating an array {@code z = x - y}
+&nbsp;     * and calling {@link #mean(double[]) mean(z)}, but without the intermediate array
+&nbsp;     * allocation.
+&nbsp;     *
+&nbsp;     * @param x First array.
+&nbsp;     * @param y Second array.
+&nbsp;     * @return mean of paired differences
+&nbsp;     * @throws IllegalArgumentException if the arrays do not have the same length.
+&nbsp;     * @see #mean(double[])
+&nbsp;     */
+&nbsp;    static double meanDifference(double[] x, double[] y) {
+<b class="nc">&nbsp;        final int n = x.length;</b>
+<b class="nc">&nbsp;        if (n != y.length) {</b>
+<b class="nc">&nbsp;            throw new InferenceException(InferenceException.VALUES_MISMATCH, n, y.length);</b>
+&nbsp;        }
+&nbsp;        // See mean(double[]) for details.
+<b class="nc">&nbsp;        final double mean = IntStream.range(0, n).mapToDouble(i -&gt; x[i] - y[i]).sum() / n;</b>
+<b class="nc">&nbsp;        return mean + IntStream.range(0, n).mapToDouble(i -&gt; (x[i] - y[i]) - mean).sum() / n;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Returns the variance of the (signed) differences between corresponding elements of
+&nbsp;     * the input arrays.
+&nbsp;     *
+&nbsp;     * &lt;pre&gt;
+&nbsp;     * var(x[i] - y[i])
+&nbsp;     * &lt;/pre&gt;
+&nbsp;     *
+&nbsp;     * &lt;p&gt;This computes the same result as creating an array {@code z = x - y}
+&nbsp;     * and calling {@link #variance(double[], double) variance(z, mean(z))}, but without the
+&nbsp;     * intermediate array allocation.
+&nbsp;     *
+&nbsp;     * @param x First array.
+&nbsp;     * @param y Second array.
+&nbsp;     * @param mean the mean difference between corresponding entries
+&nbsp;     * @return variance of paired differences
+&nbsp;     * @throws IllegalArgumentException if the arrays do not have the same length.
+&nbsp;     * @see #meanDifference(double[], double[])
+&nbsp;     * @see #variance(double[], double)
+&nbsp;     */
+&nbsp;    static double varianceDifference(double[] x, double[] y, double mean) {
+<b class="nc">&nbsp;        final int n = x.length;</b>
+<b class="nc">&nbsp;        if (n != y.length) {</b>
+<b class="nc">&nbsp;            throw new InferenceException(InferenceException.VALUES_MISMATCH, n, y.length);</b>
+&nbsp;        }
+&nbsp;        // See variance(double[]) for details.
+<b class="nc">&nbsp;        if (n == 1) {</b>
+<b class="nc">&nbsp;            return 0;</b>
+&nbsp;        }
+<b class="nc">&nbsp;        final double[] sumSq = {0};</b>
+<b class="nc">&nbsp;        final double sum2 = IntStream.range(0, n).mapToDouble(i -&gt; {</b>
+<b class="nc">&nbsp;            final double dx = (x[i] - y[i]) - mean;</b>
+<b class="nc">&nbsp;            sumSq[0] += dx * dx;</b>
+<b class="nc">&nbsp;            return dx;</b>
+<b class="nc">&nbsp;        }).sum();</b>
+<b class="nc">&nbsp;        final double sum1 = sumSq[0];</b>
+<b class="nc">&nbsp;        return (sum1 - (sum2 * sum2 / n)) / (n - 1);</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2023-09-04 19:44</div>
+</div>
+</body>
+</html>

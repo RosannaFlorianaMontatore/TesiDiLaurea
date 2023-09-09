@@ -1,0 +1,691 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=windows-1252"> 
+  <title>Coverage Report > Norm</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope:     <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">org.apache.commons.numbers.core</a>
+</div>
+
+<h1>Coverage Summary for Class: Norm (org.apache.commons.numbers.core)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">Norm</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/18)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/155)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">Norm$Array</td>
+  </tr>
+  <tr>
+    <td class="name">Norm$Three</td>
+  </tr>
+  <tr>
+    <td class="name">Norm$Two</td>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/18)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/155)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/*
+&nbsp; * Licensed to the Apache Software Foundation (ASF) under one or more
+&nbsp; * contributor license agreements.  See the NOTICE file distributed with
+&nbsp; * this work for additional information regarding copyright ownership.
+&nbsp; * The ASF licenses this file to You under the Apache License, Version 2.0
+&nbsp; * (the &quot;License&quot;); you may not use this file except in compliance with
+&nbsp; * the License.  You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *      http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;package org.apache.commons.numbers.core;
+&nbsp;
+&nbsp;/**
+&nbsp; * &lt;a href=&quot;https://en.wikipedia.org/wiki/Norm_(mathematics)&quot;&gt;Norm&lt;/a&gt; functions.
+&nbsp; *
+&nbsp; * &lt;p&gt;The implementations provide increased numerical accuracy.
+&nbsp; * Algorithms primary source is the 2005 paper
+&nbsp; * &lt;a href=&quot;https://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.2.1547&quot;&gt;
+&nbsp; * Accurate Sum and Dot Product&lt;/a&gt; by Takeshi Ogita, Siegfried M. Rump,
+&nbsp; * and Shin&#39;ichi Oishi published in &lt;em&gt;SIAM J. Sci. Comput&lt;/em&gt;.
+&nbsp; */
+<b class="nc">&nbsp;public enum Norm {</b>
+&nbsp;    /**
+&nbsp;     * &lt;a href=&quot;https://en.wikipedia.org/wiki/Norm_(mathematics)#Taxicab_norm_or_Manhattan_norm&quot;&gt;
+&nbsp;     *  Manhattan norm&lt;/a&gt; (sum of the absolute values of the arguments).
+&nbsp;     */
+<b class="nc">&nbsp;    L1(Norm::manhattan, Norm::manhattan, Norm::manhattan),</b>
+&nbsp;    /** Alias for {@link #L1}. */
+<b class="nc">&nbsp;    MANHATTAN(L1),</b>
+&nbsp;    /** &lt;a href=&quot;https://en.wikipedia.org/wiki/Norm_(mathematics)#Euclidean_norm&quot;&gt;Euclidean norm&lt;/a&gt;. */
+<b class="nc">&nbsp;    L2(Norm::euclidean, Norm::euclidean, Norm::euclidean),</b>
+&nbsp;    /** Alias for {@link #L2}. */
+<b class="nc">&nbsp;    EUCLIDEAN(L2),</b>
+&nbsp;    /**
+&nbsp;     * &lt;a href=&quot;https://en.wikipedia.org/wiki/Norm_(mathematics)#Maximum_norm_(special_case_of:_infinity_norm,_uniform_norm,_or_supremum_norm)&quot;&gt;
+&nbsp;     *  Maximum norm&lt;/a&gt; (maximum of the absolute values of the arguments).
+&nbsp;     */
+<b class="nc">&nbsp;    LINF(Norm::maximum, Norm::maximum, Norm::maximum),</b>
+&nbsp;    /** Alias for {@link #LINF}. */
+<b class="nc">&nbsp;    MAXIMUM(LINF);</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Threshold for scaling small numbers. This value is chosen such that doubles
+&nbsp;     * set to this value can be squared without underflow. Values less than this must
+&nbsp;     * be scaled up.
+&nbsp;     */
+&nbsp;    private static final double SMALL_THRESH = 0x1.0p-511;
+&nbsp;    /**
+&nbsp;     * Threshold for scaling large numbers. This value is chosen such that 2^31 doubles
+&nbsp;     * set to this value can be squared and added without overflow. Values greater than
+&nbsp;     * this must be scaled down.
+&nbsp;     */
+&nbsp;    private static final double LARGE_THRESH = 0x1.0p+496;
+&nbsp;    /**
+&nbsp;     * Threshold for scaling up a single value by {@link #SCALE_UP} without risking
+&nbsp;     * overflow when the value is squared.
+&nbsp;     */
+&nbsp;    private static final double SAFE_SCALE_UP_THRESH = 0x1.0p-100;
+&nbsp;    /** Value used to scale down large numbers. */
+&nbsp;    private static final double SCALE_DOWN = 0x1.0p-600;
+&nbsp;    /** Value used to scale up small numbers. */
+&nbsp;    private static final double SCALE_UP = 0x1.0p+600;
+&nbsp;
+&nbsp;    /** Threshold for the difference between the exponents of two Euclidean 2D input values
+&nbsp;     * where the larger value dominates the calculation.
+&nbsp;     */
+&nbsp;    private static final int EXP_DIFF_THRESHOLD_2D = 54;
+&nbsp;
+&nbsp;    /** Function of 2 arguments. */
+&nbsp;    private final Two two;
+&nbsp;    /** Function of 3 arguments. */
+&nbsp;    private final Three three;
+&nbsp;    /** Function of array argument. */
+&nbsp;    private final Array array;
+&nbsp;
+&nbsp;    /** Function of 2 arguments. */
+&nbsp;    @FunctionalInterface
+&nbsp;    private interface Two {
+&nbsp;        /**
+&nbsp;         * @param x Argument.
+&nbsp;         * @param y Argument.
+&nbsp;         * @return the norm.
+&nbsp;         */
+&nbsp;        double of(double x, double y);
+&nbsp;    }
+&nbsp;    /** Function of 3 arguments. */
+&nbsp;    @FunctionalInterface
+&nbsp;    private interface Three {
+&nbsp;        /**
+&nbsp;         * @param x Argument.
+&nbsp;         * @param y Argument.
+&nbsp;         * @param z Argument.
+&nbsp;         * @return the norm.
+&nbsp;         */
+&nbsp;        double of(double x, double y, double z);
+&nbsp;    }
+&nbsp;    /** Function of array argument. */
+&nbsp;    @FunctionalInterface
+&nbsp;    private interface Array {
+&nbsp;        /**
+&nbsp;         * @param v Array of arguments.
+&nbsp;         * @return the norm.
+&nbsp;         */
+&nbsp;        double of(double[] v);
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * @param two Function of 2 arguments.
+&nbsp;     * @param three Function of 3 arguments.
+&nbsp;     * @param array Function of array argument.
+&nbsp;     */
+&nbsp;    Norm(Two two,
+&nbsp;         Three three,
+<b class="nc">&nbsp;         Array array) {</b>
+<b class="nc">&nbsp;        this.two = two;</b>
+<b class="nc">&nbsp;        this.three = three;</b>
+<b class="nc">&nbsp;        this.array = array;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * @param alias Alternative name.
+&nbsp;     */
+<b class="nc">&nbsp;    Norm(Norm alias) {</b>
+<b class="nc">&nbsp;        this.two = alias.two;</b>
+<b class="nc">&nbsp;        this.three = alias.three;</b>
+<b class="nc">&nbsp;        this.array = alias.array;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Computes the norm.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;Special cases:
+&nbsp;     * &lt;ul&gt;
+&nbsp;     *  &lt;li&gt;If either value is {@link Double#NaN}, then the result is {@link Double#NaN}.&lt;/li&gt;
+&nbsp;     *  &lt;li&gt;If either value is infinite and the other value is not {@link Double#NaN}, then
+&nbsp;     *   the result is {@link Double#POSITIVE_INFINITY}.&lt;/li&gt;
+&nbsp;     * &lt;/ul&gt;
+&nbsp;     *
+&nbsp;     * @param x Argument.
+&nbsp;     * @param y Argument.
+&nbsp;     * @return the norm.
+&nbsp;     */
+&nbsp;    public final double of(double x,
+&nbsp;                           double y) {
+<b class="nc">&nbsp;        return two.of(x, y);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Computes the norm.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;Special cases:
+&nbsp;     * &lt;ul&gt;
+&nbsp;     *  &lt;li&gt;If any value is {@link Double#NaN}, then the result is {@link Double#NaN}.&lt;/li&gt;
+&nbsp;     *  &lt;li&gt;If any value is infinite and no value is not {@link Double#NaN}, then the
+&nbsp;     *   result is {@link Double#POSITIVE_INFINITY}.&lt;/li&gt;
+&nbsp;     * &lt;/ul&gt;
+&nbsp;     *
+&nbsp;     * @param x Argument.
+&nbsp;     * @param y Argument.
+&nbsp;     * @param z Argument.
+&nbsp;     * @return the norm.
+&nbsp;     */
+&nbsp;    public final double of(double x,
+&nbsp;                           double y,
+&nbsp;                           double z) {
+<b class="nc">&nbsp;        return three.of(x, y, z);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Computes the norm.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;Special cases:
+&nbsp;     * &lt;ul&gt;
+&nbsp;     *  &lt;li&gt;If any value is {@link Double#NaN}, then the result is {@link Double#NaN}.&lt;/li&gt;
+&nbsp;     *  &lt;li&gt;If any value is infinite and no value is not {@link Double#NaN}, then the
+&nbsp;     *   result is {@link Double#POSITIVE_INFINITY}.&lt;/li&gt;
+&nbsp;     * &lt;/ul&gt;
+&nbsp;     *
+&nbsp;     * @param v Argument.
+&nbsp;     * @return the norm.
+&nbsp;     * @throws IllegalArgumentException if the array is empty.
+&nbsp;     */
+&nbsp;    public final double of(double[] v) {
+<b class="nc">&nbsp;        ensureNonEmpty(v);</b>
+<b class="nc">&nbsp;        return array.of(v);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Computes the Manhattan norm.
+&nbsp;     *
+&nbsp;     * @param x first input value
+&nbsp;     * @param y second input value
+&nbsp;     * @return \(|x| + |y|\).
+&nbsp;     *
+&nbsp;     * @see #L1
+&nbsp;     * @see #MANHATTAN
+&nbsp;     * @see #of(double,double)
+&nbsp;     */
+&nbsp;    private static double manhattan(final double x,
+&nbsp;                                    final double y) {
+<b class="nc">&nbsp;        return Math.abs(x) + Math.abs(y);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Computes the Manhattan norm.
+&nbsp;     *
+&nbsp;     * @param x first input value
+&nbsp;     * @param y second input value
+&nbsp;     * @param z third input value
+&nbsp;     * @return \(|x| + |y| + |z|\)
+&nbsp;     *
+&nbsp;     * @see #L1
+&nbsp;     * @see #MANHATTAN
+&nbsp;     * @see #of(double,double,double)
+&nbsp;     */
+&nbsp;    private static double manhattan(final double x,
+&nbsp;                                    final double y,
+&nbsp;                                    final double z) {
+<b class="nc">&nbsp;        return Sum.of(Math.abs(x))</b>
+<b class="nc">&nbsp;            .add(Math.abs(y))</b>
+<b class="nc">&nbsp;            .add(Math.abs(z))</b>
+<b class="nc">&nbsp;            .getAsDouble();</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Computes the Manhattan norm.
+&nbsp;     *
+&nbsp;     * @param v input values
+&nbsp;     * @return \(|v_0| + ... + |v_i|\)
+&nbsp;     *
+&nbsp;     * @see #L1
+&nbsp;     * @see #MANHATTAN
+&nbsp;     * @see #of(double[])
+&nbsp;     */
+&nbsp;    private static double manhattan(final double[] v) {
+<b class="nc">&nbsp;        final Sum sum = Sum.create();</b>
+&nbsp;
+<b class="nc">&nbsp;        for (final double d : v) {</b>
+<b class="nc">&nbsp;            sum.add(Math.abs(d));</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        return sum.getAsDouble();</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Computes the Euclidean norm.
+&nbsp;     * This implementation handles possible overflow or underflow.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;&lt;strong&gt;Comparison with Math.hypot()&lt;/strong&gt;
+&nbsp;     * While not guaranteed to return the same result, this method provides
+&nbsp;     * similar error bounds as {@link Math#hypot(double, double)} (and may run faster on
+&nbsp;     * some JVM).
+&nbsp;     *
+&nbsp;     * @param x first input
+&nbsp;     * @param y second input
+&nbsp;     * @return \(\sqrt{x^2 + y^2}\).
+&nbsp;     *
+&nbsp;     * @see #L2
+&nbsp;     * @see #EUCLIDEAN
+&nbsp;     * @see #of(double,double)
+&nbsp;     */
+&nbsp;    private static double euclidean(final double x,
+&nbsp;                                    final double y) {
+<b class="nc">&nbsp;        final double xabs = Math.abs(x);</b>
+<b class="nc">&nbsp;        final double yabs = Math.abs(y);</b>
+&nbsp;
+&nbsp;        final double max;
+&nbsp;        final double min;
+&nbsp;        // the compare method considers NaN greater than other values, meaning that our
+&nbsp;        // check for if the max is finite later on will detect NaNs correctly
+<b class="nc">&nbsp;        if (Double.compare(xabs, yabs) &gt; 0) {</b>
+<b class="nc">&nbsp;            max = xabs;</b>
+<b class="nc">&nbsp;            min = yabs;</b>
+&nbsp;        } else {
+<b class="nc">&nbsp;            max = yabs;</b>
+<b class="nc">&nbsp;            min = xabs;</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        // if the max is not finite, then one of the inputs must not have
+&nbsp;        // been finite
+<b class="nc">&nbsp;        if (!Double.isFinite(max)) {</b>
+&nbsp;            // let the standard multiply operation determine whether to return NaN or infinite
+<b class="nc">&nbsp;            return xabs * yabs;</b>
+<b class="nc">&nbsp;        } else if (Math.getExponent(max) - Math.getExponent(min) &gt; EXP_DIFF_THRESHOLD_2D) {</b>
+&nbsp;            // value is completely dominated by max; just return max
+<b class="nc">&nbsp;            return max;</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        // compute the scale and rescale values
+&nbsp;        final double scale;
+&nbsp;        final double rescale;
+<b class="nc">&nbsp;        if (max &gt; LARGE_THRESH) {</b>
+<b class="nc">&nbsp;            scale = SCALE_DOWN;</b>
+<b class="nc">&nbsp;            rescale = SCALE_UP;</b>
+<b class="nc">&nbsp;        } else if (max &lt; SAFE_SCALE_UP_THRESH) {</b>
+<b class="nc">&nbsp;            scale = SCALE_UP;</b>
+<b class="nc">&nbsp;            rescale = SCALE_DOWN;</b>
+&nbsp;        } else {
+<b class="nc">&nbsp;            scale = 1d;</b>
+<b class="nc">&nbsp;            rescale = 1d;</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        double sum = 0d;</b>
+<b class="nc">&nbsp;        double comp = 0d;</b>
+&nbsp;
+&nbsp;        // add scaled x
+<b class="nc">&nbsp;        final double sx = xabs * scale;</b>
+<b class="nc">&nbsp;        final double px = sx * sx;</b>
+<b class="nc">&nbsp;        comp += ExtendedPrecision.squareLowUnscaled(sx, px);</b>
+<b class="nc">&nbsp;        final double sumPx = sum + px;</b>
+<b class="nc">&nbsp;        comp += ExtendedPrecision.twoSumLow(sum, px, sumPx);</b>
+<b class="nc">&nbsp;        sum = sumPx;</b>
+&nbsp;
+&nbsp;        // add scaled y
+<b class="nc">&nbsp;        final double sy = yabs * scale;</b>
+<b class="nc">&nbsp;        final double py = sy * sy;</b>
+<b class="nc">&nbsp;        comp += ExtendedPrecision.squareLowUnscaled(sy, py);</b>
+<b class="nc">&nbsp;        final double sumPy = sum + py;</b>
+<b class="nc">&nbsp;        comp += ExtendedPrecision.twoSumLow(sum, py, sumPy);</b>
+<b class="nc">&nbsp;        sum = sumPy;</b>
+&nbsp;
+<b class="nc">&nbsp;        return Math.sqrt(sum + comp) * rescale;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Computes the Euclidean norm.
+&nbsp;     * This implementation handles possible overflow or underflow.
+&nbsp;     *
+&nbsp;     * @param x first input
+&nbsp;     * @param y second input
+&nbsp;     * @param z third input
+&nbsp;     * @return \(\sqrt{x^2 + y^2 + z^2}\)
+&nbsp;     *
+&nbsp;     * @see #L2
+&nbsp;     * @see #EUCLIDEAN
+&nbsp;     * @see #of(double,double,double)
+&nbsp;     */
+&nbsp;    private static double euclidean(final double x,
+&nbsp;                                    final double y,
+&nbsp;                                    final double z) {
+<b class="nc">&nbsp;        final double xabs = Math.abs(x);</b>
+<b class="nc">&nbsp;        final double yabs = Math.abs(y);</b>
+<b class="nc">&nbsp;        final double zabs = Math.abs(z);</b>
+&nbsp;
+<b class="nc">&nbsp;        final double max = Math.max(Math.max(xabs, yabs), zabs);</b>
+&nbsp;
+&nbsp;        // if the max is not finite, then one of the inputs must not have
+&nbsp;        // been finite
+<b class="nc">&nbsp;        if (!Double.isFinite(max)) {</b>
+&nbsp;            // let the standard multiply operation determine whether to
+&nbsp;            // return NaN or infinite
+<b class="nc">&nbsp;            return xabs * yabs * zabs;</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        // compute the scale and rescale values
+&nbsp;        final double scale;
+&nbsp;        final double rescale;
+<b class="nc">&nbsp;        if (max &gt; LARGE_THRESH) {</b>
+<b class="nc">&nbsp;            scale = SCALE_DOWN;</b>
+<b class="nc">&nbsp;            rescale = SCALE_UP;</b>
+<b class="nc">&nbsp;        } else if (max &lt; SAFE_SCALE_UP_THRESH) {</b>
+<b class="nc">&nbsp;            scale = SCALE_UP;</b>
+<b class="nc">&nbsp;            rescale = SCALE_DOWN;</b>
+&nbsp;        } else {
+<b class="nc">&nbsp;            scale = 1d;</b>
+<b class="nc">&nbsp;            rescale = 1d;</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        double sum = 0d;</b>
+<b class="nc">&nbsp;        double comp = 0d;</b>
+&nbsp;
+&nbsp;        // add scaled x
+<b class="nc">&nbsp;        final double sx = xabs * scale;</b>
+<b class="nc">&nbsp;        final double px = sx * sx;</b>
+<b class="nc">&nbsp;        comp += ExtendedPrecision.squareLowUnscaled(sx, px);</b>
+<b class="nc">&nbsp;        final double sumPx = sum + px;</b>
+<b class="nc">&nbsp;        comp += ExtendedPrecision.twoSumLow(sum, px, sumPx);</b>
+<b class="nc">&nbsp;        sum = sumPx;</b>
+&nbsp;
+&nbsp;        // add scaled y
+<b class="nc">&nbsp;        final double sy = yabs * scale;</b>
+<b class="nc">&nbsp;        final double py = sy * sy;</b>
+<b class="nc">&nbsp;        comp += ExtendedPrecision.squareLowUnscaled(sy, py);</b>
+<b class="nc">&nbsp;        final double sumPy = sum + py;</b>
+<b class="nc">&nbsp;        comp += ExtendedPrecision.twoSumLow(sum, py, sumPy);</b>
+<b class="nc">&nbsp;        sum = sumPy;</b>
+&nbsp;
+&nbsp;        // add scaled z
+<b class="nc">&nbsp;        final double sz = zabs * scale;</b>
+<b class="nc">&nbsp;        final double pz = sz * sz;</b>
+<b class="nc">&nbsp;        comp += ExtendedPrecision.squareLowUnscaled(sz, pz);</b>
+<b class="nc">&nbsp;        final double sumPz = sum + pz;</b>
+<b class="nc">&nbsp;        comp += ExtendedPrecision.twoSumLow(sum, pz, sumPz);</b>
+<b class="nc">&nbsp;        sum = sumPz;</b>
+&nbsp;
+<b class="nc">&nbsp;        return Math.sqrt(sum + comp) * rescale;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Computes the Euclidean norm.
+&nbsp;     * This implementation handles possible overflow or underflow.
+&nbsp;     *
+&nbsp;     * @param v input values
+&nbsp;     * @return \(\sqrt{v_0^2 + ... + v_{n-1}^2}\).
+&nbsp;     *
+&nbsp;     * @see #L2
+&nbsp;     * @see #EUCLIDEAN
+&nbsp;     * @see #of(double[])
+&nbsp;     */
+&nbsp;    private static double euclidean(final double[] v) {
+&nbsp;        // sum of big, normal and small numbers
+<b class="nc">&nbsp;        double s1 = 0;</b>
+<b class="nc">&nbsp;        double s2 = 0;</b>
+<b class="nc">&nbsp;        double s3 = 0;</b>
+&nbsp;
+&nbsp;        // sum compensation values
+<b class="nc">&nbsp;        double c1 = 0;</b>
+<b class="nc">&nbsp;        double c2 = 0;</b>
+<b class="nc">&nbsp;        double c3 = 0;</b>
+&nbsp;
+<b class="nc">&nbsp;        for (int i = 0; i &lt; v.length; ++i) {</b>
+<b class="nc">&nbsp;            final double x = Math.abs(v[i]);</b>
+<b class="nc">&nbsp;            if (!Double.isFinite(x)) {</b>
+&nbsp;                // not finite; determine whether to return NaN or positive infinity
+<b class="nc">&nbsp;                return euclideanNormSpecial(v, i);</b>
+<b class="nc">&nbsp;            } else if (x &gt; LARGE_THRESH) {</b>
+&nbsp;                // scale down
+<b class="nc">&nbsp;                final double sx = x * SCALE_DOWN;</b>
+&nbsp;
+&nbsp;                // compute the product and product compensation
+<b class="nc">&nbsp;                final double p = sx * sx;</b>
+<b class="nc">&nbsp;                final double cp = ExtendedPrecision.squareLowUnscaled(sx, p);</b>
+&nbsp;
+&nbsp;                // compute the running sum and sum compensation
+<b class="nc">&nbsp;                final double s = s1 + p;</b>
+<b class="nc">&nbsp;                final double cs = ExtendedPrecision.twoSumLow(s1, p, s);</b>
+&nbsp;
+&nbsp;                // update running totals
+<b class="nc">&nbsp;                c1 += cp + cs;</b>
+<b class="nc">&nbsp;                s1 = s;</b>
+<b class="nc">&nbsp;            } else if (x &lt; SMALL_THRESH) {</b>
+&nbsp;                // scale up
+<b class="nc">&nbsp;                final double sx = x * SCALE_UP;</b>
+&nbsp;
+&nbsp;                // compute the product and product compensation
+<b class="nc">&nbsp;                final double p = sx * sx;</b>
+<b class="nc">&nbsp;                final double cp = ExtendedPrecision.squareLowUnscaled(sx, p);</b>
+&nbsp;
+&nbsp;                // compute the running sum and sum compensation
+<b class="nc">&nbsp;                final double s = s3 + p;</b>
+<b class="nc">&nbsp;                final double cs = ExtendedPrecision.twoSumLow(s3, p, s);</b>
+&nbsp;
+&nbsp;                // update running totals
+<b class="nc">&nbsp;                c3 += cp + cs;</b>
+<b class="nc">&nbsp;                s3 = s;</b>
+<b class="nc">&nbsp;            } else {</b>
+&nbsp;                // no scaling
+&nbsp;                // compute the product and product compensation
+<b class="nc">&nbsp;                final double p = x * x;</b>
+<b class="nc">&nbsp;                final double cp = ExtendedPrecision.squareLowUnscaled(x, p);</b>
+&nbsp;
+&nbsp;                // compute the running sum and sum compensation
+<b class="nc">&nbsp;                final double s = s2 + p;</b>
+<b class="nc">&nbsp;                final double cs = ExtendedPrecision.twoSumLow(s2, p, s);</b>
+&nbsp;
+&nbsp;                // update running totals
+<b class="nc">&nbsp;                c2 += cp + cs;</b>
+<b class="nc">&nbsp;                s2 = s;</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+&nbsp;        // The highest sum is the significant component. Add the next significant.
+&nbsp;        // Note that the &quot;x * SCALE_DOWN * SCALE_DOWN&quot; expressions must be executed
+&nbsp;        // in the order given. If the two scale factors are multiplied together first,
+&nbsp;        // they will underflow to zero.
+<b class="nc">&nbsp;        if (s1 != 0) {</b>
+&nbsp;            // add s1, s2, c1, c2
+<b class="nc">&nbsp;            final double s2Adj = s2 * SCALE_DOWN * SCALE_DOWN;</b>
+<b class="nc">&nbsp;            final double sum = s1 + s2Adj;</b>
+<b class="nc">&nbsp;            final double comp = ExtendedPrecision.twoSumLow(s1, s2Adj, sum) +</b>
+&nbsp;                c1 + (c2 * SCALE_DOWN * SCALE_DOWN);
+<b class="nc">&nbsp;            return Math.sqrt(sum + comp) * SCALE_UP;</b>
+<b class="nc">&nbsp;        } else if (s2 != 0) {</b>
+&nbsp;            // add s2, s3, c2, c3
+<b class="nc">&nbsp;            final double s3Adj = s3 * SCALE_DOWN * SCALE_DOWN;</b>
+<b class="nc">&nbsp;            final double sum = s2 + s3Adj;</b>
+<b class="nc">&nbsp;            final double comp = ExtendedPrecision.twoSumLow(s2, s3Adj, sum) +</b>
+&nbsp;                c2 + (c3 * SCALE_DOWN * SCALE_DOWN);
+<b class="nc">&nbsp;            return Math.sqrt(sum + comp);</b>
+&nbsp;        }
+&nbsp;        // add s3, c3
+<b class="nc">&nbsp;        return Math.sqrt(s3 + c3) * SCALE_DOWN;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Special cases of non-finite input.
+&nbsp;     *
+&nbsp;     * @param v input vector
+&nbsp;     * @param start index to start examining the input vector from
+&nbsp;     * @return Euclidean norm special value
+&nbsp;     */
+&nbsp;    private static double euclideanNormSpecial(final double[] v,
+&nbsp;                                               final int start) {
+<b class="nc">&nbsp;        for (int i = start; i &lt; v.length; ++i) {</b>
+<b class="nc">&nbsp;            if (Double.isNaN(v[i])) {</b>
+<b class="nc">&nbsp;                return Double.NaN;</b>
+&nbsp;            }
+&nbsp;        }
+<b class="nc">&nbsp;        return Double.POSITIVE_INFINITY;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Computes the maximum norm.
+&nbsp;     *
+&nbsp;     * @param x first input
+&nbsp;     * @param y second input
+&nbsp;     * @return \(\max{(|x|, |y|)}\).
+&nbsp;     *
+&nbsp;     * @see #LINF
+&nbsp;     * @see #MAXIMUM
+&nbsp;     * @see #of(double,double)
+&nbsp;     */
+&nbsp;    private static double maximum(final double x,
+&nbsp;                                  final double y) {
+<b class="nc">&nbsp;        return Math.max(Math.abs(x), Math.abs(y));</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Computes the maximum norm.
+&nbsp;     *
+&nbsp;     * @param x first input
+&nbsp;     * @param y second input
+&nbsp;     * @param z third input
+&nbsp;     * @return \(\max{(|x|, |y|, |z|)}\).
+&nbsp;     *
+&nbsp;     * @see #LINF
+&nbsp;     * @see #MAXIMUM
+&nbsp;     * @see #of(double,double,double)
+&nbsp;     */
+&nbsp;    private static double maximum(final double x,
+&nbsp;                                  final double y,
+&nbsp;                                  final double z) {
+<b class="nc">&nbsp;        return Math.max(Math.abs(x),</b>
+<b class="nc">&nbsp;                        Math.max(Math.abs(y),</b>
+<b class="nc">&nbsp;                                 Math.abs(z)));</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Computes the maximum norm.
+&nbsp;     *
+&nbsp;     * @param v input values
+&nbsp;     * @return \(\max{(|v_0|, \ldots, |v_{n-1}|)}\)
+&nbsp;     *
+&nbsp;     * @see #LINF
+&nbsp;     * @see #MAXIMUM
+&nbsp;     * @see #of(double[])
+&nbsp;     */
+&nbsp;    private static double maximum(final double[] v) {
+<b class="nc">&nbsp;        double max = 0d;</b>
+<b class="nc">&nbsp;        for (final double d : v) {</b>
+<b class="nc">&nbsp;            max = Math.max(max, Math.abs(d));</b>
+&nbsp;        }
+<b class="nc">&nbsp;        return max;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * @param a Array.
+&nbsp;     * @throws IllegalArgumentException for zero-size array.
+&nbsp;     */
+&nbsp;    private static void ensureNonEmpty(double[] a) {
+<b class="nc">&nbsp;        if (a.length == 0) {</b>
+<b class="nc">&nbsp;            throw new IllegalArgumentException(&quot;Empty array&quot;);</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2023-08-18 14:27</div>
+</div>
+</body>
+</html>

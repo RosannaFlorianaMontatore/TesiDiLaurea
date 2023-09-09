@@ -1,0 +1,445 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=windows-1252"> 
+  <title>Coverage Report > BrentOptimizer</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope:     <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">org.apache.commons.statistics.inference</a>
+</div>
+
+<h1>Coverage Summary for Class: BrentOptimizer (org.apache.commons.statistics.inference)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">BrentOptimizer</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/3)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/92)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">BrentOptimizer$PointValuePair</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/6)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/7)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/98)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/*
+&nbsp; * Licensed to the Apache Software Foundation (ASF) under one or more
+&nbsp; * contributor license agreements.  See the NOTICE file distributed with
+&nbsp; * this work for additional information regarding copyright ownership.
+&nbsp; * The ASF licenses this file to You under the Apache License, Version 2.0
+&nbsp; * (the &quot;License&quot;); you may not use this file except in compliance with
+&nbsp; * the License.  You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *      http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;package org.apache.commons.statistics.inference;
+&nbsp;
+&nbsp;import java.util.function.DoubleUnaryOperator;
+&nbsp;import org.apache.commons.numbers.core.Precision;
+&nbsp;
+&nbsp;/**
+&nbsp; * For a function defined on some interval {@code (lo, hi)}, this class
+&nbsp; * finds an approximation {@code x} to the point at which the function
+&nbsp; * attains its minimum.
+&nbsp; * It implements Richard Brent&#39;s algorithm (from his book &quot;Algorithms for
+&nbsp; * Minimization without Derivatives&quot;, p. 79) for finding minima of real
+&nbsp; * univariate functions.
+&nbsp; *
+&nbsp; * &lt;P&gt;This code is an adaptation, partly based on the Python code from SciPy
+&nbsp; * (module &quot;optimize.py&quot; v0.5); the original algorithm is also modified:
+&nbsp; * &lt;ul&gt;
+&nbsp; *  &lt;li&gt;to use an initial guess provided by the user,&lt;/li&gt;
+&nbsp; *  &lt;li&gt;to ensure that the best point encountered is the one returned.&lt;/li&gt;
+&nbsp; * &lt;/ul&gt;
+&nbsp; *
+&nbsp; * &lt;p&gt;This class has been extracted from {@code o.a.c.math4.optim.univariate}
+&nbsp; * and simplified to remove support for the UnivariateOptimizer interface.
+&nbsp; * This removed the options: to find the maximum; use a custom convergence checker
+&nbsp; * on the function value; and remove the maximum function evaluation count.
+&nbsp; * The class now implements a single optimize method within the provided bracket
+&nbsp; * from the given start position (with value).
+&nbsp; *
+&nbsp; * @since 1.1
+&nbsp; */
+&nbsp;class BrentOptimizer {
+&nbsp;    /** Golden section. (3 - sqrt(5)) / 2. */
+&nbsp;    private static final double GOLDEN_SECTION = 0.3819660112501051;
+&nbsp;    /** Minimum relative tolerance. 2 * eps = 2^-51. */
+&nbsp;    private static final double MIN_RELATIVE_TOLERANCE = 0x1.0p-51;
+&nbsp;
+&nbsp;    /** Relative threshold. */
+&nbsp;    private final double relativeThreshold;
+&nbsp;    /** Absolute threshold. */
+&nbsp;    private final double absoluteThreshold;
+&nbsp;    /** The number of function evaluations from the most recent call to optimize. */
+&nbsp;    private int evaluations;
+&nbsp;
+&nbsp;    /**
+&nbsp;     * This class holds a point and the value of an objective function at this
+&nbsp;     * point. This is a simple immutable container.
+&nbsp;     *
+&nbsp;     * @since 1.1
+&nbsp;     */
+&nbsp;    static final class PointValuePair {
+&nbsp;        /** Point. */
+&nbsp;        private final double point;
+&nbsp;        /** Value of the objective function at the point. */
+&nbsp;        private final double value;
+&nbsp;
+&nbsp;        /**
+&nbsp;         * @param point Point.
+&nbsp;         * @param value Value of an objective function at the point.
+&nbsp;         */
+<b class="nc">&nbsp;        private PointValuePair(double point, double value) {</b>
+<b class="nc">&nbsp;            this.point = point;</b>
+<b class="nc">&nbsp;            this.value = value;</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        /**
+&nbsp;         * Create a point/objective function value pair.
+&nbsp;         *
+&nbsp;         * @param point Point.
+&nbsp;         * @param value Value of an objective function at the point.
+&nbsp;         * @return the pair
+&nbsp;         */
+&nbsp;        static PointValuePair of(double point, double value) {
+<b class="nc">&nbsp;            return new PointValuePair(point, value);</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        /**
+&nbsp;         * Get the point.
+&nbsp;         *
+&nbsp;         * @return the point.
+&nbsp;         */
+&nbsp;        double getPoint() {
+<b class="nc">&nbsp;            return point;</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        /**
+&nbsp;         * Get the value of the objective function.
+&nbsp;         *
+&nbsp;         * @return the stored value of the objective function.
+&nbsp;         */
+&nbsp;        double getValue() {
+<b class="nc">&nbsp;            return value;</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * The arguments are used to implement the original stopping criterion
+&nbsp;     * of Brent&#39;s algorithm.
+&nbsp;     * {@code abs} and {@code rel} define a tolerance
+&nbsp;     * {@code tol = rel |x| + abs}. {@code rel} should be no smaller than
+&nbsp;     * &lt;em&gt;2 macheps&lt;/em&gt; and preferably not much less than &lt;em&gt;sqrt(macheps)&lt;/em&gt;,
+&nbsp;     * where &lt;em&gt;macheps&lt;/em&gt; is the relative machine precision. {@code abs} must
+&nbsp;     * be positive.
+&nbsp;     *
+&nbsp;     * @param rel Relative threshold.
+&nbsp;     * @param abs Absolute threshold.
+&nbsp;     * @throws IllegalArgumentException if {@code abs &lt;= 0}; or if {@code rel &lt; 2 * Math.ulp(1.0)}
+&nbsp;     */
+<b class="nc">&nbsp;    BrentOptimizer(double rel, double abs) {</b>
+<b class="nc">&nbsp;        if (rel &gt;= MIN_RELATIVE_TOLERANCE) {</b>
+<b class="nc">&nbsp;            relativeThreshold = rel;</b>
+<b class="nc">&nbsp;            absoluteThreshold = Arguments.checkStrictlyPositive(abs);</b>
+&nbsp;        } else {
+&nbsp;            // relative too small, or NaN
+<b class="nc">&nbsp;            throw new InferenceException(InferenceException.X_LT_Y, rel, MIN_RELATIVE_TOLERANCE);</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Gets the number of function evaluations from the most recent call to
+&nbsp;     * {@link #optimize(DoubleUnaryOperator, double, double, double, double) optimize}.
+&nbsp;     *
+&nbsp;     * @return the function evaluations
+&nbsp;     */
+&nbsp;    int getEvaluations() {
+<b class="nc">&nbsp;        return evaluations;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Search for the minimum inside the provided interval. The bracket must satisfy
+&nbsp;     * the equalities {@code lo &lt; mid &lt; hi} or {@code hi &lt; mid &lt; lo}.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;Note: This function accepts the initial guess and the function value at that point.
+&nbsp;     * This is done for convenience as this internal class is used where the caller already
+&nbsp;     * knows the function value.
+&nbsp;     *
+&nbsp;     * @param func Function to solve.
+&nbsp;     * @param lo Lower bound of the search interval.
+&nbsp;     * @param hi Higher bound of the search interval.
+&nbsp;     * @param mid Start point.
+&nbsp;     * @param fMid Function value at the start point.
+&nbsp;     * @return the value where the function is minimum.
+&nbsp;     * @throws IllegalArgumentException if start point is not within the search interval
+&nbsp;     * @throws IllegalStateException if the maximum number of iterations is exceeded
+&nbsp;     */
+&nbsp;    PointValuePair optimize(DoubleUnaryOperator func,
+&nbsp;                            double lo, double hi,
+&nbsp;                            double mid, double fMid) {
+&nbsp;        double a;
+&nbsp;        double b;
+<b class="nc">&nbsp;        if (lo &lt; hi) {</b>
+<b class="nc">&nbsp;            a = lo;</b>
+<b class="nc">&nbsp;            b = hi;</b>
+&nbsp;        } else {
+<b class="nc">&nbsp;            a = hi;</b>
+<b class="nc">&nbsp;            b = lo;</b>
+&nbsp;        }
+<b class="nc">&nbsp;        if (!(a &lt; mid &amp;&amp; mid &lt; b)) {</b>
+<b class="nc">&nbsp;            throw new InferenceException(&quot;Invalid bounds: (%s, %s) with start %s&quot;, a, b, mid);</b>
+&nbsp;        }
+<b class="nc">&nbsp;        double x = mid;</b>
+<b class="nc">&nbsp;        double v = x;</b>
+<b class="nc">&nbsp;        double w = x;</b>
+<b class="nc">&nbsp;        double d = 0;</b>
+<b class="nc">&nbsp;        double e = 0;</b>
+<b class="nc">&nbsp;        double fx = fMid;</b>
+<b class="nc">&nbsp;        double fv = fx;</b>
+<b class="nc">&nbsp;        double fw = fx;</b>
+&nbsp;
+&nbsp;        // Best point encountered so far (which is the initial guess).
+<b class="nc">&nbsp;        double bestX = x;</b>
+<b class="nc">&nbsp;        double bestFx = fx;</b>
+&nbsp;
+&nbsp;        // No test for iteration count.
+&nbsp;        // Note that the termination criterion is based purely on the size of the current
+&nbsp;        // bracket and the current point x. If the function evaluates NaN then golden
+&nbsp;        // section steps are taken.
+<b class="nc">&nbsp;        evaluations = 0;</b>
+&nbsp;        for (;;) {
+<b class="nc">&nbsp;            final double m = 0.5 * (a + b);</b>
+<b class="nc">&nbsp;            final double tol1 = relativeThreshold * Math.abs(x) + absoluteThreshold;</b>
+<b class="nc">&nbsp;            final double tol2 = 2 * tol1;</b>
+&nbsp;
+&nbsp;            // Default termination (Brent&#39;s criterion).
+<b class="nc">&nbsp;            if (Math.abs(x - m) &lt;= tol2 - 0.5 * (b - a)) {</b>
+<b class="nc">&nbsp;                return PointValuePair.of(bestX, bestFx);</b>
+&nbsp;            }
+&nbsp;
+<b class="nc">&nbsp;            if (Math.abs(e) &gt; tol1) {</b>
+&nbsp;                // Fit parabola.
+<b class="nc">&nbsp;                double r = (x - w) * (fx - fv);</b>
+<b class="nc">&nbsp;                double q = (x - v) * (fx - fw);</b>
+<b class="nc">&nbsp;                double p = (x - v) * q - (x - w) * r;</b>
+<b class="nc">&nbsp;                q = 2 * (q - r);</b>
+&nbsp;
+<b class="nc">&nbsp;                if (q &gt; 0) {</b>
+<b class="nc">&nbsp;                    p = -p;</b>
+&nbsp;                } else {
+<b class="nc">&nbsp;                    q = -q;</b>
+&nbsp;                }
+&nbsp;
+<b class="nc">&nbsp;                r = e;</b>
+<b class="nc">&nbsp;                e = d;</b>
+&nbsp;
+<b class="nc">&nbsp;                if (p &gt; q * (a - x) &amp;&amp;</b>
+&nbsp;                    p &lt; q * (b - x) &amp;&amp;
+<b class="nc">&nbsp;                    Math.abs(p) &lt; Math.abs(0.5 * q * r)) {</b>
+&nbsp;                    // Parabolic interpolation step.
+<b class="nc">&nbsp;                    d = p / q;</b>
+<b class="nc">&nbsp;                    final double u = x + d;</b>
+&nbsp;
+&nbsp;                    // f must not be evaluated too close to a or b.
+<b class="nc">&nbsp;                    if (u - a &lt; tol2 || b - u &lt; tol2) {</b>
+<b class="nc">&nbsp;                        if (x &lt;= m) {</b>
+<b class="nc">&nbsp;                            d = tol1;</b>
+&nbsp;                        } else {
+<b class="nc">&nbsp;                            d = -tol1;</b>
+&nbsp;                        }
+&nbsp;                    }
+<b class="nc">&nbsp;                } else {</b>
+&nbsp;                    // Golden section step.
+<b class="nc">&nbsp;                    if (x &lt; m) {</b>
+<b class="nc">&nbsp;                        e = b - x;</b>
+&nbsp;                    } else {
+<b class="nc">&nbsp;                        e = a - x;</b>
+&nbsp;                    }
+<b class="nc">&nbsp;                    d = GOLDEN_SECTION * e;</b>
+&nbsp;                }
+<b class="nc">&nbsp;            } else {</b>
+&nbsp;                // Golden section step.
+<b class="nc">&nbsp;                if (x &lt; m) {</b>
+<b class="nc">&nbsp;                    e = b - x;</b>
+&nbsp;                } else {
+<b class="nc">&nbsp;                    e = a - x;</b>
+&nbsp;                }
+<b class="nc">&nbsp;                d = GOLDEN_SECTION * e;</b>
+&nbsp;            }
+&nbsp;
+&nbsp;            // Update by at least &quot;tol1&quot;.
+&nbsp;            // Here d is never NaN so the evaluation point u is always finite.
+&nbsp;            double u;
+<b class="nc">&nbsp;            if (Math.abs(d) &lt; tol1) {</b>
+<b class="nc">&nbsp;                if (d &gt;= 0) {</b>
+<b class="nc">&nbsp;                    u = x + tol1;</b>
+&nbsp;                } else {
+<b class="nc">&nbsp;                    u = x - tol1;</b>
+&nbsp;                }
+&nbsp;            } else {
+<b class="nc">&nbsp;                u = x + d;</b>
+&nbsp;            }
+&nbsp;
+<b class="nc">&nbsp;            evaluations++;</b>
+<b class="nc">&nbsp;            final double fu = func.applyAsDouble(u);</b>
+&nbsp;
+&nbsp;            // Maintain the best encountered result
+<b class="nc">&nbsp;            if (fu &lt; bestFx) {</b>
+<b class="nc">&nbsp;                bestX = u;</b>
+<b class="nc">&nbsp;                bestFx = fu;</b>
+&nbsp;            }
+&nbsp;
+&nbsp;            // Note:
+&nbsp;            // Here the use of a convergence checker on f(x) previous vs current has been removed.
+&nbsp;            // Typically when the checker requires a very small relative difference
+&nbsp;            // the optimizer will stop before, or soon after, on Brent&#39;s criterion when that is
+&nbsp;            // configured with the smallest recommended convergence criteria.
+&nbsp;
+&nbsp;            // Update a, b, v, w and x.
+<b class="nc">&nbsp;            if (fu &lt;= fx) {</b>
+<b class="nc">&nbsp;                if (u &lt; x) {</b>
+<b class="nc">&nbsp;                    b = x;</b>
+&nbsp;                } else {
+<b class="nc">&nbsp;                    a = x;</b>
+&nbsp;                }
+<b class="nc">&nbsp;                v = w;</b>
+<b class="nc">&nbsp;                fv = fw;</b>
+<b class="nc">&nbsp;                w = x;</b>
+<b class="nc">&nbsp;                fw = fx;</b>
+<b class="nc">&nbsp;                x = u;</b>
+<b class="nc">&nbsp;                fx = fu;</b>
+&nbsp;            } else {
+<b class="nc">&nbsp;                if (u &lt; x) {</b>
+<b class="nc">&nbsp;                    a = u;</b>
+&nbsp;                } else {
+<b class="nc">&nbsp;                    b = u;</b>
+&nbsp;                }
+<b class="nc">&nbsp;                if (fu &lt;= fw ||</b>
+<b class="nc">&nbsp;                    Precision.equals(w, x)) {</b>
+<b class="nc">&nbsp;                    v = w;</b>
+<b class="nc">&nbsp;                    fv = fw;</b>
+<b class="nc">&nbsp;                    w = u;</b>
+<b class="nc">&nbsp;                    fw = fu;</b>
+<b class="nc">&nbsp;                } else if (fu &lt;= fv ||</b>
+<b class="nc">&nbsp;                           Precision.equals(v, x) ||</b>
+<b class="nc">&nbsp;                           Precision.equals(v, w)) {</b>
+<b class="nc">&nbsp;                    v = u;</b>
+<b class="nc">&nbsp;                    fv = fu;</b>
+&nbsp;                }
+&nbsp;            }
+<b class="nc">&nbsp;        }</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2023-09-04 19:44</div>
+</div>
+</body>
+</html>

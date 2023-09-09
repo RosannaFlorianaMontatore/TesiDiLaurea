@@ -1,0 +1,376 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=windows-1252"> 
+  <title>Coverage Report > Arguments</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope:     <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">org.apache.commons.statistics.inference</a>
+</div>
+
+<h1>Coverage Summary for Class: Arguments (org.apache.commons.statistics.inference)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">Arguments</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (16/16)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (51/51)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/*
+&nbsp; * Licensed to the Apache Software Foundation (ASF) under one or more
+&nbsp; * contributor license agreements.  See the NOTICE file distributed with
+&nbsp; * this work for additional information regarding copyright ownership.
+&nbsp; * The ASF licenses this file to You under the Apache License, Version 2.0
+&nbsp; * (the &quot;License&quot;); you may not use this file except in compliance with
+&nbsp; * the License.  You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *      http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;package org.apache.commons.statistics.inference;
+&nbsp;
+&nbsp;import java.util.EnumSet;
+&nbsp;
+&nbsp;/**
+&nbsp; * Argument validation methods.
+&nbsp; *
+&nbsp; * @since 1.1
+&nbsp; */
+&nbsp;final class Arguments {
+&nbsp;    /** Two. */
+&nbsp;    private static final int TWO = 2;
+&nbsp;
+&nbsp;    /** No instances. */
+&nbsp;    private Arguments() {}
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Check the significance level is in the correct range.
+&nbsp;     *
+&nbsp;     * @param alpha Significance level of the test.
+&nbsp;     * @throws IllegalArgumentException if {@code alpha} is not in the range
+&nbsp;     * {@code (0, 0.5]}
+&nbsp;     */
+&nbsp;    static void checkSignificance(double alpha) {
+<b class="fc">&nbsp;        if (alpha &gt; 0 &amp;&amp; alpha &lt;= 0.5) {</b>
+&nbsp;            return;
+&nbsp;        }
+&nbsp;        // Not in (0, 0.5], or NaN
+<b class="fc">&nbsp;        throw new InferenceException(InferenceException.INVALID_SIGNIFICANCE, alpha);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Check that the value is {@code &gt;= 0}.
+&nbsp;     *
+&nbsp;     * @param v Value to be tested.
+&nbsp;     * @return the value
+&nbsp;     * @throws IllegalArgumentException if the value is less than 0.
+&nbsp;     */
+&nbsp;    static int checkNonNegative(int v) {
+<b class="fc">&nbsp;        if (v &lt; 0) {</b>
+<b class="fc">&nbsp;            throw new InferenceException(InferenceException.NEGATIVE, v);</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return v;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Check that the value is {@code &gt;= 0}.
+&nbsp;     *
+&nbsp;     * @param v Value to be tested.
+&nbsp;     * @throws IllegalArgumentException if the value is less than 0.
+&nbsp;     */
+&nbsp;    static void checkNonNegative(double v) {
+<b class="fc">&nbsp;        if (v &gt;= 0) {</b>
+&nbsp;            return;
+&nbsp;        }
+&nbsp;        // Negative, or NaN
+<b class="fc">&nbsp;        throw new InferenceException(InferenceException.NEGATIVE, v);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Check that all values are {@code &gt;= 0}.
+&nbsp;     *
+&nbsp;     * @param values Values to be tested.
+&nbsp;     * @throws IllegalArgumentException if any values are less than 0.
+&nbsp;     */
+&nbsp;    static void checkNonNegative(long[] values) {
+<b class="fc">&nbsp;        for (final long v : values) {</b>
+<b class="fc">&nbsp;            if (v &lt; 0) {</b>
+<b class="fc">&nbsp;                throw new InferenceException(InferenceException.NEGATIVE, v);</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Check that all values are {@code &gt;= 0}.
+&nbsp;     *
+&nbsp;     * @param values Values to be tested.
+&nbsp;     * @throws IllegalArgumentException if any values are less than 0.
+&nbsp;     */
+&nbsp;    static void checkNonNegative(long[][] values) {
+<b class="fc">&nbsp;        for (final long[] v : values) {</b>
+<b class="fc">&nbsp;            checkNonNegative(v);</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Check that value is {@code &gt; 0}.
+&nbsp;     *
+&nbsp;     * @param v Value to be tested.
+&nbsp;     * @return the value
+&nbsp;     * @throws IllegalArgumentException if the value is not strictly positive.
+&nbsp;     */
+&nbsp;    static int checkStrictlyPositive(int v) {
+<b class="fc">&nbsp;        if (v &lt;= 0) {</b>
+<b class="fc">&nbsp;            throw new InferenceException(InferenceException.NOT_STRICTLY_POSITIVE, v);</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return v;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Check that value is {@code &gt; 0}.
+&nbsp;     *
+&nbsp;     * @param v Value to be tested.
+&nbsp;     * @return the value
+&nbsp;     * @throws IllegalArgumentException if the value is not strictly positive.
+&nbsp;     */
+&nbsp;    static double checkStrictlyPositive(double v) {
+<b class="fc">&nbsp;        if (v &gt; 0) {</b>
+<b class="fc">&nbsp;            return v;</b>
+&nbsp;        }
+&nbsp;        // not positive or NaN
+<b class="fc">&nbsp;        throw new InferenceException(InferenceException.NOT_STRICTLY_POSITIVE, v);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Check that all values are {@code &gt; 0}.
+&nbsp;     *
+&nbsp;     * @param values Values to be tested.
+&nbsp;     * @throws IllegalArgumentException if any values are not strictly positive.
+&nbsp;     */
+&nbsp;    static void checkStrictlyPositive(double[] values) {
+<b class="fc">&nbsp;        for (final double v : values) {</b>
+&nbsp;            // Logic negation detects NaN
+<b class="fc">&nbsp;            if (!(v &gt; 0)) {</b>
+<b class="fc">&nbsp;                throw new InferenceException(InferenceException.NOT_STRICTLY_POSITIVE, v);</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Check that the value is finite.
+&nbsp;     *
+&nbsp;     * @param v Value to be tested.
+&nbsp;     * @return the value
+&nbsp;     * @throws IllegalArgumentException if the value is not finite.
+&nbsp;     */
+&nbsp;    static double checkFinite(double v) {
+<b class="fc">&nbsp;        if (!Double.isFinite(v)) {</b>
+<b class="fc">&nbsp;            throw new InferenceException(&quot;Non-finite input value: &quot; + v);</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return v;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Check that all values are not {@link Double#NaN}.
+&nbsp;     *
+&nbsp;     * @param values Values to be tested.
+&nbsp;     * @throws IllegalArgumentException if any values are NaN.
+&nbsp;     */
+&nbsp;    static void checkNonNaN(double[] values) {
+<b class="fc">&nbsp;        for (final double v : values) {</b>
+<b class="fc">&nbsp;            if (Double.isNaN(v)) {</b>
+<b class="fc">&nbsp;                throw new InferenceException(&quot;NaN input value&quot;);</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Checks if the input array is rectangular. It is assumed the array is non-null
+&nbsp;     * and has a non-zero length.
+&nbsp;     *
+&nbsp;     * @param array Array to be tested.
+&nbsp;     * @throws NullPointerException if input array is null
+&nbsp;     * @throws IndexOutOfBoundsException if input array is zero length
+&nbsp;     * @throws IllegalArgumentException if input array is not rectangular
+&nbsp;     */
+&nbsp;    static void checkRectangular(long[][] array) {
+<b class="fc">&nbsp;        final int first = array[0].length;</b>
+<b class="fc">&nbsp;        for (int i = 1; i &lt; array.length; i++) {</b>
+<b class="fc">&nbsp;            if (array[i].length != first) {</b>
+<b class="fc">&nbsp;                throw new InferenceException(InferenceException.NOT_RECTANGULAR, array[i].length, first);</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Check the values size is the minimum required, {@code size &gt;= required}.
+&nbsp;     *
+&nbsp;     * @param size Values size.
+&nbsp;     * @param required Required size.
+&nbsp;     * @throws IllegalArgumentException if {@code size &lt; required}
+&nbsp;     */
+&nbsp;    static void checkValuesRequiredSize(int size, int required) {
+<b class="fc">&nbsp;        if (size &lt; required) {</b>
+<b class="fc">&nbsp;            throw new InferenceException(InferenceException.VALUES_REQUIRED, size, required);</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Check the categories size is the minimum required, {@code size &gt;= required}.
+&nbsp;     *
+&nbsp;     * @param size Values size.
+&nbsp;     * @param required Required size.
+&nbsp;     * @throws IllegalArgumentException if {@code size &lt; required}
+&nbsp;     */
+&nbsp;    static void checkCategoriesRequiredSize(int size, int required) {
+<b class="fc">&nbsp;        if (size &lt; required) {</b>
+<b class="fc">&nbsp;            throw new InferenceException(InferenceException.CATEGORIES_REQUIRED, size, required);</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Check the values sizes are equal, {@code size1 == size2}.
+&nbsp;     *
+&nbsp;     * @param size1 First size.
+&nbsp;     * @param size2 Second size.
+&nbsp;     * @throws IllegalArgumentException if {@code size1 != size2}
+&nbsp;     */
+&nbsp;    static void checkValuesSizeMatch(int size1, int size2) {
+<b class="fc">&nbsp;        if (size1 != size2) {</b>
+<b class="fc">&nbsp;            throw new InferenceException(InferenceException.VALUES_MISMATCH, size1, size2);</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Check the option is allowed.
+&nbsp;     *
+&nbsp;     * @param &lt;E&gt; Option type.
+&nbsp;     * @param v Option value.
+&nbsp;     * @param allowed Allowed options.
+&nbsp;     * @return the value
+&nbsp;     * @throws IllegalArgumentException if the value is not in the allowed options or is null
+&nbsp;     */
+&nbsp;    static &lt;E extends Enum&lt;E&gt;&gt; E checkOption(E v, EnumSet&lt;E&gt; allowed) {
+<b class="fc">&nbsp;        if (!allowed.contains(v)) {</b>
+<b class="fc">&nbsp;            throw new InferenceException(&quot;Invalid option: &quot; + v);</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return v;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Check the input is a 2-by-2 contingency table.
+&nbsp;     *
+&nbsp;     * @param table Table.
+&nbsp;     * @throws IllegalArgumentException if the {@code table} is not a 2-by-2 table; any
+&nbsp;     * table entry is negative; or the sum is zero or is not an integer
+&nbsp;     */
+&nbsp;    static void checkTable(int[][] table) {
+<b class="fc">&nbsp;        if (table.length != TWO || table[0].length != TWO || table[1].length != TWO) {</b>
+<b class="fc">&nbsp;            throw new InferenceException(&quot;Require a 2-by-2 contingency table&quot;);</b>
+&nbsp;        }
+&nbsp;        // Must all be positive
+<b class="fc">&nbsp;        final int a = table[0][0];</b>
+<b class="fc">&nbsp;        final int b = table[0][1];</b>
+<b class="fc">&nbsp;        final int c = table[1][0];</b>
+<b class="fc">&nbsp;        final int d = table[1][1];</b>
+&nbsp;        // Bitwise OR combines the sign bit from all values
+<b class="fc">&nbsp;        Arguments.checkNonNegative(a | b | c | d);</b>
+&nbsp;        // Sum must be an integer
+<b class="fc">&nbsp;        final long sum = (long) a + b + c + d;</b>
+<b class="fc">&nbsp;        if (sum &gt; Integer.MAX_VALUE) {</b>
+<b class="fc">&nbsp;            throw new InferenceException(InferenceException.X_GT_Y, sum, Integer.MAX_VALUE);</b>
+&nbsp;        }
+<b class="fc">&nbsp;        Arguments.checkStrictlyPositive((int) sum);</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2023-09-04 19:44</div>
+</div>
+</body>
+</html>

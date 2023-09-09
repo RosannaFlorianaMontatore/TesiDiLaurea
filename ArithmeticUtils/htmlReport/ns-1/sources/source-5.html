@@ -1,0 +1,385 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=windows-1252"> 
+  <title>Coverage Report > Sum</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope:     <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">org.apache.commons.numbers.core</a>
+</div>
+
+<h1>Coverage Summary for Class: Sum (org.apache.commons.numbers.core)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">Sum</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/14)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/37)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/*
+&nbsp; * Licensed to the Apache Software Foundation (ASF) under one or more
+&nbsp; * contributor license agreements.  See the NOTICE file distributed with
+&nbsp; * this work for additional information regarding copyright ownership.
+&nbsp; * The ASF licenses this file to You under the Apache License, Version 2.0
+&nbsp; * (the &quot;License&quot;); you may not use this file except in compliance with
+&nbsp; * the License.  You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *      http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;package org.apache.commons.numbers.core;
+&nbsp;
+&nbsp;import java.util.function.DoubleConsumer;
+&nbsp;import java.util.function.DoubleSupplier;
+&nbsp;
+&nbsp;/**
+&nbsp; * Class providing accurate floating-point sums and linear combinations.
+&nbsp; * This class uses techniques to mitigate round off errors resulting from
+&nbsp; * standard floating-point operations, increasing the overall accuracy of
+&nbsp; * results at the cost of a moderate increase in the number of computations.
+&nbsp; * This functionality can be viewed as filling the gap between standard
+&nbsp; * floating point operations (fast but prone to round off errors) and
+&nbsp; * {@link java.math.BigDecimal} (perfectly accurate but slow).
+&nbsp; *
+&nbsp; * &lt;p&gt;&lt;strong&gt;Usage&lt;/strong&gt;
+&nbsp; * &lt;p&gt;This class use a builder pattern in order to maximize the flexibility
+&nbsp; * of the API. Typical use involves constructing an instance from one
+&nbsp; * of the factory methods, adding any number of {@link #add(double) single value terms}
+&nbsp; * and/or {@link #addProduct(double, double) products}, and then extracting the
+&nbsp; * computed sum. Convenience methods exist for adding multiple values or products at once.
+&nbsp; * The examples below demonstrate some simple use cases.
+&nbsp; *
+&nbsp; * &lt;pre&gt;
+&nbsp; * // compute the sum a1 + a2 + a3 + a4
+&nbsp; * Sum sum = Sum.of(a1);
+&nbsp; *      .add(a2)
+&nbsp; *      .add(a3)
+&nbsp; *      .add(a4);
+&nbsp; * double result = sum.getAsDouble();
+&nbsp; *
+&nbsp; * // same as above but using the varargs factory method
+&nbsp; * double result = Sum.of(a1, a2, a3, a4).getAsDouble();
+&nbsp; *
+&nbsp; * // compute the dot product of two arrays of the same length, a and b
+&nbsp; * Sum sum = Sum.create();
+&nbsp; * for (int i = 0; i &amp;lt; a.length; ++i) {
+&nbsp; *      sum.addProduct(a[i], b[i]);
+&nbsp; * }
+&nbsp; * double result = sum.getAsDouble();
+&nbsp; *
+&nbsp; * // same as above but using a convenience factory method
+&nbsp; * double result = Sum.ofProducts(a, b).getAsDouble();
+&nbsp; * &lt;/pre&gt;
+&nbsp; *
+&nbsp; * &lt;p&gt;It is worth noting that this class is designed to reduce floating point errors
+&nbsp; * &lt;em&gt;across a sequence of operations&lt;/em&gt; and not just a single add or multiply. The
+&nbsp; * standard IEEE floating point operations already produce the most accurate results
+&nbsp; * possible given two arguments and this class does not improve on them. Rather, it tracks
+&nbsp; * the errors inherent with each operation and uses them to reduce the error of the overall
+&nbsp; * result. Therefore, this class is only beneficial in cases involving 3 or more floating point
+&nbsp; * operations. Code such as {@code Sum.of(a, b).getAsDouble()} and
+&nbsp; * {@code Sum.create().addProduct(a, b).getAsDouble()} only adds overhead with no benefit.
+&nbsp; *
+&nbsp; * &lt;p&gt;&lt;strong&gt;Implementation Notes&lt;/strong&gt;
+&nbsp; * &lt;p&gt;This class internally uses the &lt;em&gt;Sum2S&lt;/em&gt; and &lt;em&gt;Dot2S&lt;/em&gt; algorithms described in
+&nbsp; * &lt;a href=&quot;https://doi.org/10.1137/030601818&quot;&gt;
+&nbsp; * Accurate Sum and Dot Product&lt;/a&gt; by Takeshi Ogita, Siegfried M. Rump,
+&nbsp; * and Shin&#39;ichi Oishi (&lt;em&gt;SIAM J. Sci. Comput&lt;/em&gt;, 2005). These are compensated
+&nbsp; * summation and multiplication algorithms chosen here for their good
+&nbsp; * balance of precision and performance. Future releases may choose to use
+&nbsp; * different algorithms.
+&nbsp; *
+&nbsp; * &lt;p&gt;Results follow the IEEE 754 rules for addition: For example, if any
+&nbsp; * input value is {@link Double#NaN}, the result is {@link Double#NaN}.
+&nbsp; *
+&nbsp; * &lt;p&gt;Instances of this class are mutable and not safe for use by multiple
+&nbsp; * threads.
+&nbsp; */
+&nbsp;public final class Sum
+&nbsp;    implements DoubleSupplier,
+&nbsp;               DoubleConsumer {
+&nbsp;    /** Standard sum. */
+&nbsp;    private double sum;
+&nbsp;    /** Compensation value. */
+&nbsp;    private double comp;
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Constructs a new instance with the given initial value.
+&nbsp;     *
+&nbsp;     * @param initialValue Initial value.
+&nbsp;     */
+<b class="nc">&nbsp;    private Sum(final double initialValue) {</b>
+<b class="nc">&nbsp;        sum = initialValue;</b>
+<b class="nc">&nbsp;        comp = 0d;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Adds a single term to this sum.
+&nbsp;     *
+&nbsp;     * @param t Value to add.
+&nbsp;     * @return this instance.
+&nbsp;     */
+&nbsp;    public Sum add(final double t) {
+<b class="nc">&nbsp;        final double newSum = sum + t;</b>
+<b class="nc">&nbsp;        comp += ExtendedPrecision.twoSumLow(sum, t, newSum);</b>
+<b class="nc">&nbsp;        sum = newSum;</b>
+&nbsp;
+<b class="nc">&nbsp;        return this;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Adds values from the given array to the sum.
+&nbsp;     *
+&nbsp;     * @param terms Terms to add.
+&nbsp;     * @return this instance.
+&nbsp;     */
+&nbsp;    public Sum add(final double... terms) {
+<b class="nc">&nbsp;        for (final double t : terms) {</b>
+<b class="nc">&nbsp;            add(t);</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        return this;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Adds the high-accuracy product \( a b \) to this sum.
+&nbsp;     *
+&nbsp;     * @param a Factor
+&nbsp;     * @param b Factor.
+&nbsp;     * @return this instance
+&nbsp;     */
+&nbsp;    public Sum addProduct(final double a,
+&nbsp;                          final double b) {
+<b class="nc">&nbsp;        final double ab = a * b;</b>
+<b class="nc">&nbsp;        final double pLow = ExtendedPrecision.productLow(a, b, ab);</b>
+&nbsp;
+<b class="nc">&nbsp;        final double newSum = sum + ab;</b>
+<b class="nc">&nbsp;        comp += ExtendedPrecision.twoSumLow(sum, ab, newSum) + pLow;</b>
+<b class="nc">&nbsp;        sum = newSum;</b>
+&nbsp;
+<b class="nc">&nbsp;        return this;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Adds \( \sum_i a_i b_i \) to this sum.
+&nbsp;     *
+&nbsp;     * @param a Factors.
+&nbsp;     * @param b Factors.
+&nbsp;     * @return this instance.
+&nbsp;     * @throws IllegalArgumentException if the arrays do not have the same length.
+&nbsp;     */
+&nbsp;    public Sum addProducts(final double[] a,
+&nbsp;                           final double[] b) {
+<b class="nc">&nbsp;        final int len = a.length;</b>
+<b class="nc">&nbsp;        if (len != b.length) {</b>
+<b class="nc">&nbsp;            throw new IllegalArgumentException(&quot;Dimension mismatch: &quot; +</b>
+&nbsp;                                               a.length + &quot; != &quot; + b.length);
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        for (int i = 0; i &lt; len; ++i) {</b>
+<b class="nc">&nbsp;            addProduct(a[i], b[i]);</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        return this;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Adds another sum to this sum.
+&nbsp;     *
+&nbsp;     * @param other Sum to add.
+&nbsp;     * @return this instance.
+&nbsp;     */
+&nbsp;    public Sum add(final Sum other) {
+<b class="nc">&nbsp;        return add(other.sum, other.comp);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Subtracts another sum from this sum.
+&nbsp;     *
+&nbsp;     * @param other Sum to subtract.
+&nbsp;     * @return this instance.
+&nbsp;     */
+&nbsp;    public Sum subtract(final Sum other) {
+<b class="nc">&nbsp;        return add(-other.sum, -other.comp);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Adds the sum and compensation to this sum.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;This is a utility method to extract both values from a sum
+&nbsp;     * before addition to ensure there are no issues when adding a sum
+&nbsp;     * to itself.
+&nbsp;     *
+&nbsp;     * @param s Sum.
+&nbsp;     * @param c Compensation.
+&nbsp;     * @return this instance.
+&nbsp;     */
+&nbsp;    private Sum add(double s, double c) {
+<b class="nc">&nbsp;        add(s);</b>
+&nbsp;        // compensation can be NaN from accumulating one or more same-signed infinite values.
+&nbsp;        // Do not pollute the regular IEEE754 sum with a spurious NaN.
+<b class="nc">&nbsp;        if (!Double.isNaN(c)) {</b>
+<b class="nc">&nbsp;            add(c);</b>
+&nbsp;        }
+<b class="nc">&nbsp;        return this;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Adds a single term to this sum.
+&nbsp;     * This is equivalent to {@link #add(double)}.
+&nbsp;     *
+&nbsp;     * @param value Value to add.
+&nbsp;     *
+&nbsp;     * @see #add(double)
+&nbsp;     */
+&nbsp;    @Override
+&nbsp;    public void accept(final double value) {
+<b class="nc">&nbsp;        add(value);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Gets the sum value.
+&nbsp;     *
+&nbsp;     * @return the sum value.
+&nbsp;     */
+&nbsp;    @Override
+&nbsp;    public double getAsDouble() {
+&nbsp;        // High-precision value if it is finite, standard IEEE754 result otherwise.
+<b class="nc">&nbsp;        final double hpsum = sum + comp;</b>
+<b class="nc">&nbsp;        return Double.isFinite(hpsum) ?</b>
+<b class="nc">&nbsp;                hpsum :</b>
+<b class="nc">&nbsp;                sum;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Creates a new instance with an initial value of zero.
+&nbsp;     *
+&nbsp;     * @return a new instance.
+&nbsp;     */
+&nbsp;    public static Sum create() {
+<b class="nc">&nbsp;        return new Sum(0d);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Creates an instance initialized to the given value.
+&nbsp;     *
+&nbsp;     * @param a Initial value.
+&nbsp;     * @return a new instance.
+&nbsp;     */
+&nbsp;    public static Sum of(final double a) {
+<b class="nc">&nbsp;        return new Sum(a);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Creates an instance containing the sum of the given values.
+&nbsp;     *
+&nbsp;     * @param values Values to add.
+&nbsp;     * @return a new instance.
+&nbsp;     */
+&nbsp;    public static Sum of(final double... values) {
+<b class="nc">&nbsp;        return create().add(values);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Creates a new instance containing \( \sum_i a_i b_i \).
+&nbsp;     *
+&nbsp;     * @param a Factors.
+&nbsp;     * @param b Factors.
+&nbsp;     * @return a new instance.
+&nbsp;     */
+&nbsp;    public static Sum ofProducts(final double[] a,
+&nbsp;                                 final double[] b) {
+<b class="nc">&nbsp;        return create().addProducts(a, b);</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2023-08-18 14:27</div>
+</div>
+</body>
+</html>

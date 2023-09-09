@@ -1,0 +1,1264 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=windows-1252"> 
+  <title>Coverage Report > KolmogorovSmirnovDistribution</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope:     <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">org.apache.commons.statistics.inference</a>
+</div>
+
+<h1>Coverage Summary for Class: KolmogorovSmirnovDistribution (org.apache.commons.statistics.inference)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">KolmogorovSmirnovDistribution</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/18)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">KolmogorovSmirnovDistribution$One</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/7)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/80)
+  </span>
+</td>
+  </tr>
+  <tr>
+    <td class="name">KolmogorovSmirnovDistribution$One$ScaledPower</td>
+  </tr>
+  <tr>
+    <td class="name">KolmogorovSmirnovDistribution$Two</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/8)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/192)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/17)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/290)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/*
+&nbsp; * Licensed to the Apache Software Foundation (ASF) under one or more
+&nbsp; * contributor license agreements.  See the NOTICE file distributed with
+&nbsp; * this work for additional information regarding copyright ownership.
+&nbsp; * The ASF licenses this file to You under the Apache License, Version 2.0
+&nbsp; * (the &quot;License&quot;); you may not use this file except in compliance with
+&nbsp; * the License.  You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *      http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package org.apache.commons.statistics.inference;
+&nbsp;
+&nbsp;import java.util.Arrays;
+&nbsp;import org.apache.commons.numbers.combinatorics.Factorial;
+&nbsp;import org.apache.commons.numbers.combinatorics.LogFactorial;
+&nbsp;import org.apache.commons.numbers.core.DD;
+&nbsp;import org.apache.commons.numbers.core.DDMath;
+&nbsp;import org.apache.commons.numbers.core.Sum;
+&nbsp;import org.apache.commons.statistics.inference.SquareMatrixSupport.RealSquareMatrix;
+&nbsp;
+&nbsp;/**
+&nbsp; * Computes the complementary probability for the one-sample Kolmogorov-Smirnov distribution.
+&nbsp; *
+&nbsp; * @since 1.1
+&nbsp; */
+&nbsp;final class KolmogorovSmirnovDistribution {
+&nbsp;    /** pi^2. */
+&nbsp;    private static final double PI2 = 9.8696044010893586188344909;
+&nbsp;    /** sqrt(2*pi). */
+&nbsp;    private static final double ROOT_TWO_PI = 2.5066282746310005024157652;
+&nbsp;    /** Value of x when the KS sum is 0.5. */
+&nbsp;    private static final double X_KS_HALF = 0.8275735551899077;
+&nbsp;    /** Value of x when the KS sum is 1.0. */
+&nbsp;    private static final double X_KS_ONE = 0.1754243674345323;
+&nbsp;    /** Machine epsilon, 2^-52. */
+&nbsp;    private static final double EPS = 0x1.0p-52;
+&nbsp;
+&nbsp;    /** No instances. */
+&nbsp;    private KolmogorovSmirnovDistribution() {}
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Computes the complementary probability {@code P[D_n &gt;= x]}, or survival function (SF),
+&nbsp;     * for the two-sided one-sample Kolmogorov-Smirnov distribution.
+&nbsp;     *
+&nbsp;     * &lt;pre&gt;
+&nbsp;     * D_n = sup_x |F(x) - CDF_n(x)|
+&nbsp;     * &lt;/pre&gt;
+&nbsp;     *
+&nbsp;     * &lt;p&gt;where {@code n} is the sample size; {@code CDF_n(x)} is an empirical
+&nbsp;     * cumulative distribution function; and {@code F(x)} is the expected
+&nbsp;     * distribution.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;
+&nbsp;     * References:
+&nbsp;     * &lt;ol&gt;
+&nbsp;     * &lt;li&gt;Simard, R., &amp;amp; L’Ecuyer, P. (2011).
+&nbsp;     * &lt;a href=&quot;https://doi.org/10.18637/jss.v039.i11&quot;&gt;Computing the Two-Sided Kolmogorov-Smirnov Distribution.&lt;/a&gt;
+&nbsp;     * Journal of Statistical Software, 39(11), 1–18.
+&nbsp;     * &lt;li&gt;
+&nbsp;     * Marsaglia, G., Tsang, W. W., &amp;amp; Wang, J. (2003).
+&nbsp;     * &lt;a href=&quot;https://doi.org/10.18637/jss.v008.i18&quot;&gt;Evaluating Kolmogorov&#39;s Distribution.&lt;/a&gt;
+&nbsp;     * Journal of Statistical Software, 8(18), 1–4.
+&nbsp;     * &lt;/ol&gt;
+&nbsp;     *
+&nbsp;     * &lt;p&gt;Note that [2] contains an error in computing h, refer to &lt;a
+&nbsp;     * href=&quot;https://issues.apache.org/jira/browse/MATH-437&quot;&gt;MATH-437&lt;/a&gt; for details.
+&nbsp;     *
+&nbsp;     * @since 1.1
+&nbsp;     */
+&nbsp;    static final class Two {
+&nbsp;        /** pi^2. */
+&nbsp;        private static final double PI2 = 9.8696044010893586188344909;
+&nbsp;        /** pi^4. */
+&nbsp;        private static final double PI4 = 97.409091034002437236440332;
+&nbsp;        /** pi^6. */
+&nbsp;        private static final double PI6 = 961.38919357530443703021944;
+&nbsp;        /** sqrt(2*pi). */
+&nbsp;        private static final double ROOT_TWO_PI = 2.5066282746310005024157652;
+&nbsp;        /** sqrt(pi/2). */
+&nbsp;        private static final double ROOT_HALF_PI = 1.2533141373155002512078826;
+&nbsp;        /** Threshold for Pelz-Good where the 1 - CDF == 1.
+&nbsp;         * Occurs when sqrt(2pi/z) exp(-pi^2 / (8 z^2)) is far below 2^-53.
+&nbsp;         * Threshold set at exp(-pi^2 / (8 z^2)) = 2^-80. */
+&nbsp;        private static final double LOG_PG_MIN = -55.451774444795625;
+&nbsp;        /** Factor 4a in the quadratic equation to solve max k: log(2^-52) * 8. */
+&nbsp;        private static final double FOUR_A = -288.3492271129372;
+&nbsp;        /** The scaling threshold in the MTW algorithm. Marsaglia used 1e-140. This uses 2^-400 ~ 3.87e-121. */
+&nbsp;        private static final double MTW_SCALE_THRESHOLD = 0x1.0p-400;
+&nbsp;        /** The up-scaling factor in the MTW algorithm. Marsaglia used 1e140. This uses 2^400 ~ 2.58e120. */
+&nbsp;        private static final double MTW_UP_SCALE = 0x1.0p400;
+&nbsp;        /** The power-of-2 of the up-scaling factor in the MTW algorithm, n if the up-scale factor is 2^n. */
+&nbsp;        private static final int MTW_UP_SCALE_POWER = 400;
+&nbsp;        /** The scaling threshold in the Pomeranz algorithm.  */
+&nbsp;        private static final double P_DOWN_SCALE = 0x1.0p-128;
+&nbsp;        /** The up-scaling factor in the Pomeranz algorithm. */
+&nbsp;        private static final double P_UP_SCALE = 0x1.0p128;
+&nbsp;        /** The power-of-2 of the up-scaling factor in the Pomeranz algorithm, n if the up-scale factor is 2^n. */
+&nbsp;        private static final int P_SCALE_POWER = 128;
+&nbsp;        /** Maximum finite factorial. */
+&nbsp;        private static final int MAX_FACTORIAL = 170;
+&nbsp;        /** Approximate threshold for ln(MIN_NORMAL). */
+&nbsp;        private static final int LOG_MIN_NORMAL = -708;
+&nbsp;        /** 140, n threshold for small n for the sf computation.*/
+&nbsp;        private static final int N140 = 140;
+&nbsp;        /** 0.754693, nxx threshold for small n Durbin matrix sf computation. */
+&nbsp;        private static final double NXX_0_754693 = 0.754693;
+&nbsp;        /** 4, nxx threshold for small n Pomeranz sf computation. */
+&nbsp;        private static final int NXX_4 = 4;
+&nbsp;        /** 2.2, nxx threshold for large n Miller approximation sf computation. */
+&nbsp;        private static final double NXX_2_2 = 2.2;
+&nbsp;        /** 100000, n threshold for large n Durbin matrix sf computation. */
+&nbsp;        private static final int N_100000 = 100000;
+&nbsp;        /** 1.4, nx^(3/2) threshold for large n Durbin matrix sf computation. */
+&nbsp;        private static final double NX32_1_4 = 1.4;
+&nbsp;        /** 1/2. */
+&nbsp;        private static final double HALF = 0.5;
+&nbsp;
+&nbsp;        /** No instances. */
+&nbsp;        private Two() {}
+&nbsp;
+&nbsp;        /**
+&nbsp;         * Calculates complementary probability {@code P[D_n &gt;= x]} for the two-sided
+&nbsp;         * one-sample Kolmogorov-Smirnov distribution.
+&nbsp;         *
+&nbsp;         * @param x Statistic.
+&nbsp;         * @param n Sample size (assumed to be positive).
+&nbsp;         * @return \(P(D_n &amp;ge; x)\)
+&nbsp;         */
+&nbsp;        static double sf(double x, int n) {
+<b class="nc">&nbsp;            final double p = sfExact(x, n);</b>
+<b class="nc">&nbsp;            if (p &gt;= 0) {</b>
+<b class="nc">&nbsp;                return p;</b>
+&nbsp;            }
+&nbsp;
+&nbsp;            // The computation is divided based on the x-n plane.
+<b class="nc">&nbsp;            final double nxx = n * x * x;</b>
+<b class="nc">&nbsp;            if (n &lt;= N140) {</b>
+&nbsp;                // 10 decimal digits of precision
+&nbsp;
+&nbsp;                // nx^2 &lt; 4 use 1 - CDF(x).
+<b class="nc">&nbsp;                if (nxx &lt; NXX_0_754693) {</b>
+&nbsp;                    // Durbin matrix (MTW)
+<b class="nc">&nbsp;                    return 1 - durbinMTW(x, n);</b>
+&nbsp;                }
+<b class="nc">&nbsp;                if (nxx &lt; NXX_4) {</b>
+&nbsp;                    // Pomeranz
+<b class="nc">&nbsp;                    return 1 - pomeranz(x, n);</b>
+&nbsp;                }
+&nbsp;                // Miller approximation: 2 * one-sided D+ computation
+<b class="nc">&nbsp;                return 2 * One.sf(x, n);</b>
+&nbsp;            }
+&nbsp;            // n &gt; 140
+<b class="nc">&nbsp;            if (nxx &gt;= NXX_2_2) {</b>
+&nbsp;                // 6 decimal digits of precision
+&nbsp;
+&nbsp;                // Miller approximation: 2 * one-sided D+ computation
+<b class="nc">&nbsp;                return 2 * One.sf(x, n);</b>
+&nbsp;            }
+&nbsp;            // nx^2 &lt; 2.2 use 1 - CDF(x).
+&nbsp;            // 5 decimal digits of precision (for n &lt; 200000)
+&nbsp;
+&nbsp;            // nx^1.5 &lt;= 1.4
+<b class="nc">&nbsp;            if (n &lt;= N_100000 &amp;&amp; n * Math.pow(x, 1.5) &lt; NX32_1_4) {</b>
+&nbsp;                // Durbin matrix (MTW)
+<b class="nc">&nbsp;                return 1 - durbinMTW(x, n);</b>
+&nbsp;            }
+&nbsp;            // Pelz-Good, algorithm modified to sum negative terms from 1 for the SF.
+&nbsp;            // (precision increases with n)
+<b class="nc">&nbsp;            return pelzGood(x, n);</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        /**
+&nbsp;         * Calculates exact cases for the complementary probability
+&nbsp;         * {@code P[D_n &gt;= x]} the two-sided one-sample Kolmogorov-Smirnov distribution.
+&nbsp;         *
+&nbsp;         * &lt;p&gt;Exact cases handle x not in [0, 1]. It is assumed n is positive.
+&nbsp;         *
+&nbsp;         * @param x Statistic.
+&nbsp;         * @param n Sample size (assumed to be positive).
+&nbsp;         * @return \(P(D_n &amp;ge; x)\)
+&nbsp;         */
+&nbsp;        private static double sfExact(double x, int n) {
+<b class="nc">&nbsp;            if (n * x * x &gt;= 370 || x &gt;= 1) {</b>
+&nbsp;                // p would underflow, or x is out of the domain
+<b class="nc">&nbsp;                return 0;</b>
+&nbsp;            }
+<b class="nc">&nbsp;            final double nx = x * n;</b>
+<b class="nc">&nbsp;            if (nx &lt;= 1) {</b>
+&nbsp;                // x &lt;= 1/(2n)
+<b class="nc">&nbsp;                if (nx &lt;= HALF) {</b>
+&nbsp;                    // Also detects x &lt;= 0 (iff n is positive)
+<b class="nc">&nbsp;                    return 1;</b>
+&nbsp;                }
+<b class="nc">&nbsp;                if (n == 1) {</b>
+&nbsp;                    // Simplification of:
+&nbsp;                    // 1 - (n! (2x - 1/n)^n) == 1 - (2x - 1)
+<b class="nc">&nbsp;                    return 2.0 - 2.0 * x;</b>
+&nbsp;                }
+&nbsp;                // 1/(2n) &lt; x &lt;= 1/n
+&nbsp;                // 1 - (n! (2x - 1/n)^n)
+<b class="nc">&nbsp;                final double f = 2 * x - 1.0 / n;</b>
+&nbsp;                // Switch threshold where (2x - 1/n)^n is sub-normal
+&nbsp;                // Max factorial threshold is n=170
+<b class="nc">&nbsp;                final double logf = Math.log(f);</b>
+<b class="nc">&nbsp;                if (n &lt;= MAX_FACTORIAL &amp;&amp; n * logf &gt; LOG_MIN_NORMAL) {</b>
+<b class="nc">&nbsp;                    return 1 - Factorial.doubleValue(n) * Math.pow(f, n);</b>
+&nbsp;                }
+<b class="nc">&nbsp;                return -Math.expm1(LogFactorial.create().value(n) + n * logf);</b>
+&nbsp;            }
+&nbsp;            // 1 - 1/n &lt;= x &lt; 1
+<b class="nc">&nbsp;            if (n - 1 &lt;= nx) {</b>
+&nbsp;                // 2 * (1-x)^n
+<b class="nc">&nbsp;                return 2 * Math.pow(1 - x, n);</b>
+&nbsp;            }
+&nbsp;
+<b class="nc">&nbsp;            return -1;</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        /**
+&nbsp;         * Computes the Durbin matrix approximation for {@code P(D_n &lt; d)} using the method
+&nbsp;         * of Marsaglia, Tsang and Wang (2003).
+&nbsp;         *
+&nbsp;         * @param x Statistic.
+&nbsp;         * @param n Sample size (assumed to be positive).
+&nbsp;         * @return \(P(D_n &amp;lt; x)\)
+&nbsp;         */
+&nbsp;        private static double durbinMTW(double x, int n) {
+<b class="nc">&nbsp;            final int k = (int) Math.ceil(n * x);</b>
+<b class="nc">&nbsp;            final RealSquareMatrix h = createH(x, n).power(n);</b>
+&nbsp;
+&nbsp;            // Use scaling as per Marsaglia&#39;s code to avoid underflow.
+<b class="nc">&nbsp;            double pFrac = h.get(k - 1, k - 1);</b>
+<b class="nc">&nbsp;            int scale = h.scale();</b>
+&nbsp;            // Omit i == n as this is a no-op
+<b class="nc">&nbsp;            for (int i = 1; i &lt; n; ++i) {</b>
+<b class="nc">&nbsp;                pFrac *= (double) i / (double) n;</b>
+<b class="nc">&nbsp;                if (pFrac &lt; MTW_SCALE_THRESHOLD) {</b>
+<b class="nc">&nbsp;                    pFrac *= MTW_UP_SCALE;</b>
+<b class="nc">&nbsp;                    scale -= MTW_UP_SCALE_POWER;</b>
+&nbsp;                }
+&nbsp;            }
+&nbsp;            // Return the CDF
+<b class="nc">&nbsp;            return clipProbability(Math.scalb(pFrac, scale));</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        /***
+&nbsp;         * Creates {@code H} of size {@code m x m} as described in [1].
+&nbsp;         *
+&nbsp;         * @param x Statistic.
+&nbsp;         * @param n Sample size (assumed to be positive).
+&nbsp;         * @return H matrix
+&nbsp;         */
+&nbsp;        private static RealSquareMatrix createH(double x, int n) {
+&nbsp;            // MATH-437:
+&nbsp;            // This is *not* (int) (n * x) + 1.
+&nbsp;            // This is only ever called when 1/n &lt; x &lt; 1 - 1/n.
+&nbsp;            // =&gt; h cannot be &gt;= 1 when using ceil. h can be 0 if nx is integral.
+<b class="nc">&nbsp;            final int k = (int) Math.ceil(n * x);</b>
+<b class="nc">&nbsp;            final double h = k - n * x;</b>
+&nbsp;
+<b class="nc">&nbsp;            final int m = 2 * k - 1;</b>
+<b class="nc">&nbsp;            final double[] data = new double[m * m];</b>
+&nbsp;            // Start by filling everything with either 0 or 1.
+<b class="nc">&nbsp;            for (int i = 0; i &lt; m; ++i) {</b>
+&nbsp;                // h[i][j] = i - j + 1 &lt; 0 ? 0 : 1
+&nbsp;                // =&gt; h[i][j&lt;=i+1] = 1
+<b class="nc">&nbsp;                final int jend = Math.min(m - 1, i + 1);</b>
+<b class="nc">&nbsp;                for (int j = i * m; j &lt;= i * m + jend; j++) {</b>
+<b class="nc">&nbsp;                    data[j] = 1;</b>
+&nbsp;                }
+&nbsp;            }
+&nbsp;
+&nbsp;            // Setting up power-array to avoid calculating the same value twice:
+&nbsp;            // hp[0] = h^1, ..., hp[m-1] = h^m
+<b class="nc">&nbsp;            final double[] hp = new double[m];</b>
+<b class="nc">&nbsp;            hp[0] = h;</b>
+<b class="nc">&nbsp;            for (int i = 1; i &lt; m; ++i) {</b>
+&nbsp;                // Avoid compound rounding errors using h * hp[i - 1]
+&nbsp;                // with Math.pow as it is within 1 ulp of the exact result
+<b class="nc">&nbsp;                hp[i] = Math.pow(h, i + 1);</b>
+&nbsp;            }
+&nbsp;
+&nbsp;            // First column and last row has special values (each other reversed).
+<b class="nc">&nbsp;            for (int i = 0; i &lt; m; ++i) {</b>
+<b class="nc">&nbsp;                data[i * m] -= hp[i];</b>
+<b class="nc">&nbsp;                data[(m - 1) * m + i] -= hp[m - i - 1];</b>
+&nbsp;            }
+&nbsp;
+&nbsp;            // [1] states: &quot;For 1/2 &lt; h &lt; 1 the bottom left element of the matrix should be
+&nbsp;            // (1 - 2*h^m + (2h - 1)^m )/m!&quot;
+<b class="nc">&nbsp;            if (2 * h - 1 &gt; 0) {</b>
+<b class="nc">&nbsp;                data[(m - 1) * m] += Math.pow(2 * h - 1, m);</b>
+&nbsp;            }
+&nbsp;
+&nbsp;            // Aside from the first column and last row, the (i, j)-th element is 1/(i - j + 1)! if i -
+&nbsp;            // j + 1 &gt;= 0, else 0. 1&#39;s and 0&#39;s are already put, so only division with (i - j + 1)! is
+&nbsp;            // needed in the elements that have 1&#39;s. Note that i - j + 1 &gt; 0 &lt;=&gt; i + 1 &gt; j instead of
+&nbsp;            // j&#39;ing all the way to m. Also note that we can use pre-computed factorials given
+&nbsp;            // the limits where this method is called.
+<b class="nc">&nbsp;            for (int i = 0; i &lt; m; ++i) {</b>
+<b class="nc">&nbsp;                final int im = i * m;</b>
+<b class="nc">&nbsp;                for (int j = 0; j &lt; i + 1; ++j) {</b>
+&nbsp;                    // Here (i - j + 1 &gt; 0)
+&nbsp;                    // Divide by (i - j + 1)!
+&nbsp;                    // Note: This method is used when:
+&nbsp;                    // n &lt;= 140; nxx &lt; 0.754693
+&nbsp;                    // n &lt;= 100000; n x^1.5 &lt; 1.4
+&nbsp;                    // max m ~ 2nx ~ (1.4/1e5)^(2/3) * 2e5 = 116
+&nbsp;                    // Use a tabulated factorial
+<b class="nc">&nbsp;                    data[im + j] /= Factorial.doubleValue(i - j + 1);</b>
+&nbsp;                }
+&nbsp;            }
+<b class="nc">&nbsp;            return SquareMatrixSupport.create(m, data);</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        /**
+&nbsp;         * Computes the Pomeranz approximation for {@code P(D_n &lt; d)} using the method
+&nbsp;         * as described in Simard and L’Ecuyer (2011).
+&nbsp;         *
+&nbsp;         * &lt;p&gt;Modifications have been made to the scaling of the intermediate values.
+&nbsp;         *
+&nbsp;         * @param x Statistic.
+&nbsp;         * @param n Sample size (assumed to be positive).
+&nbsp;         * @return \(P(D_n &amp;lt; x)\)
+&nbsp;         */
+&nbsp;        private static double pomeranz(double x, int n) {
+<b class="nc">&nbsp;            final double t = n * x;</b>
+&nbsp;            // Store floor(A-t) and ceil(A+t). This does not require computing A.
+<b class="nc">&nbsp;            final int[] amt = new int[2 * n + 3];</b>
+<b class="nc">&nbsp;            final int[] apt = new int[2 * n + 3];</b>
+<b class="nc">&nbsp;            computeA(n, t, amt, apt);</b>
+&nbsp;            // Precompute ((A[i] - A[i-1])/n)^(j-k) / (j-k)!
+&nbsp;            // A[i] - A[i-1] has 4 possible values (based on multiples of A2)
+&nbsp;            // A1 - A0 = 0 - 0                               = 0
+&nbsp;            // A2 - A1 = A2 - 0                              = A2
+&nbsp;            // A3 - A2 = (1 - A2) - A2                       = 1 - 2 * A2
+&nbsp;            // A4 - A3 = (A2 + 1) - (1 - A2)                 = 2 * A2
+&nbsp;            // A5 - A4 = (1 - A2 + 1) - (A2 + 1)             = 1 - 2 * A2
+&nbsp;            // A6 - A5 = (A2 + 1 + 1) - (1 - A2 + 1)         = 2 * A2
+&nbsp;            // A7 - A6 = (1 - A2 + 1 + 1) - (A2 + 1 + 1)     = 1 - 2 * A2
+&nbsp;            // A8 - A7 = (A2 + 1 + 1 + 1) - (1 - A2 + 1 + 1) = 2 * A2
+&nbsp;            // ...
+&nbsp;            // Ai - Ai-1 = ((i-1)/2 - A2) - (A2 + (i-2)/2)   = 1 - 2 * A2 ; i = odd
+&nbsp;            // Ai - Ai-1 = (A2 + (i-1)/2) - ((i-2)/2 - A2)   = 2 * A2     ; i = even
+&nbsp;            // ...
+&nbsp;            // A2n+2 - A2n+1 = n - (n - A2)                  = A2
+&nbsp;
+&nbsp;            // ap[][j - k] = ((A[i] - A[i-1])/n)^(j-k) / (j-k)!
+&nbsp;            // for each case: A[i] - A[i-1] in [A2, 1 - 2 * A2, 2 * A2]
+&nbsp;            // Ignore case 0 as this is not used. Factors are ap[0] = 1, else 0.
+&nbsp;            // If A2==0.5 then this is computed as a no-op due to multiplication by zero.
+<b class="nc">&nbsp;            final int n2 = n + 2;</b>
+<b class="nc">&nbsp;            final double[][] ap = new double[3][n2];</b>
+<b class="nc">&nbsp;            final double a2 = Math.min(t - Math.floor(t), Math.ceil(t) - t);</b>
+<b class="nc">&nbsp;            computeAP(ap[0], a2 / n);</b>
+<b class="nc">&nbsp;            computeAP(ap[1], (1 - 2 * a2) / n);</b>
+<b class="nc">&nbsp;            computeAP(ap[2], (2 * a2) / n);</b>
+&nbsp;
+&nbsp;            // Current and previous V
+<b class="nc">&nbsp;            double[] vc = new double[n2];</b>
+<b class="nc">&nbsp;            double[] vp = new double[n2];</b>
+&nbsp;            // Count of re-scaling
+<b class="nc">&nbsp;            int scale = 0;</b>
+&nbsp;
+&nbsp;            // V_1,1 = 1
+<b class="nc">&nbsp;            vc[1] = 1;</b>
+&nbsp;
+<b class="nc">&nbsp;            for (int i = 2; i &lt;= 2 * n + 2; i++) {</b>
+<b class="nc">&nbsp;                final double[] v = vc;</b>
+<b class="nc">&nbsp;                vc = vp;</b>
+<b class="nc">&nbsp;                vp = v;</b>
+&nbsp;                // This is useful for following current values of vc
+<b class="nc">&nbsp;                Arrays.fill(vc, 0);</b>
+&nbsp;
+&nbsp;                // Select (A[i] - A[i-1]) factor
+&nbsp;                double[] p;
+<b class="nc">&nbsp;                if (i == 2 || i == 2 * n + 2) {</b>
+&nbsp;                    // First or last
+<b class="nc">&nbsp;                    p = ap[0];</b>
+&nbsp;                } else {
+&nbsp;                    // odd:  [1] 1 - 2 * 2A
+&nbsp;                    // even: [2] 2 * A2
+<b class="nc">&nbsp;                    p = ap[2 - (i &amp; 1)];</b>
+&nbsp;                }
+&nbsp;
+&nbsp;                // Set limits.
+&nbsp;                // j is the ultimate bound for k and should be in [1, n+1]
+<b class="nc">&nbsp;                final int jmin = Math.max(1, amt[i] + 2);</b>
+<b class="nc">&nbsp;                final int jmax = Math.min(n + 1, apt[i]);</b>
+<b class="nc">&nbsp;                final int k1 = Math.max(1, amt[i - 1] + 2);</b>
+&nbsp;
+&nbsp;                // All numbers will reduce in size.
+&nbsp;                // Maintain the largest close to 1.0.
+&nbsp;                // This is a change from Simard and L’Ecuyer which scaled based on the smallest.
+<b class="nc">&nbsp;                double max = 0;</b>
+<b class="nc">&nbsp;                for (int j = jmin; j &lt;= jmax; j++) {</b>
+<b class="nc">&nbsp;                    final int k2 = Math.min(j, apt[i - 1]);</b>
+&nbsp;                    // Accurate sum.
+&nbsp;                    // vp[high] is smaller
+&nbsp;                    // p[high] is smaller
+&nbsp;                    // Sum ascending has smaller products first.
+<b class="nc">&nbsp;                    double sum = 0;</b>
+<b class="nc">&nbsp;                    for (int k = k1; k &lt;= k2; k++) {</b>
+<b class="nc">&nbsp;                        sum += vp[k] * p[j - k];</b>
+&nbsp;                    }
+<b class="nc">&nbsp;                    vc[j] = sum;</b>
+<b class="nc">&nbsp;                    if (max &lt; sum) {</b>
+&nbsp;                        // Note: max *may* always be the first sum: vc[jmin]
+<b class="nc">&nbsp;                        max = sum;</b>
+&nbsp;                    }
+&nbsp;                }
+&nbsp;
+&nbsp;                // Rescale if too small
+<b class="nc">&nbsp;                if (max &lt; P_DOWN_SCALE) {</b>
+&nbsp;                    // Only scale in current range from V
+<b class="nc">&nbsp;                    for (int j = jmin; j &lt;= jmax; j++) {</b>
+<b class="nc">&nbsp;                        vc[j] *= P_UP_SCALE;</b>
+&nbsp;                    }
+<b class="nc">&nbsp;                    scale -= P_SCALE_POWER;</b>
+&nbsp;                }
+&nbsp;            }
+&nbsp;
+&nbsp;            // F_n(x) = n! V_{2n+2,n+1}
+<b class="nc">&nbsp;            double v = vc[n + 1];</b>
+&nbsp;
+&nbsp;            // This method is used when n &lt; 140 where all n! are finite.
+&nbsp;            // v is below 1 so we can directly compute the result without using logs.
+<b class="nc">&nbsp;            v *= Factorial.doubleValue(n);</b>
+&nbsp;            // Return the CDF (rescaling as required)
+<b class="nc">&nbsp;            return Math.scalb(v, scale);</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        /**
+&nbsp;         * Compute the power factors.
+&nbsp;         * &lt;pre&gt;
+&nbsp;         * factor[j] = z^j / j!
+&nbsp;         * &lt;/pre&gt;
+&nbsp;         *
+&nbsp;         * @param p Power factors.
+&nbsp;         * @param z (A[i] - A[i-1]) / n
+&nbsp;         */
+&nbsp;        private static void computeAP(double[] p, double z) {
+&nbsp;            // Note z^0 / 0! = 1 for any z
+<b class="nc">&nbsp;            p[0] = 1;</b>
+<b class="nc">&nbsp;            p[1] = z;</b>
+<b class="nc">&nbsp;            for (int j = 2; j &lt; p.length; j++) {</b>
+&nbsp;                // Only used when n &lt;= 140 and can use the tabulated values of n!
+&nbsp;                // This avoids using recursion: p[j] = z * p[j-1] / j.
+&nbsp;                // Direct computation more closely agrees with the recursion using BigDecimal
+&nbsp;                // with 200 digits of precision.
+<b class="nc">&nbsp;                p[j] = Math.pow(z, j) / Factorial.doubleValue(j);</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+&nbsp;        /**
+&nbsp;         * Compute the factors floor(A-t) and ceil(A+t).
+&nbsp;         * Arrays should have length 2n+3.
+&nbsp;         *
+&nbsp;         * @param n Sample size.
+&nbsp;         * @param t Statistic x multiplied by n.
+&nbsp;         * @param amt floor(A-t)
+&nbsp;         * @param apt ceil(A+t)
+&nbsp;         */
+&nbsp;        // package-private for testing
+&nbsp;        static void computeA(int n, double t, int[] amt, int[] apt) {
+<b class="nc">&nbsp;            final int l = (int) Math.floor(t);</b>
+<b class="nc">&nbsp;            final double f = t - l;</b>
+<b class="nc">&nbsp;            final int limit = 2 * n + 2;</b>
+&nbsp;
+&nbsp;            // 3-cases
+<b class="nc">&nbsp;            if (f &gt; HALF) {</b>
+&nbsp;                // Case (iii): 1/2 &lt; f &lt; 1
+&nbsp;                // for i = 1, 2, ...
+<b class="nc">&nbsp;                for (int j = 2; j &lt;= limit; j += 2) {</b>
+<b class="nc">&nbsp;                    final int i = j &gt;&gt;&gt; 1;</b>
+<b class="nc">&nbsp;                    amt[j] = i - 2 - l;</b>
+<b class="nc">&nbsp;                    apt[j] = i + l;</b>
+&nbsp;                }
+&nbsp;                // for i = 0, 1, 2, ...
+<b class="nc">&nbsp;                for (int j = 1; j &lt;= limit; j += 2) {</b>
+<b class="nc">&nbsp;                    final int i = j &gt;&gt;&gt; 1;</b>
+<b class="nc">&nbsp;                    amt[j] = i - 1 - l;</b>
+<b class="nc">&nbsp;                    apt[j] = i + 1 + l;</b>
+&nbsp;                }
+<b class="nc">&nbsp;            } else if (f &gt; 0) {</b>
+&nbsp;                // Case (ii): 0 &lt; f &lt;= 1/2
+<b class="nc">&nbsp;                amt[1] = -l - 1;</b>
+<b class="nc">&nbsp;                apt[1] = l + 1;</b>
+&nbsp;                // for i = 1, 2, ...
+<b class="nc">&nbsp;                for (int j = 2; j &lt;= limit; j++) {</b>
+<b class="nc">&nbsp;                    final int i = j &gt;&gt;&gt; 1;</b>
+<b class="nc">&nbsp;                    amt[j] = i - 1 - l;</b>
+<b class="nc">&nbsp;                    apt[j] = i + l;</b>
+&nbsp;                }
+&nbsp;            } else {
+&nbsp;                // Case (i): f = 0
+&nbsp;                // for i = 1, 2, ...
+<b class="nc">&nbsp;                for (int j = 2; j &lt;= limit; j += 2) {</b>
+<b class="nc">&nbsp;                    final int i = j &gt;&gt;&gt; 1;</b>
+<b class="nc">&nbsp;                    amt[j] = i - 1 - l;</b>
+<b class="nc">&nbsp;                    apt[j] = i - 1 + l;</b>
+&nbsp;                }
+&nbsp;                // for i = 0, 1, 2, ...
+<b class="nc">&nbsp;                for (int j = 1; j &lt;= limit; j += 2) {</b>
+<b class="nc">&nbsp;                    final int i = j &gt;&gt;&gt; 1;</b>
+<b class="nc">&nbsp;                    amt[j] = i - l;</b>
+<b class="nc">&nbsp;                    apt[j] = i + l;</b>
+&nbsp;                }
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+&nbsp;        /**
+&nbsp;         * Computes the Pelz-Good approximation for {@code P(D_n &gt;= d)} as described in
+&nbsp;         * Simard and L’Ecuyer (2011).
+&nbsp;         *
+&nbsp;         * &lt;p&gt;This has been modified to compute the complementary CDF by subtracting the
+&nbsp;         * terms k0, k1, k2, k3 from 1. For use in computing the CDF the method should
+&nbsp;         * be updated to return the sum of k0 ... k3.
+&nbsp;         *
+&nbsp;         * @param x Statistic.
+&nbsp;         * @param n Sample size (assumed to be positive).
+&nbsp;         * @return \(P(D_n &amp;ge; x)\)
+&nbsp;         * @throws ArithmeticException if the series does not converge
+&nbsp;         */
+&nbsp;        // package-private for testing
+&nbsp;        static double pelzGood(double x, int n) {
+&nbsp;            // Change the variable to z since approximation is for the distribution evaluated at d / sqrt(n)
+<b class="nc">&nbsp;            final double z2 = x * x * n;</b>
+&nbsp;
+<b class="nc">&nbsp;            double lne = -PI2 / (8 * z2);</b>
+&nbsp;            // Final result is ~ (1 - K0) ~ 1 - sqrt(2pi/z) exp(-pi^2 / (8 z^2))
+&nbsp;            // Do not compute when the exp value is far below eps.
+<b class="nc">&nbsp;            if (lne &lt; LOG_PG_MIN) {</b>
+&nbsp;                // z ~ sqrt(-pi^2/(8*min)) ~ 0.1491
+<b class="nc">&nbsp;                return 1;</b>
+&nbsp;            }
+&nbsp;            // Note that summing K1, ..., K3 over all k with factor
+&nbsp;            // (k + 1/2) is equivalent to summing over all k with
+&nbsp;            // 2 (k - 1/2) / 2 == (2k - 1) / 2
+&nbsp;            // This is the form for K0.
+&nbsp;            // Compute all together over odd integers and divide factors
+&nbsp;            // of (k + 1/2)^b by 2^b.
+<b class="nc">&nbsp;            double k0 = 0;</b>
+<b class="nc">&nbsp;            double k1 = 0;</b>
+<b class="nc">&nbsp;            double k2 = 0;</b>
+<b class="nc">&nbsp;            double k3 = 0;</b>
+&nbsp;
+<b class="nc">&nbsp;            final double rootN = Math.sqrt(n);</b>
+<b class="nc">&nbsp;            final double z = x * rootN;</b>
+<b class="nc">&nbsp;            final double z3 = z * z2;</b>
+<b class="nc">&nbsp;            final double z4 = z2 * z2;</b>
+<b class="nc">&nbsp;            final double z6 = Math.pow(z2, 3);</b>
+<b class="nc">&nbsp;            final double z7 = Math.pow(z2, 3.5);</b>
+<b class="nc">&nbsp;            final double z8 = Math.pow(z2, 4);</b>
+<b class="nc">&nbsp;            final double z10 = Math.pow(z2, 5);</b>
+&nbsp;
+<b class="nc">&nbsp;            final double a1 = PI2 / 4;</b>
+&nbsp;
+<b class="nc">&nbsp;            final double a2 = 6 * z6 + 2 * z4;</b>
+<b class="nc">&nbsp;            final double b2 = (PI2 * (2 * z4 - 5 * z2)) / 4;</b>
+<b class="nc">&nbsp;            final double c2 = (PI4 * (1 - 2 * z2)) / 16;</b>
+&nbsp;
+<b class="nc">&nbsp;            final double a3 = (PI6 * (5 - 30 * z2)) / 64;</b>
+<b class="nc">&nbsp;            final double b3 = (PI4 * (-60 * z2 + 212 * z4)) / 16;</b>
+<b class="nc">&nbsp;            final double c3 = (PI2 * (135 * z4 - 96 * z6)) / 4;</b>
+<b class="nc">&nbsp;            final double d3 = -(30 * z6 + 90 * z8);</b>
+&nbsp;
+&nbsp;            // Iterate j=(2k - 1) for k=1, 2, ...
+&nbsp;            // Terms reduce in size. Stop when:
+&nbsp;            // exp(-pi^2 / 8z^2) * eps = exp((2k-1)^2 * -pi^2 / 8z^2)
+&nbsp;            // (2k-1)^2 = 1 - log(eps) * 8z^2 / pi^2
+&nbsp;            // 0 = k^2 - k + log(eps) * 2z^2 / pi^2
+&nbsp;            // Solve using quadratic equation and eps = ulp(1.0): 4a ~ -288
+<b class="nc">&nbsp;            final int max = (int) Math.ceil((1 + Math.sqrt(1 - FOUR_A * z2 / PI2)) / 2);</b>
+&nbsp;            // Sum smallest terms first
+<b class="nc">&nbsp;            for (int k = max; k &gt; 0; k--) {</b>
+<b class="nc">&nbsp;                final int j = 2 * k - 1;</b>
+&nbsp;                // Create (2k-1)^2; (2k-1)^4; (2k-1)^6
+<b class="nc">&nbsp;                final double j2 = (double) j * j;</b>
+<b class="nc">&nbsp;                final double j4 = Math.pow(j, 4);</b>
+<b class="nc">&nbsp;                final double j6 = Math.pow(j, 6);</b>
+&nbsp;                // exp(-pi^2 * (2k-1)^2 / 8z^2)
+<b class="nc">&nbsp;                final double e = Math.exp(lne * j2);</b>
+<b class="nc">&nbsp;                k0 += e;</b>
+<b class="nc">&nbsp;                k1 += (a1 * j2 - z2) * e;</b>
+<b class="nc">&nbsp;                k2 += (a2 + b2 * j2 + c2 * j4) * e;</b>
+<b class="nc">&nbsp;                k3 += (a3 * j6 + b3 * j4 + c3 * j2 + d3) * e;</b>
+&nbsp;            }
+<b class="nc">&nbsp;            k0 *= ROOT_TWO_PI / z;</b>
+&nbsp;            // Factors are halved as the sum is for k in -inf to +inf
+<b class="nc">&nbsp;            k1 *= ROOT_HALF_PI / (3 * z4);</b>
+<b class="nc">&nbsp;            k2 *= ROOT_HALF_PI / (36 * z7);</b>
+<b class="nc">&nbsp;            k3 *= ROOT_HALF_PI / (3240 * z10);</b>
+&nbsp;
+&nbsp;            // Compute additional K2,K3 terms
+<b class="nc">&nbsp;            double k2b = 0;</b>
+<b class="nc">&nbsp;            double k3b = 0;</b>
+&nbsp;
+&nbsp;            // -pi^2 / (2z^2)
+<b class="nc">&nbsp;            lne *= 4;</b>
+&nbsp;
+<b class="nc">&nbsp;            final double a3b = 3 * PI2 * z2;</b>
+&nbsp;
+&nbsp;            // Iterate for j=1, 2, ...
+&nbsp;            // Note: Here max = sqrt(1 - FOUR_A z^2 / (4 pi^2)).
+&nbsp;            // This is marginally smaller so we reuse the same value.
+<b class="nc">&nbsp;            for (int j = max; j &gt; 0; j--) {</b>
+<b class="nc">&nbsp;                final double j2 = (double) j * j;</b>
+<b class="nc">&nbsp;                final double j4 = Math.pow(j, 4);</b>
+&nbsp;                // exp(-pi^2 * k^2 / 2z^2)
+<b class="nc">&nbsp;                final double e = Math.exp(lne * j2);</b>
+<b class="nc">&nbsp;                k2b += PI2 * j2 * e;</b>
+<b class="nc">&nbsp;                k3b += (-PI4 * j4 + a3b * j2) * e;</b>
+&nbsp;            }
+&nbsp;            // Factors are halved as the sum is for k in -inf to +inf
+<b class="nc">&nbsp;            k2b *= ROOT_HALF_PI / (18 * z3);</b>
+<b class="nc">&nbsp;            k3b *= ROOT_HALF_PI / (108 * z6);</b>
+&nbsp;
+&nbsp;            // Series: K0(z) + K1(z)/n^0.5 + K2(z)/n + K3(z)/n^1.5 + O(1/n^2)
+<b class="nc">&nbsp;            k1 /= rootN;</b>
+<b class="nc">&nbsp;            k2 /= n;</b>
+<b class="nc">&nbsp;            k3 /= n * rootN;</b>
+<b class="nc">&nbsp;            k2b /= n;</b>
+<b class="nc">&nbsp;            k3b /= n * rootN;</b>
+&nbsp;
+&nbsp;            // Return (1 - CDF) with an extended precision sum in order of descending magnitude
+<b class="nc">&nbsp;            return clipProbability(Sum.of(1, -k0, -k1, -k2, -k3, +k2b, -k3b).getAsDouble());</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Computes the complementary probability {@code P[D_n^+ &gt;= x]} for the one-sided
+&nbsp;     * one-sample Kolmogorov-Smirnov distribution.
+&nbsp;     *
+&nbsp;     * &lt;pre&gt;
+&nbsp;     * D_n^+ = sup_x {CDF_n(x) - F(x)}
+&nbsp;     * &lt;/pre&gt;
+&nbsp;     *
+&nbsp;     * &lt;p&gt;where {@code n} is the sample size; {@code CDF_n(x)} is an empirical
+&nbsp;     * cumulative distribution function; and {@code F(x)} is the expected
+&nbsp;     * distribution. The computation uses Smirnov&#39;s stable formula:
+&nbsp;     *
+&nbsp;     * &lt;pre&gt;
+&nbsp;     *                   floor(n(1-x)) (n) ( j     ) (j-1)  (         j ) (n-j)
+&nbsp;     * P[D_n^+ &gt;= x] = x     Sum       ( ) ( - + x )        ( 1 - x - - )
+&nbsp;     *                       j=0       (j) ( n     )        (         n )
+&nbsp;     * &lt;/pre&gt;
+&nbsp;     *
+&nbsp;     * &lt;p&gt;Computing using logs is not as accurate as direct multiplication when n is large.
+&nbsp;     * However the terms are very large and small. Multiplication uses a scaled representation
+&nbsp;     * with a separate exponent term to support the extreme range. Extended precision
+&nbsp;     * representation of the numbers reduces the error in the power terms. Details in
+&nbsp;     * van Mulbregt (2018).
+&nbsp;     *
+&nbsp;     * &lt;p&gt;
+&nbsp;     * References:
+&nbsp;     * &lt;ol&gt;
+&nbsp;     * &lt;li&gt;
+&nbsp;     * van Mulbregt, P. (2018).
+&nbsp;     * &lt;a href=&quot;https://doi.org/10.48550/arxiv.1802.06966&quot;&gt;Computing the Cumulative Distribution Function and Quantiles of the One-sided Kolmogorov-Smirnov Statistic&lt;/a&gt;
+&nbsp;     * arxiv:1802.06966.
+&nbsp;     * &lt;li&gt;Magg &amp;amp; Dicaire (1971).
+&nbsp;     * &lt;a href=&quot;https://doi.org/10.1093/biomet/58.3.653&quot;&gt;On Kolmogorov-Smirnov Type One-Sample Statistics&lt;/a&gt;
+&nbsp;     * Biometrika 58.3 pp. 653–656.
+&nbsp;     * &lt;/ol&gt;
+&nbsp;     *
+&nbsp;     * @since 1.1
+&nbsp;     */
+&nbsp;    static final class One {
+&nbsp;        /** &quot;Very large&quot; n to use a asymptotic limiting form.
+&nbsp;         * [1] suggests 1e12 but this is reduced to avoid excess
+&nbsp;         * computation time. */
+&nbsp;        private static final int VERY_LARGE_N = 1000000;
+&nbsp;        /** Maximum number of term for the Smirnov-Dwass algorithm. */
+&nbsp;        private static final int SD_MAX_TERMS = 3;
+&nbsp;        /** Minimum sample size for the Smirnov-Dwass algorithm. */
+&nbsp;        private static final int SD_MIN_N = 8;
+&nbsp;        /** Number of bits of precision in the sum of terms Aj.
+&nbsp;         * This does not have to be the full 106 bits of a double-double as the final result
+&nbsp;         * is used as a double. The terms are represented as fractions with an exponent:
+&nbsp;         * &lt;pre&gt;
+&nbsp;         *  Aj = 2^b * f
+&nbsp;         *  f of sum(A) in [0.5, 1)
+&nbsp;         *  f of Aj in [0.25, 2]
+&nbsp;         * &lt;/pre&gt;
+&nbsp;         * &lt;p&gt;The terms can be added if their exponents overlap. The bits of precision must
+&nbsp;         * account for the extra range of the fractional part of Aj by 1 bit. Note that
+&nbsp;         * additional bits are added to this dynamically based on the number of terms. */
+&nbsp;        private static final int SUM_PRECISION_BITS = 53;
+&nbsp;        /** Number of bits of precision in the sum of terms Aj.
+&nbsp;         * For Smirnov-Dwass we use the full 106 bits of a double-double due to the summation
+&nbsp;         * of terms that cancel. Account for the extra range of the fractional part of Aj by 1 bit. */
+&nbsp;        private static final int SD_SUM_PRECISION_BITS = 107;
+&nbsp;        /** Proxy for the default choice of the scaled power function.
+&nbsp;         * The actual choice is based on the chosen algorithm. */
+<b class="nc">&nbsp;        private static final ScaledPower POWER_DEFAULT = null;</b>
+&nbsp;
+&nbsp;        /**
+&nbsp;         * Defines a scaled power function.
+&nbsp;         * Package-private to allow the main sf method to be called direct in testing.
+&nbsp;         */
+&nbsp;        interface ScaledPower {
+&nbsp;            /**
+&nbsp;             * Compute the number {@code x} raised to the power {@code n}.
+&nbsp;             *
+&nbsp;             * &lt;p&gt;The value is returned as fractional {@code f} and integral
+&nbsp;             * {@code 2^exp} components.
+&nbsp;             * &lt;pre&gt;
+&nbsp;             * (x+xx)^n = (f+ff) * 2^exp
+&nbsp;             * &lt;/pre&gt;
+&nbsp;             *
+&nbsp;             * @param x x.
+&nbsp;             * @param n Power.
+&nbsp;             * @param exp Result power of two scale factor (integral exponent).
+&nbsp;             * @return Fraction part.
+&nbsp;             * @see DD#frexp(int[])
+&nbsp;             * @see DD#pow(int, long[])
+&nbsp;             * @see DDMath#pow(DD, int, long[])
+&nbsp;             */
+&nbsp;            DD pow(DD x, int n, long[] exp);
+&nbsp;        }
+&nbsp;
+&nbsp;        /** No instances. */
+&nbsp;        private One() {}
+&nbsp;
+&nbsp;        /**
+&nbsp;         * Calculates complementary probability {@code P[D_n^+ &gt;= x]}, or survival
+&nbsp;         * function (SF), for the one-sided one-sample Kolmogorov-Smirnov distribution.
+&nbsp;         *
+&nbsp;         * @param x Statistic.
+&nbsp;         * @param n Sample size (assumed to be positive).
+&nbsp;         * @return \(P(D_n^+ &amp;ge; x)\)
+&nbsp;         */
+&nbsp;        static double sf(double x, int n) {
+<b class="nc">&nbsp;            final double p = sfExact(x, n);</b>
+<b class="nc">&nbsp;            if (p &gt;= 0) {</b>
+<b class="nc">&nbsp;                return p;</b>
+&nbsp;            }
+&nbsp;            // Note: This is not referring to N = floor(n*x).
+&nbsp;            // Here n is the sample size and a suggested limit 10^12 is noted on pp.15 in [1].
+&nbsp;            // This uses a lower threshold where the full computation takes ~ 1 second.
+<b class="nc">&nbsp;            if (n &gt; VERY_LARGE_N) {</b>
+<b class="nc">&nbsp;                return sfAsymptotic(x, n);</b>
+&nbsp;            }
+<b class="nc">&nbsp;            return sf(x, n, POWER_DEFAULT);</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        /**
+&nbsp;         * Calculates exact cases for the complementary probability
+&nbsp;         * {@code P[D_n^+ &gt;= x]} the one-sided one-sample Kolmogorov-Smirnov distribution.
+&nbsp;         *
+&nbsp;         * &lt;p&gt;Exact cases handle x not in [0, 1]. It is assumed n is positive.
+&nbsp;         *
+&nbsp;         * @param x Statistic.
+&nbsp;         * @param n Sample size (assumed to be positive).
+&nbsp;         * @return \(P(D_n^+ &amp;ge; x)\)
+&nbsp;         */
+&nbsp;        private static double sfExact(double x, int n) {
+<b class="nc">&nbsp;            if (n * x * x &gt;= 372.5 || x &gt;= 1) {</b>
+&nbsp;                // p would underflow, or x is out of the domain
+<b class="nc">&nbsp;                return 0;</b>
+&nbsp;            }
+<b class="nc">&nbsp;            if (x &lt;= 0) {</b>
+&nbsp;                // edge-of, or out-of, the domain
+<b class="nc">&nbsp;                return 1;</b>
+&nbsp;            }
+<b class="nc">&nbsp;            if (n == 1) {</b>
+<b class="nc">&nbsp;                return x;</b>
+&nbsp;            }
+&nbsp;            // x &lt;= 1/n
+&nbsp;            // [1] Equation (33)
+<b class="nc">&nbsp;            final double nx = n * x;</b>
+<b class="nc">&nbsp;            if (nx &lt;= 1) {</b>
+&nbsp;                // 1 - x (1+x)^(n-1): here x may be small so use log1p
+<b class="nc">&nbsp;                return 1 - x * Math.exp((n - 1) * Math.log1p(x));</b>
+&nbsp;            }
+&nbsp;            // 1 - 1/n &lt;= x &lt; 1
+&nbsp;            // [1] Equation (16)
+<b class="nc">&nbsp;            if (n - 1 &lt;= nx) {</b>
+&nbsp;                // (1-x)^n: here x &gt; 0.5 and 1-x is exact
+<b class="nc">&nbsp;                return Math.pow(1 - x, n);</b>
+&nbsp;            }
+<b class="nc">&nbsp;            return -1;</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        /**
+&nbsp;         * Calculates complementary probability {@code P[D_n^+ &gt;= x]}, or survival
+&nbsp;         * function (SF), for the one-sided one-sample Kolmogorov-Smirnov distribution.
+&nbsp;         *
+&nbsp;         * &lt;p&gt;Computes the result using the asymptotic formula Eq 5 in [1].
+&nbsp;         *
+&nbsp;         * @param x Statistic.
+&nbsp;         * @param n Sample size (assumed to be positive).
+&nbsp;         * @return \(P(D_n^+ &amp;ge; x)\)
+&nbsp;         */
+&nbsp;        private static double sfAsymptotic(double x, int n) {
+&nbsp;            // Magg &amp; Dicaire (1971) limiting form
+<b class="nc">&nbsp;            return Math.exp(-Math.pow(6.0 * n * x + 1, 2) / (18.0 * n));</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        /**
+&nbsp;         * Calculates complementary probability {@code P[D_n^+ &gt;= x]}, or survival
+&nbsp;         * function (SF), for the one-sided one-sample Kolmogorov-Smirnov distribution.
+&nbsp;         *
+&nbsp;         * &lt;p&gt;Computes the result using double-double arithmetic. The power function
+&nbsp;         * can use a fast approximation or a full power computation.
+&nbsp;         *
+&nbsp;         * &lt;p&gt;This function is safe for {@code x &gt; 1/n}. When {@code x} approaches
+&nbsp;         * sub-normal then division or multiplication by x can under/overflow. The
+&nbsp;         * case of {@code x &lt; 1/n} can be computed in {@code sfExact}.
+&nbsp;         *
+&nbsp;         * @param x Statistic (typically in (1/n, 1 - 1/n)).
+&nbsp;         * @param n Sample size (assumed to be positive).
+&nbsp;         * @param power Function to compute the scaled power (can be null).
+&nbsp;         * @return \(P(D_n^+ &amp;ge; x)\)
+&nbsp;         * @see DD#pow(int, long[])
+&nbsp;         * @see DDMath#pow(DD, int, long[])
+&nbsp;         */
+&nbsp;        static double sf(double x, int n, ScaledPower power) {
+&nbsp;            // Compute only the SF using Algorithm 1 pp 12.
+&nbsp;
+&nbsp;            // Compute: k = floor(n*x), alpha = nx - k; x = (k+alpha)/n with 0 &lt;= alpha &lt; 1
+<b class="nc">&nbsp;            final double[] alpha = {0};</b>
+<b class="nc">&nbsp;            final int k = splitX(n, x, alpha);</b>
+&nbsp;
+&nbsp;            // Choose the algorithm:
+&nbsp;            // Eq (13) Smirnov/Birnbaum-Tingey; or Smirnov/Dwass Eq (31)
+&nbsp;            // Eq. 13 sums j = 0 : floor( n(1-x) )  = n - 1 - floor(nx) iff alpha != 0; else n - floor(nx)
+&nbsp;            // Eq. 31 sums j = ceil( n(1-x) ) : n   = n - floor(nx)
+&nbsp;            // Drop a term term if x = (n-j)/n. Equates to shifting the floor* down and ceil* up:
+&nbsp;            // Eq. 13 N = floor*( n(1-x) ) = n - k - ((alpha!=0) ? 1 : 0) - ((alpha==0) ? 1 : 0)
+&nbsp;            // Eq. 31 N = n - ceil*( n(1-x) ) = k - ((alpha==0) ? 1 : 0)
+&nbsp;            // Where N is the number of terms - 1. This differs from Algorithm 1 by dropping
+&nbsp;            // a SD term when it should be zero (to working precision).
+<b class="nc">&nbsp;            final int regN = n - k - 1;</b>
+<b class="nc">&nbsp;            final int sdN = k - ((alpha[0] == 0) ? 1 : 0);</b>
+&nbsp;
+&nbsp;            // SD : Figure 3 (c) (pp. 6)
+&nbsp;            // Terms Aj (j = n -&gt; 0) have alternating signs through the range and may involve
+&nbsp;            // numbers much bigger than 1 causing cancellation; magnitudes increase then decrease.
+&nbsp;            // Section 3.3: Extra digits of precision required
+&nbsp;            // grows like Order(sqrt(n)). E.g. sf=0.7 (x ~ 0.4/sqrt(n)) loses 8 digits.
+&nbsp;            //
+&nbsp;            // Regular : Figure 3 (a, b)
+&nbsp;            // Terms Aj can have similar magnitude through the range; when x &gt;= 1/sqrt(n)
+&nbsp;            // the final few terms can be magnitudes smaller and could be ignored.
+&nbsp;            // Section 3.4: As x increases the magnitude of terms becomes more peaked,
+&nbsp;            // centred at j = (n-nx)/2, i.e. 50% of the terms.
+&nbsp;            //
+&nbsp;            // As n -&gt; inf the sf for x = k/n agrees with the asymptote Eq 5 in log2(n) bits.
+&nbsp;            //
+&nbsp;            // Figure 4 has lines at x = 1/n and x = 3/sqrt(n).
+&nbsp;            // Point between is approximately x = 4/n, i.e. nx &lt; 4 : k &lt;= 3.
+&nbsp;            // If faster when x &lt; 0.5 and requiring nx ~ 4 then requires n &gt;= 8.
+&nbsp;            //
+&nbsp;            // Note: If SD accuracy scales with sqrt(n) then we could use 1 / sqrt(n).
+&nbsp;            // That threshold is always above 4 / n when n is 16 (4/n = 1/sqrt(n) : n = 4^2).
+&nbsp;            // So the current thresholds are conservative.
+<b class="nc">&nbsp;            boolean sd = false;</b>
+<b class="nc">&nbsp;            if (sdN &lt; regN) {</b>
+&nbsp;                // Here x &lt; 0.5 and SD has fewer terms
+&nbsp;                // Always choose when we only have one additional term (i.e x &lt; 2/n)
+<b class="nc">&nbsp;                sd = sdN &lt;= 1;</b>
+&nbsp;                // Otherwise when x &lt; 4 / n
+<b class="nc">&nbsp;                sd |= sdN &lt;= SD_MAX_TERMS &amp;&amp; n &gt;= SD_MIN_N;</b>
+&nbsp;            }
+&nbsp;
+<b class="nc">&nbsp;            final int maxN = sd ? sdN : regN;</b>
+&nbsp;
+&nbsp;            // Note: if N &gt; &quot;very large&quot; use the asymptotic approximation.
+&nbsp;            // Currently this check is done on n (sample size) in the calling function.
+&nbsp;            // This provides a monotonic p-value for all x with the same n.
+&nbsp;
+&nbsp;            // Configure the algorithm.
+&nbsp;            // The error of double-double addition and multiplication is low (&lt; 2^-102).
+&nbsp;            // The error in Aj is mainly from the power function.
+&nbsp;            // fastPow error is around 2^-52, pow error is ~ 2^-70 or lower.
+&nbsp;            // Smirnoff-Dwass has a sum of terms that cancel and requires higher precision.
+&nbsp;            // The power can optionally be specified.
+&nbsp;            ScaledPower fpow;
+<b class="nc">&nbsp;            if (power == POWER_DEFAULT) {</b>
+&nbsp;                // SD has only a few terms. Use a high accuracy power.
+<b class="nc">&nbsp;                fpow = sd ? DDMath::pow : DD::pow;</b>
+&nbsp;            } else {
+<b class="nc">&nbsp;                fpow = power;</b>
+&nbsp;            }
+&nbsp;            // For the regular summation we must sum at least 50% of the terms. The number
+&nbsp;            // of required bits to sum remaining terms of the same magnitude is log2(N/2).
+&nbsp;            // These guards bits are conservative and &gt; ~99% of terms are typically used.
+<b class="nc">&nbsp;            final int sumBits = sd ? SD_SUM_PRECISION_BITS : SUM_PRECISION_BITS + log2(maxN &gt;&gt; 1);</b>
+&nbsp;
+&nbsp;            // Working variable for the exponent of scaled values
+<b class="nc">&nbsp;            final int[] ie = {0};</b>
+<b class="nc">&nbsp;            final long[] le = {0};</b>
+&nbsp;
+&nbsp;            // The terms Aj may over/underflow.
+&nbsp;            // This is handled by maintaining the sum(Aj) using a fractional representation.
+&nbsp;            // sum(Aj) maintained as 2^e * f with f in [0.5, 1)
+&nbsp;            DD sum;
+&nbsp;            long esum;
+&nbsp;
+&nbsp;            // Compute A0
+<b class="nc">&nbsp;            if (sd) {</b>
+&nbsp;                // A0 = (1+x)^(n-1)
+<b class="nc">&nbsp;                sum = fpow.pow(DD.ofSum(1, x), n - 1, le);</b>
+<b class="nc">&nbsp;                esum = le[0];</b>
+&nbsp;            } else {
+&nbsp;                // A0 = (1-x)^n / x
+<b class="nc">&nbsp;                sum = fpow.pow(DD.ofDifference(1, x), n, le);</b>
+<b class="nc">&nbsp;                esum = le[0];</b>
+&nbsp;                // x in (1/n, 1 - 1/n) so the divide of the fraction is safe
+<b class="nc">&nbsp;                sum = sum.divide(x).frexp(ie);</b>
+<b class="nc">&nbsp;                esum += ie[0];</b>
+&nbsp;            }
+&nbsp;
+&nbsp;            // Binomial coefficient c(n, j) maintained as 2^e * f with f in [1, 2)
+&nbsp;            // This value is integral but maintained to limited precision
+<b class="nc">&nbsp;            DD c = DD.ONE;</b>
+<b class="nc">&nbsp;            long ec = 0;</b>
+<b class="nc">&nbsp;            for (int i = 1; i &lt;= maxN; i++) {</b>
+&nbsp;                // c(n, j) = c(n, j-1) * (n-j+1) / j
+<b class="nc">&nbsp;                c = c.multiply(DD.fromQuotient(n - i + 1, i));</b>
+&nbsp;                // Here we maintain c in [1, 2) to restrict the scaled Aj term to [0.25, 2].
+<b class="nc">&nbsp;                final int b = Math.getExponent(c.hi());</b>
+<b class="nc">&nbsp;                if (b != 0) {</b>
+<b class="nc">&nbsp;                    c = c.scalb(-b);</b>
+<b class="nc">&nbsp;                    ec += b;</b>
+&nbsp;                }
+&nbsp;                // Compute Aj
+<b class="nc">&nbsp;                final int j = sd ? n - i : i;</b>
+&nbsp;                // Algorithm 4 pp. 27
+&nbsp;                // S = ((j/n) + x)^(j-1)
+&nbsp;                // T = ((n-j)/n - x)^(n-j)
+<b class="nc">&nbsp;                final DD s = fpow.pow(DD.fromQuotient(j, n).add(x), j - 1, le);</b>
+<b class="nc">&nbsp;                final long es = le[0];</b>
+<b class="nc">&nbsp;                final DD t = fpow.pow(DD.fromQuotient(n - j, n).subtract(x), n - j, le);</b>
+<b class="nc">&nbsp;                final long et = le[0];</b>
+&nbsp;                // Aj = C(n, j) * T * S
+&nbsp;                //    = 2^e * [1, 2] * [0.5, 1] * [0.5, 1]
+&nbsp;                //    = 2^e * [0.25, 2]
+<b class="nc">&nbsp;                final long eaj = ec + es + et;</b>
+&nbsp;                // Only compute and add to the sum when the exponents overlap by n-bits.
+<b class="nc">&nbsp;                if (eaj &gt; esum - sumBits) {</b>
+<b class="nc">&nbsp;                    DD aj = c.multiply(t).multiply(s);</b>
+&nbsp;                    // Scaling must offset by the scale of the sum
+<b class="nc">&nbsp;                    aj = aj.scalb((int) (eaj - esum));</b>
+<b class="nc">&nbsp;                    sum = sum.add(aj);</b>
+&nbsp;                } else {
+&nbsp;                    // Terms are expected to increase in magnitude then reduce.
+&nbsp;                    // Here the terms are insignificant and we can stop.
+&nbsp;                    // Effectively Aj -&gt; eps * sum, and most of the computation is done.
+&nbsp;                    break;
+&nbsp;                }
+&nbsp;
+&nbsp;                // Re-scale the sum
+<b class="nc">&nbsp;                sum = sum.frexp(ie);</b>
+<b class="nc">&nbsp;                esum += ie[0];</b>
+&nbsp;            }
+&nbsp;
+&nbsp;            // p = x * sum(Ai). Since the sum is normalised
+&nbsp;            // this is safe as long as x does not approach a sub-normal.
+&nbsp;            // Typically x in (1/n, 1 - 1/n).
+<b class="nc">&nbsp;            sum = sum.multiply(x);</b>
+&nbsp;            // Rescale the result
+<b class="nc">&nbsp;            sum = sum.scalb((int) esum);</b>
+<b class="nc">&nbsp;            if (sd) {</b>
+&nbsp;                // SF = 1 - CDF
+<b class="nc">&nbsp;                sum = sum.negate().add(1);</b>
+&nbsp;            }
+<b class="nc">&nbsp;            return clipProbability(sum.doubleValue());</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        /**
+&nbsp;         * Compute exactly {@code x = (k + alpha) / n} with {@code k} an integer and
+&nbsp;         * {@code alpha in [0, 1)}. Note that {@code k ~ floor(nx)} but may be rounded up
+&nbsp;         * if {@code alpha -&gt; 1} within working precision.
+&nbsp;         *
+&nbsp;         * &lt;p&gt;This computation is a significant source of increased error if performed in
+&nbsp;         * 64-bit arithmetic. Although the value alpha is only used for the PDF computation
+&nbsp;         * a value of {@code alpha == 0} indicates the final term of the SF summation can be
+&nbsp;         * dropped due to the cancellation of a power term {@code (x + j/n)} to zero with
+&nbsp;         * {@code x = (n-j)/n}. That is if {@code alpha == 0} then x is the fraction {@code k/n}
+&nbsp;         * and one Aj term is zero.
+&nbsp;         *
+&nbsp;         * @param n Sample size.
+&nbsp;         * @param x Statistic.
+&nbsp;         * @param alpha Output alpha.
+&nbsp;         * @return k
+&nbsp;         */
+&nbsp;        static int splitX(int n, double x, double[] alpha) {
+&nbsp;            // Described on page 14 in van Mulbregt [1].
+&nbsp;            // nx = U+V (exact)
+<b class="nc">&nbsp;            DD z = DD.ofProduct(n, x);</b>
+<b class="nc">&nbsp;            final double u = z.hi();</b>
+<b class="nc">&nbsp;            final double v = z.lo();</b>
+&nbsp;            // Integer part of nx is *almost* the integer part of U.
+&nbsp;            // Compute k = floor((U,V)) (changed from the listing of floor(U)).
+<b class="nc">&nbsp;            int k = (int) Math.floor(u);</b>
+&nbsp;            // Incorporate the round-off of u in the floor
+<b class="nc">&nbsp;            if (k == u) {</b>
+&nbsp;                // u is an integer. If v &lt; 0 then the floor is 1 lower.
+<b class="nc">&nbsp;                k += v &lt; 0 ? -1 : 0;</b>
+&nbsp;            }
+&nbsp;            // nx = k + ((U - k) + V) = k + (U1 + V1)
+<b class="nc">&nbsp;            z = z.subtract(k);</b>
+&nbsp;            // alpha = (U1, V1) = z
+&nbsp;            // alpha is in [0, 1) in double-double precision.
+&nbsp;            // Ensure the high part is in [0, 1) (i.e. in double precision).
+<b class="nc">&nbsp;            if (z.hi() == 1) {</b>
+&nbsp;                // Here alpha is ~ 1.0-eps.
+&nbsp;                // This occurs when x ~ j/n and n is large.
+<b class="nc">&nbsp;                k += 1;</b>
+<b class="nc">&nbsp;                alpha[0] = 0;</b>
+&nbsp;            } else {
+<b class="nc">&nbsp;                alpha[0] = z.hi();</b>
+&nbsp;            }
+<b class="nc">&nbsp;            return k;</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        /**
+&nbsp;         * Returns {@code floor(log2(n))}.
+&nbsp;         *
+&nbsp;         * @param n Value.
+&nbsp;         * @return approximate log2(n)
+&nbsp;         */
+&nbsp;        private static int log2(int n) {
+<b class="nc">&nbsp;            return 31 - Integer.numberOfLeadingZeros(n);</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Computes {@code P(sqrt(n) D_n &gt; x)}, the limiting form for the distribution of
+&nbsp;     * Kolmogorov&#39;s D_n as described in Simard and L’Ecuyer (2011) (Eq. 5, or K0 Eq. 6).
+&nbsp;     *
+&nbsp;     * &lt;p&gt;Computes \( 2 \sum_{i=1}^\infty (-1)^(i-1) e^{-2 i^2 x^2} \), or
+&nbsp;     * \( 1 - (\sqrt{2 \pi} / x) * \sum_{i=1}^\infty { e^{-(2i-1)^2 \pi^2 / (8x^2) } } \)
+&nbsp;     * when x is small.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;Note: This computes the upper Kolmogorov sum.
+&nbsp;     *
+&nbsp;     * @param x Argument x = sqrt(n) * d
+&nbsp;     * @return Upper Kolmogorov sum evaluated at x
+&nbsp;     */
+&nbsp;    static double ksSum(double x) {
+&nbsp;        // Switch computation when p ~ 0.5
+<b class="nc">&nbsp;        if (x &lt; X_KS_HALF) {</b>
+&nbsp;            // When x -&gt; 0 the result is 1
+<b class="nc">&nbsp;            if (x &lt; X_KS_ONE) {</b>
+<b class="nc">&nbsp;                return 1;</b>
+&nbsp;            }
+&nbsp;
+&nbsp;            // t = exp(-pi^2/8x^2)
+&nbsp;            // p = 1 - sqrt(2pi)/x * (t + t^9 + t^25 + t^49 + t^81 + ...)
+&nbsp;            //   = 1 - sqrt(2pi)/x * t * (1 + t^8 + t^24 + t^48 + t^80 + ...)
+&nbsp;
+<b class="nc">&nbsp;            final double logt = -PI2 / (8 * x * x);</b>
+<b class="nc">&nbsp;            final double t = Math.exp(logt);</b>
+<b class="nc">&nbsp;            final double s = ROOT_TWO_PI / x;</b>
+&nbsp;
+<b class="nc">&nbsp;            final double t8 = Math.pow(t, 8);</b>
+<b class="nc">&nbsp;            if (t8 &lt; EPS) {</b>
+&nbsp;                // Cannot compute 1 + t^8.
+&nbsp;                // 1 - sqrt(2pi)/x * exp(-pi^2/8x^2)
+&nbsp;                // 1 - exp(log(sqrt(2pi)/x) - pi^2/8x^2)
+<b class="nc">&nbsp;                return -Math.expm1(Math.log(s) + logt);</b>
+&nbsp;            }
+&nbsp;
+&nbsp;            // sum = t^((2i-1)^2 - 1), i=1, 2, 3, 4, 5, ...
+&nbsp;            //     = 1 + t^8 + t^24 + t^48 + t^80 + ...
+&nbsp;            // With x = 0.82757... the smallest terms cannot be added when i==5
+&nbsp;            // i.e. t^48 + t^80 == t^48
+&nbsp;            // sum = 1 + (t^8 * (1 + t^16 * (1 + t^24)))
+<b class="nc">&nbsp;            final double sum = 1 + (t8 * (1 + t8 * t8 * (1 + t8 * t8 * t8)));</b>
+<b class="nc">&nbsp;            return 1 - s * t * sum;</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        // t = exp(-2 x^2)
+&nbsp;        // p = 2 * (t - t^4 + t^9 - t^16 + ...)
+&nbsp;        // sum = -1^(i-1) t^(i^2), i=i, 2, 3, ...
+&nbsp;
+&nbsp;        // Sum of alternating terms of reducing magnitude:
+&nbsp;        // Will converge when exp(-2x^2) * eps &gt;= exp(-2x^2)^(i^2)
+&nbsp;        // When x = 0.82757... this requires max i==5
+&nbsp;        // i.e. t * eps &gt;= t^36 (i=6)
+<b class="nc">&nbsp;        final double t = Math.exp(-2 * x * x);</b>
+&nbsp;
+&nbsp;        // (t - t^4 + t^9 - t^16 + t^25)
+&nbsp;        // t * (1 - t^3 * (1 - t^5 * (1 - t^7 * (1 - t^9))))
+<b class="nc">&nbsp;        final double t2 = t * t;</b>
+<b class="nc">&nbsp;        final double t3 = t * t * t;</b>
+<b class="nc">&nbsp;        final double t4 = t2 * t2;</b>
+<b class="nc">&nbsp;        final double sum = t * (1 - t3 * (1 - t2 * t3 * (1 - t3 * t4 * (1 - t2 * t3 * t4))));</b>
+<b class="nc">&nbsp;        return clipProbability(2 * sum);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Clip the probability to the range [0, 1].
+&nbsp;     *
+&nbsp;     * @param p Probability.
+&nbsp;     * @return p in [0, 1]
+&nbsp;     */
+&nbsp;    static double clipProbability(double p) {
+<b class="nc">&nbsp;        return Math.min(1, Math.max(0, p));</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2023-09-04 19:44</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,533 @@
+<?xml version="1.0"?>
+
+<!--
+   Licensed to the Apache Software Foundation (ASF) under one or more
+  contributor license agreements.  See the NOTICE file distributed with
+  this work for additional information regarding copyright ownership.
+  The ASF licenses this file to You under the Apache License, Version 2.0
+  (the "License"); you may not use this file except in compliance with
+  the License.  You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+  -->
+
+<document xmlns="http://maven.apache.org/XDOC/2.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd/xdoc-2.0.xsd">
+  <properties>
+    <title>Apache Commons Statistics User Guide</title>
+  </properties>
+
+  <body>
+
+    <section name="" id="page_title">
+      <h1>Apache Commons Statistics User Guide</h1>
+    </section>
+
+    <section name="Contents" id="toc">
+      <ul>
+        <li>
+          <a href="#overview">Overview</a>
+        </li>
+        <li>
+          <a href="#example-modules">Example Modules</a>
+        </li>
+        <li>
+          <a href="#distributions">Probability Distributions</a>
+          <ul>
+            <li>
+              <a href="#dist_overview">Overview</a>
+            </li>
+            <li>
+              <a href="#dist_api">API</a>
+            </li>
+            <li>
+              <a href="#dist_imp_details">Implementation Details</a>
+            </li>
+            <li>
+              <a href="#dist_complements">Complementary Probabilities</a>
+            </li>
+          </ul>
+        </li>
+        <li>
+          <a href="#inference">Inference</a>
+          <ul>
+            <li>
+              <a href="#inference_overview">Overview</a>
+            </li>
+            <li>
+              <a href="#inference_examples">Examples</a>
+            </li>
+          </ul>
+        </li>
+        <li>
+          <a href="#ranking">Ranking</a>
+        </li>
+      </ul>
+    </section>
+
+    <section name="Overview" id="overview">
+      <p>
+        Apache Commons Statistics provides utilities for statistical applications. The code
+        originated in the <code><a href="https://commons.apache.org/proper/commons-math/">
+        commons-math</a></code> project but was pulled out into a separate project for better
+        maintainability and has since undergone numerous improvements.
+      </p>
+
+      <p>
+        Commons Statistics is divided into a number of submodules:
+      </p>
+      <ul>
+        <li>
+          <code><a href="../commons-statistics-distribution/index.html">
+          commons-statistics-distribution</a></code> - Provides interfaces
+          and classes for probability distributions.
+        </li>
+        <li>
+          <code><a href="../commons-statistics-inference/index.html">
+          commons-statistics-inference</a></code> - Provides hypothesis testing.
+        </li>
+        <li>
+          <code><a href="../commons-statistics-ranking/index.html">
+          commons-statistics-ranking</a></code> - Provides rank transformations.
+        </li>
+      </ul>
+    </section>
+
+    <section name="Example Modules" id="example-modules">
+      <p>
+        In addition to the modules above, the Commons Statistics
+        <a href="https://commons.apache.org/statistics/download_statistics.cgi">source distribution</a>
+        contains example code demonstrating library functionality and/or providing useful
+        development utilities. These modules are not part of the public API of the library and no
+        guarantees are made concerning backwards compatibility. The
+        <a href="../commons-statistics-examples/modules.html">example module parent page</a>
+        contains a listing of available modules.
+      </p>
+      <hr/>
+    </section>
+
+    <section name="Probability Distributions" id="distributions">
+      <subsection name="Overview" id="dist_overview">
+        <p>
+          The <code>commons-statistics-distribution</code> module provides a framework and implementations for some commonly used
+          probability distributions. Continuous univariate distributions are represented by
+          implementations of the
+          <a href="../commons-statistics-distribution/apidocs/org/apache/commons/statistics/distribution/ContinuousDistribution.html">ContinuousDistribution</a>
+          interface.  Discrete distributions implement
+          <a href="../commons-statistics-distribution/apidocs/org/apache/commons/statistics/distribution/DiscreteDistribution.html">DiscreteDistribution</a>
+          (values must be mapped to integers).
+        </p>
+      </subsection>
+      <subsection name="API" id="dist_api">
+        <p>
+          The distribution framework provides the means to compute probability density,
+          probability mass and cumulative probability functions for several well-known
+          discrete (integer-valued) and continuous probability distributions.
+          The API also allows for the computation of inverse cumulative probabilities
+          and sampling from distributions.
+        </p>
+        <p>
+          For an instance <code>f</code> of a distribution <code>F</code>,
+          and a domain value, <code>x</code>, <code>f.cumulativeProbability(x)</code>
+          computes <code>P(X &lt;= x)</code> where <code>X</code> is a random variable distributed
+          as <code>F</code>. The complement of the cumulative probability,
+          <code>f.survivalProbability(x)</code> computes <code>P(X &gt; x)</code>. Note that
+          the survival probability is approximately equal to <code>1 - P(X &lt;= x)</code> but
+          does not suffer from cancellation error as the cumulative probability approaches 1.
+          The cancellation error may cause a (total) loss of accuracy when
+          <code>P(X &lt;= x) ~ 1</code>
+          (see <a href="#complements">complementary probabilities</a>).
+        </p>
+<source class="prettyprint">
+TDistribution t = TDistribution.of(29);
+double lowerTail = t.cumulativeProbability(-2.656);   // P(T(29) &lt;= -2.656)
+double upperTail = t.survivalProbability(2.75);       // P(T(29) &gt; 2.75)
+</source>
+        <p>
+          For <a href="../commons-statistics-distribution/apidocs/org/apache/commons/statistics/distribution/DiscreteDistribution.html">discrete</a>
+          <code>F</code>, the probability mass function is given by <code>f.probability(x)</code>.
+          For <a href="../commons-statistics-distribution/apidocs/org/apache/commons/statistics/distribution/ContinuousDistribution.html">continuous</a>
+          <code>F</code>, the probability density function is given by <code>f.density(x)</code>.
+          Distributions also implement <code>f.probability(x1, x2)</code> for computing
+          <code>P(x1 &lt; X &lt;= x2)</code>.
+        </p>
+<source class="prettyprint">
+PoissonDistribution pd = PoissonDistribution.of(1.23);
+double p1 = pd.probability(5);
+double p2 = pd.probability(5, 5);
+double p3 = pd.probability(4, 5);
+// p2 == 0
+// p1 == p3
+</source>
+        <p>
+          Inverse distribution functions can be computed using the
+          <code>inverseCumulativeProbability</code> and <code>inverseSurvivalProbability</code>
+          methods. For continuous <code>f</code> and <code>p</code> a probability,
+          <code>f.inverseCumulativeProbability(p)</code> returns
+        </p>
+        <p>
+          \[ x = \begin{cases}
+             \inf \{ x \in \mathbb R : P(X \le x) \ge p\}   &amp; \text{for } 0 \lt p \le 1 \\
+             \inf \{ x \in \mathbb R : P(X \le x) \gt 0 \}  &amp; \text{for } p = 0
+             \end{cases} \]
+        </p>
+        <p>
+          where <code>X</code> is distributed as <code>F</code>.<br/>
+          Likewise <code>f.inverseSurvivalProbability(p)</code> returns
+        </p>
+        <p>
+          \[ x = \begin{cases}
+             \inf \{ x \in \mathbb R : P(X \gt x) \le p\}   &amp; \text{for } 0 \le p \lt 1 \\
+             \inf \{ x \in \mathbb R : P(X \gt x) \lt 1 \}  &amp; \text{for } p = 1
+             \end{cases} \]
+        </p>
+<source class="prettyprint">
+NormalDistribution n = NormalDistribution.of(0, 1);
+double x1 = n.inverseCumulativeProbability(1e-300);
+double x2 = n.inverseSurvivalProbability(1e-300);
+// x1 == -x2 ~ -37.0471
+</source>
+        <p>
+          For discrete <code>F</code>, the definition is the same, with \( \mathbb Z \)
+          (the integers) in place of \( \mathbb R \). Note that, in the discrete case,
+          the strict inequality on \( p \) in the definition can make a difference when
+          \( p \) is an attained value of the distribution. For example moving to the next
+          larger value of \( p \) will return the value \( x + 1 \) for inverse CDF.
+        </p>
+        <p>
+          All distributions provide accessors for the parameters used to create the distribution,
+          and a mean and variance. The return value when the mean or variance
+          is undefined is noted in the class javadoc.
+        </p>
+<source class="prettyprint">
+ChiSquaredDistribution chi2 = ChiSquaredDistribution.of(42);
+double df = chi2.getDegreesOfFreedom();    // 42
+double mean = chi2.getMean();              // 42
+double variance = chi2.getVariance();      // 84
+
+CauchyDistribution cauchy = CauchyDistribution.of(1.23, 4.56);
+double location = cauchy.getLocation();    // 1.23
+double scale = cauchy.getScale();          // 4.56
+double undefined1 = cauchy.getMean();      // NaN
+double undefined2 = cauchy.getVariance();  // NaN
+</source>
+        <p>
+          The supported domain of the distribution is provided by the
+          <code>getSupportLowerBound</code> and <code>getSupportUpperBound</code> methods.
+        </p>
+<source class="prettyprint">
+BinomialDistribution b = BinomialDistribution.of(13, 0.15);
+int lower = b.getSupportLowerBound();  // 0
+int upper = b.getSupportUpperBound();  // 13
+</source>
+        <p>
+          All distributions implement a <code>createSampler(UniformRandomProvider rng)</code>
+          method to support random sampling from the distribution, where <code>UniformRandomProvider</code>
+          is an interface defined in <a href="https://commons.apache.org/proper/commons-rng/">Commons RNG</a>.
+          The sampler is a functional interface whose functional method is <code>sample()</code>,
+          suitable for generation of <code>double</code> or <code>int</code> samples.
+          Default <code>samples()</code> methods are provided to create a
+          <code>DoubleStream</code> or <code>IntStream</code>.
+        </p>
+<source class="prettyprint">
+// From Commons RNG Simple
+UniformRandomProvider rng = RandomSource.KISS.create(123L);
+
+NormalDistribution n = NormalDistribution.of(0, 1);
+double x = n.createSampler(rng).sample();
+
+// Generate a number of samples
+GeometricDistribution g = GeometricDistribution.of(0.75);
+int[] k = g.createSampler(rng).samples(100).toArray();
+// k.length == 100
+</source>
+        <p>
+          Note that even when distributions are immutable, the sampler is not immutable as it
+          depends on the instance of the mutable <code>UniformRandomProvider</code>. Generation of
+          many samples in a multi-threaded application should use a separate instance of
+          <code>UniformRandomProvider</code> per thread. Any synchronization should be avoided
+          for best performance. By default the streams returned from the <code>samples()</code>
+          methods are sequential.
+        </p>
+      </subsection>
+      <subsection name="Implementation Details" id="dist_imp_details">
+        <p>
+          Instances are constructed using factory methods, typically a static method in the
+          distribution class named <code>of</code>. This allows the returned instance
+          to be specialised to the distribution parameters.
+        </p>
+        <p>
+          Exceptions will be raised by the factory method when constructing the distribution
+          using invalid parameters. See the class javadoc for exception conditions.
+        </p>
+        <p>
+          Unless otherwise noted, distribution instances are immutable. This allows sharing
+          an instance between threads for computations.
+        </p>
+        <p>
+          Exceptions will not be raised by distributions for an invalid <code>x</code> argument
+          to probability functions. Typically the cumulative probability functions will return
+          0 or 1 for an out-of-domain argument, depending on which the side of the domain bound
+          the argument falls, and the density or probability mass functions return 0.
+          Return values for <code>x</code> arguments when the result is
+          undefined should be documented in the class javadoc. For example the beta distribution
+          is undefined for <code>x = 0, alpha &lt; 1</code> or <code>x = 1, beta &lt; 1</code>.
+          Note: This out-of-domain behaviour may be different from distributions in the
+          <code>org.apache.commons.math3.distribution</code> package. Users upgrading from
+          <code><a href="https://commons.apache.org/proper/commons-math/">commons-math</a></code>
+          should check the appropriate class javadoc.
+        </p>
+        <p>
+          An exception will be raised by distributions for an invalid <code>p</code> argument
+          to inverse probability functions. The argument must be in the range <code>[0, 1]</code>.
+        </p>
+      </subsection>
+      <subsection name="Complementary Probabilities" id="dist_complements">
+        <p>
+          The distributions provide the cumulative probability <code>p</code> and its complement,
+          the survival probability, <code>q = 1 - p</code>. When the probability
+          <code>q</code> is small use of the cumulative probability to compute <code>q</code> can
+          result in dramatic loss of accuracy. This is due to the distribution of floating-point
+          numbers having a
+          <a href="https://en.wikipedia.org/wiki/Reciprocal_distribution">log-uniform</a>
+          distribution as the limiting distribution. There are far more
+          representable numbers as the probability value approaches zero than when it approaches
+          one.
+        </p>
+        <p>
+          The difference is illustrated with the result of computing the upper tail of a
+          probability distribution.
+        </p>
+<source class="prettyprint">
+ChiSquaredDistribution chi2 = ChiSquaredDistribution.of(42);
+double q1 = 1 - chi2.cumulativeProbability(168);
+double q2 = chi2.survivalProbability(168);
+// q1 == 0
+// q2 != 0
+</source>
+        <p>
+          In this case the value <code>1 - p</code> has only a single bit of information as
+          <code>x</code> approaches 168. For example the value <code>1 - p(x=167)</code>
+          is <code>2<sup>-53</sup></code> (or approximately <code>1.11e-16</code>).
+          The complement <code>q</code> retains information
+          much further into the long tail as shown in the following table:
+        </p>
+        <table border="1" style="width: auto">
+          <tr><th colspan="3"><font size="+1">Chi-squared distribution, 42 degrees of freedom</font></th></tr>
+          <tr><th>x</th><th>1 - p</th><th>q</th></tr>
+          <tr><td>166</td><td>1.11e-16</td><td>1.16e-16</td></tr>
+          <tr><td>167</td><td>1.11e-16</td><td>7.96e-17</td></tr>
+          <tr><td>168</td><td>0</td><td>5.43e-17</td></tr>
+          <tr><td>...</td><td></td><td></td></tr>
+          <tr><td>200</td><td>0</td><td>1.19e-22</td></tr>
+        </table>
+        <p>
+          Probability computations should use the appropriate cumulative or survival function
+          to calculate the lower or upper tail respectively. The same care should be applied
+          when inverting probability distributions. It is preferred to compute either
+          <code>p &le; 0.5</code> or <code>q &le; 0.5</code> without loss of accuracy and then
+          invert respectively the cumulative probability using <code>p</code> or the survival
+          probabilty using <code>q</code> to obtain <code>x</code>.
+        </p>
+<source class="prettyprint">
+ChiSquaredDistribution chi2 = ChiSquaredDistribution.of(42);
+double q = 5.43e-17;
+// Incorrect: p = 1 - q == 1.0 !!!
+double x1 = chi2.inverseCumulativeProbability(1 - q);
+// Correct: invert q
+double x2 = chi2.inverseSurvivalProbability(q);
+// x1 == +infinity
+// x2 ~ 168.0
+</source>
+        <p>
+          Note: The survival probability functions were not present in the
+          <code>org.apache.commons.math3.distribution</code> package. Users upgrading from
+          <code><a href="https://commons.apache.org/proper/commons-math/">commons-math</a></code>
+          should update usage of the cumulative probability functions where appropriate.
+        </p>
+      </subsection>
+    </section>
+    <section name="Inference" id="inference">
+      <p>
+        The <code>commons-statistics-inference</code> module provides hypothesis testing.
+      </p>
+      <subsection name="Overview" id="inference_overview">
+        <p>
+          The module provides test classes that implement a single, or family, of statistical
+          tests. Each test class provides methods to compute a test statistic and a p-value for the
+          significance of the statistic. These can be computed together using a <code>test</code>
+          method and returned as a
+          <a href="../commons-statistics-inference/apidocs/org/apache/commons/statistics/inference/DiscreteDistribution.html">SignificanceResult</a>.
+          The <code>SignificanceResult</code> has a method that can be used to <code>reject</code>
+          the null hypothesis at the provided significance level. Test classes may extend the
+          <code>SignificanceResult</code> to return more information about the test result,
+          for example the computed degrees of freedom.
+        </p>
+        <p>
+          Alternatively a <code>statistic</code> method is provided to compute <i>only</i> the
+          statistic as a <code>double</code> value. This statistic can be compared to a pre-computed
+          critical value, for example from a table of critical values.
+        </p>
+        <p>
+          A test is obtained using the <code>withDefaults()</code> method to return the test with
+          all options set to their default value. Any test options can be configured using
+          property change methods to return a new instance of the test. Tests that support an
+          <a href="../commons-statistics-inference/apidocs/org/apache/commons/statistics/inference/AlternativeHypothesis.html">
+          alternate hypothesis</a> will use a two-sided test by default. Test that support multiple
+          <a href="../commons-statistics-inference/apidocs/org/apache/commons/statistics/inference/PValueMethod.html">
+          p-value methods</a> will default to an appropriate computation for the size of the input
+          data. Unless otherwise noted test instances are immutable.
+        </p>
+      </subsection>
+      <subsection name="Examples" id="inference_examples">
+        <p>
+          A chi-square test that the observed counts conform to the expected frequencies.
+        </p>
+<source class="prettyprint">
+double[] expected = {0.25, 0.5, 0.25};
+long[] observed = {57, 123, 38};
+
+SignificanceResult result = ChiSquareTest.withDefaults()
+                                         .test(expected, observed);
+result.getPValue();    // 0.0316148
+result.reject(0.05);   // true
+result.reject(0.01);   // false
+</source>
+        <p>
+          A paired t-test that the student's marks in the math exam were greater than the science
+          exam. This fails to reject the null hypothesis (that there was no difference) with
+          95% confidence.
+        </p>
+<source class="prettyprint">
+double[] math    = {53, 69, 65, 65, 67, 79, 86, 65, 62, 69};   // mean = 68.0
+double[] science = {75, 65, 68, 63, 55, 65, 73, 45, 51, 52};   // mean = 61.2
+
+SignificanceResult result = TTest.withDefaults()
+                                 .with(AlternativeHypothesis.GREATER_THAN)
+                                 .pairedTest(math, science);
+result.getPValue();    // 0.05764
+result.reject(0.05);   // false
+</source>
+        <p>
+          A G-test that the allele frequencies conform to the expected Hardy-Weinberg proportions.
+          This is an example of an intrinsic hypothesis where the expected frequencies are computed
+          using the observations and the degrees of freedom must be adjusted.
+          The data is from McDonald (1989) Selection component analysis
+          of the Mpi locus in the amphipod Platorchestia platensis.
+          <i>Heredity</i> <b>62</b>: 243-249.
+        </p>
+<source class="prettyprint">
+// Allele frequencies: Mpi 90/90, Mpi 90/100, Mpi 100/100
+long[] observed = {1203, 2919, 1678};
+// Mpi 90 proportion
+double p = (2.0 * observed[0] + observed[1]) /
+           (2 * Arrays.stream(observed).sum());   // 5325 / 11600 = 0.459
+
+// Hardy-Weinberg proportions
+double[] expected = {p * p, 2 * p * (1 - p), (1 - p) * (1 - p)};
+// 0.211, 0.497, 0.293
+
+SignificanceResult result = GTest.withDefaults()
+                                 .withDegreesOfFreedomAdjustment(1)
+                                 .test(expected, observed);
+result.getStatistic();   // 1.03
+result.getPValue();      // 0.309
+result.reject(0.05);     // false
+</source>
+        <p>
+          A one-way analysis of variance test. This is an example where the result has more
+          information than the test statistic and the p-value.
+          The data is from McDonald <i>et al</i> (1991) Allozymes and morphometric characters of
+          three species of Mytilus in the Northern and Southern Hemispheres.
+          <i>Marine Biology</i> <b>111</b>: 323-333.
+        </p>
+<source class="prettyprint">
+double[] tillamook = {0.0571, 0.0813, 0.0831, 0.0976, 0.0817, 0.0859, 0.0735, 0.0659, 0.0923, 0.0836};
+double[] newport = {0.0873, 0.0662, 0.0672, 0.0819, 0.0749, 0.0649, 0.0835, 0.0725};
+double[] petersburg = {0.0974, 0.1352, 0.0817, 0.1016, 0.0968, 0.1064, 0.105};
+double[] magadan = {0.1033, 0.0915, 0.0781, 0.0685, 0.0677, 0.0697, 0.0764, 0.0689};
+double[] tvarminne = {0.0703, 0.1026, 0.0956, 0.0973, 0.1039, 0.1045};
+
+Collection&lt;double[]&gt; data = Arrays.asList(tillamook, newport, petersburg, magadan, tvarminne);
+OneWayAnova.Result result = OneWayAnova.withDefaults()
+                                       .test(data);
+result.getStatistic();   // 7.12
+result.getPValue();      // 2.8e-4
+result.reject(0.001);    // true
+</source>
+      <p>
+        The result also provides the between and within group degrees of freedom and the mean
+        squares allowing reporting of the results in a table:
+      </p>
+      <table>
+        <tr><th></th><th>degrees of freedom</th><th>mean square</th><th>F</th><th>p</th></tr>
+        <tr><td>between groups</td><td>4</td><td>0.001113</td><td>7.12</td><td>2.8e-4</td></tr>
+        <tr><td>within groups</td><td>34</td><td>0.000159</td><td></td><td></td></tr>
+      </table>
+      </subsection>
+    </section>
+    <section name="Ranking" id="ranking">
+      <p>
+        The <code>commons-statistics-ranking</code> module provides rank transformations.
+      </p>
+      <p>
+        The <code>NaturalRanking</code> class provides a ranking based on the natural ordering
+        of floating-point values. Ranks are assigned to the input numbers in ascending order,
+        starting from 1.
+      </p>
+<source class="prettyprint">
+NaturalRanking ranking = new NaturalRanking();
+ranking.apply(new double[] {5, 6, 7, 8});   // 1, 2, 3, 4
+ranking.apply(new double[] {8, 5, 7, 6});   // 4, 1, 3, 2
+</source>
+      <p>
+        The special case of <code>NaN</code> values are handled using the configured
+        <code>NaNStragegy</code>. The default is to raise an exception.
+      </p>
+<source class="prettyprint">
+double[] data = new double[] {6, 5, Double.NaN, 7};
+new NaturalRanking().apply(data);                      // IllegalArgumentException
+new NaturalRanking(NaNStrategy.MINIMAL).apply(data);   // (4, 2, 1, 3)
+new NaturalRanking(NaNStrategy.MAXIMAL).apply(data);   // (3, 1, 4, 2)
+new NaturalRanking(NaNStrategy.REMOVED).apply(data);   // (3, 1, 2)
+new NaturalRanking(NaNStrategy.FIXED).apply(data);     // (3, 1, NaN, 2)
+new NaturalRanking(NaNStrategy.FAILED).apply(data);    // IllegalArgumentException
+</source>
+      <p>
+        Ties are handled using the configured <code>TiesStragegy</code>. The default is to
+        use an average.
+      </p>
+<source class="prettyprint">
+double[] data = new double[] {7, 5, 7, 6};
+new NaturalRanking(.apply(data);                           // (3.5, 1, 3.5, 2)
+new NaturalRanking(TiesStrategy.SEQUENTIAL).apply(data);   // (3, 1, 4, 2)
+new NaturalRanking(TiesStrategy.MINIMUM).apply(data);      // (3, 1, 3, 2)
+new NaturalRanking(TiesStrategy.MAXIMUM).apply(data);      // (4, 1, 4, 2)
+new NaturalRanking(TiesStrategy.AVERAGE).apply(data);      // (3.5, 1, 3.5, 2)
+new NaturalRanking(TiesStrategy.RANDOM).apply(data);       // (3, 1, 4, 2)  or  (4, 1, 3, 2)
+</source>
+      <p>
+        The source of randomness defaults to a system supplied generator. The randomness can be
+        provided as a <code>LongSupplier</code> of random 64-bit values.
+      </p>
+<source class="prettyprint">
+double[] data = new double[] {7, 5, 7, 6};
+new NaturalRanking(TiesStrategy.RANDOM).apply(data);
+new NaturalRanking(new SplittableRandom()::nextInt).apply(data);
+// From Commons RNG
+UniformRandomProvider rng = RandomSource.KISS.create();
+new NaturalRanking(rng::nextInt).apply(data);
+// ranks: (3, 1, 4, 2)  or  (4, 1, 3, 2)
+</source>
+    </section>
+
+  </body>
+
+</document>

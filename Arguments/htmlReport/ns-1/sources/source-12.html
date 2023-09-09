@@ -1,0 +1,505 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=windows-1252"> 
+  <title>Coverage Report > OneWayAnova</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope:     <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">org.apache.commons.statistics.inference</a>
+</div>
+
+<h1>Coverage Summary for Class: OneWayAnova (org.apache.commons.statistics.inference)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">OneWayAnova</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/8)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/55)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">OneWayAnova$Result</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/7)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/20)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/15)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/75)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/*
+&nbsp; * Licensed to the Apache Software Foundation (ASF) under one or more
+&nbsp; * contributor license agreements.  See the NOTICE file distributed with
+&nbsp; * this work for additional information regarding copyright ownership.
+&nbsp; * The ASF licenses this file to You under the Apache License, Version 2.0
+&nbsp; * (the &quot;License&quot;); you may not use this file except in compliance with
+&nbsp; * the License.  You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *      http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;package org.apache.commons.statistics.inference;
+&nbsp;
+&nbsp;import java.util.Collection;
+&nbsp;import java.util.Iterator;
+&nbsp;import org.apache.commons.numbers.core.Sum;
+&nbsp;import org.apache.commons.statistics.distribution.FDistribution;
+&nbsp;
+&nbsp;/**
+&nbsp; * Implements one-way ANOVA (analysis of variance) statistics.
+&nbsp; *
+&nbsp; * &lt;p&gt;Tests for differences between two or more categories of univariate data
+&nbsp; * (for example, the body mass index of accountants, lawyers, doctors and
+&nbsp; * computer programmers). When two categories are given, this is equivalent to
+&nbsp; * the {@link TTest}.
+&nbsp; *
+&nbsp; * &lt;p&gt;This implementation computes the F statistic using the definitional formula:
+&nbsp; *
+&nbsp; * &lt;p&gt;\[ F = \frac{\text{between-group variability}}{\text{within-group variability}} \]
+&nbsp; *
+&nbsp; * @see &lt;a href=&quot;https://en.wikipedia.org/wiki/Analysis_of_variance&quot;&gt;Analysis of variance (Wikipedia)&lt;/a&gt;
+&nbsp; * @see &lt;a href=&quot;https://en.wikipedia.org/wiki/F-test#Multiple-comparison_ANOVA_problems&quot;&gt;
+&nbsp; * Multiple-comparison ANOVA problems (Wikipedia)&lt;/a&gt;
+&nbsp; * @see &lt;a href=&quot;https://www.biostathandbook.com/onewayanova.html&quot;&gt;
+&nbsp; * McDonald, J.H. 2014. Handbook of Biological Statistics (3rd ed.). Sparky House Publishing, Baltimore, Maryland.
+&nbsp; * One-way anova. pp 145-156.&lt;/a&gt;
+&nbsp; * @since 1.1
+&nbsp; */
+&nbsp;public final class OneWayAnova {
+&nbsp;    /** Default instance. */
+<b class="nc">&nbsp;    private static final OneWayAnova DEFAULT = new OneWayAnova();</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Result for the one-way ANOVA.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;This class is immutable.
+&nbsp;     *
+&nbsp;     * @since 1.1
+&nbsp;     */
+&nbsp;    public static final class Result extends BaseSignificanceResult {
+&nbsp;        /** Degrees of freedom in numerator (between groups). */
+&nbsp;        private final int dfbg;
+&nbsp;        /** Degrees of freedom in denominator (within groups). */
+&nbsp;        private final long dfwg;
+&nbsp;        /** Mean square between groups. */
+&nbsp;        private final double msbg;
+&nbsp;        /** Mean square within groups. */
+&nbsp;        private final double mswg;
+&nbsp;        /** nO value used to partition the variance. */
+&nbsp;        private final double nO;
+&nbsp;
+&nbsp;        /**
+&nbsp;         * @param dfbg Degrees of freedom in numerator (between groups).
+&nbsp;         * @param dfwg Degrees of freedom in denominator (within groups).
+&nbsp;         * @param msbg Mean square between groups.
+&nbsp;         * @param mswg Mean square within groups.
+&nbsp;         * @param nO Factor for partitioning the variance.
+&nbsp;         * @param f F statistic
+&nbsp;         * @param p P-value.
+&nbsp;         */
+&nbsp;        Result(int dfbg, long dfwg, double msbg, double mswg, double nO, double f, double p) {
+<b class="nc">&nbsp;            super(f, p);</b>
+<b class="nc">&nbsp;            this.dfbg = dfbg;</b>
+<b class="nc">&nbsp;            this.dfwg = dfwg;</b>
+<b class="nc">&nbsp;            this.msbg = msbg;</b>
+<b class="nc">&nbsp;            this.mswg = mswg;</b>
+<b class="nc">&nbsp;            this.nO = nO;</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        /**
+&nbsp;         * Gets the degrees of freedom in the numerator (between groups).
+&nbsp;         *
+&nbsp;         * @return degrees of freedom between groups
+&nbsp;         */
+&nbsp;        int getDFBG() {
+<b class="nc">&nbsp;            return dfbg;</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        /**
+&nbsp;         * Gets the degrees of freedom in the denominator (within groups).
+&nbsp;         *
+&nbsp;         * @return degrees of freedom within groups
+&nbsp;         */
+&nbsp;        long getDFWG() {
+<b class="nc">&nbsp;            return dfwg;</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        /**
+&nbsp;         * Gets the mean square between groups.
+&nbsp;         *
+&nbsp;         * @return mean square between groups
+&nbsp;         */
+&nbsp;        public double getMSBG() {
+<b class="nc">&nbsp;            return msbg;</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        /**
+&nbsp;         * Gets the mean square within groups.
+&nbsp;         *
+&nbsp;         * @return mean square within groups
+&nbsp;         */
+&nbsp;        public double getMSWG() {
+<b class="nc">&nbsp;            return mswg;</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        /**
+&nbsp;         * Gets the variance component between groups.
+&nbsp;         *
+&nbsp;         * &lt;p&gt;The value is a partitioning of the variance.
+&nbsp;         * It is the complement of {@link #getVCWG()}.
+&nbsp;         *
+&nbsp;         * &lt;p&gt;Partitioning the variance applies only to a model II
+&nbsp;         * (random effects) one-way anova. This applies when the
+&nbsp;         * groups are random samples from a larger set of groups;
+&nbsp;         * partitioning the variance allows comparison of the
+&nbsp;         * variation between groups to the variation within groups.
+&nbsp;         *
+&nbsp;         * &lt;p&gt;If the {@linkplain #getMSBG() MSBG} is less than the
+&nbsp;         * {@linkplain #getMSWG() MSWG} this returns 0. Otherwise this
+&nbsp;         * creates an estimate of the added variance component
+&nbsp;         * between groups as:
+&nbsp;         *
+&nbsp;         * &lt;p&gt;\[ \text{between-group variance} = A = (\text{MS}_{\text{bg}} - \text{MS}_{\text{wg}}) / n_o \]
+&nbsp;         *
+&nbsp;         * &lt;p&gt;where \( n_o \) is a number close to, but usually less than,
+&nbsp;         * the arithmetic mean of the sample size \(n_i\) of each
+&nbsp;         * of the \( a \) groups:
+&nbsp;         *
+&nbsp;         * &lt;p&gt;\[ n_o = \frac{1}{a-1} \left( \sum_i{n_i} - \frac{\sum_i{n_i^2}}{\sum_i{n_i}} \right) \]
+&nbsp;         *
+&nbsp;         * &lt;p&gt;The added variance component among groups \( A \) is expressed
+&nbsp;         * as a fraction of the total variance components \( A + B \) where
+&nbsp;         * \( B \) is the {@linkplain #getMSWG() MSWG}.
+&nbsp;         *
+&nbsp;         * @return variance component between groups (in [0, 1]).
+&nbsp;         */
+&nbsp;        public double getVCBG() {
+<b class="nc">&nbsp;            if (msbg &lt;= mswg) {</b>
+<b class="nc">&nbsp;                return 0;</b>
+&nbsp;            }
+&nbsp;            // a is an estimate of the between-group variance
+<b class="nc">&nbsp;            final double a = (msbg - mswg) / nO;</b>
+<b class="nc">&nbsp;            final double b = mswg;</b>
+<b class="nc">&nbsp;            return a / (a + b);</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        /**
+&nbsp;         * Gets the variance component within groups.
+&nbsp;         *
+&nbsp;         * &lt;p&gt;The value is a partitioning of the variance.
+&nbsp;         * It is the complement of {@link #getVCBG()}. See
+&nbsp;         * that method for details.
+&nbsp;         *
+&nbsp;         * @return variance component within groups (in [0, 1]).
+&nbsp;         */
+&nbsp;        public double getVCWG() {
+<b class="nc">&nbsp;            if (msbg &lt;= mswg) {</b>
+<b class="nc">&nbsp;                return 1;</b>
+&nbsp;            }
+<b class="nc">&nbsp;            final double a = (msbg - mswg) / nO;</b>
+<b class="nc">&nbsp;            final double b = mswg;</b>
+<b class="nc">&nbsp;            return b / (a + b);</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Private constructor. */
+<b class="nc">&nbsp;    private OneWayAnova() {</b>
+&nbsp;        // Do nothing
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Return an instance using the default options.
+&nbsp;     *
+&nbsp;     * @return default instance
+&nbsp;     */
+&nbsp;    public static OneWayAnova withDefaults() {
+<b class="nc">&nbsp;        return DEFAULT;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Computes the F statistic for an ANOVA test for a collection of category data,
+&nbsp;     * evaluating the null hypothesis that there is no difference among the means of
+&nbsp;     * the data categories.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;Special cases:
+&nbsp;     * &lt;ul&gt;
+&nbsp;     * &lt;li&gt;If the value in each category is the same (no variance within groups) but different
+&nbsp;     * between groups, the f-value is {@linkplain Double#POSITIVE_INFINITY infinity}.
+&nbsp;     * &lt;li&gt;If the value in every group is the same (no variance within or between groups),
+&nbsp;     * the f-value is {@link Double#NaN NaN}.
+&nbsp;     * &lt;/ul&gt;
+&nbsp;     *
+&nbsp;     * @param data Category summary data.
+&nbsp;     * @return F statistic
+&nbsp;     * @throws IllegalArgumentException if the number of categories is less than
+&nbsp;     * two; a contained category does not have at least one value; or all
+&nbsp;     * categories have only one value (zero degrees of freedom within groups)
+&nbsp;     */
+&nbsp;    public double statistic(Collection&lt;double[]&gt; data) {
+<b class="nc">&nbsp;        final double[] f = new double[1];</b>
+<b class="nc">&nbsp;        aov(data, f);</b>
+<b class="nc">&nbsp;        return f[0];</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Performs an ANOVA test for a collection of category data,
+&nbsp;     * evaluating the null hypothesis that there is no difference among the means of
+&nbsp;     * the data categories.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;Special cases:
+&nbsp;     * &lt;ul&gt;
+&nbsp;     * &lt;li&gt;If the value in each category is the same (no variance within groups) but different
+&nbsp;     * between groups, the f-value is {@linkplain Double#POSITIVE_INFINITY infinity} and the p-value is zero.
+&nbsp;     * &lt;li&gt;If the value in every group is the same (no variance within or between groups),
+&nbsp;     * the f-value and p-value are {@link Double#NaN NaN}.
+&nbsp;     * &lt;/ul&gt;
+&nbsp;     *
+&nbsp;     * @param data Category summary data.
+&nbsp;     * @return test result
+&nbsp;     * @throws IllegalArgumentException if the number of categories is less than
+&nbsp;     * two; a contained category does not have at least one value; or all
+&nbsp;     * categories have only one value (zero degrees of freedom within groups)
+&nbsp;     */
+&nbsp;    public Result test(Collection&lt;double[]&gt; data) {
+<b class="nc">&nbsp;        return aov(data, null);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Performs an ANOVA test for a collection of category data, evaluating the null
+&nbsp;     * hypothesis that there is no difference among the means of the data categories.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;This is a utility method to allow computation of the F statistic without
+&nbsp;     * the p-value or partitioning of the variance. If the {@code statistic} is not null
+&nbsp;     * the method will record the F statistic in the array and return null.
+&nbsp;     *
+&nbsp;     * @param data Category summary data.
+&nbsp;     * @param statistic Result for the F statistic (or null).
+&nbsp;     * @return test result (or null)
+&nbsp;     * @throws IllegalArgumentException if the number of categories is less than two; a
+&nbsp;     * contained category does not have at least one value; or all categories have only
+&nbsp;     * one value (zero degrees of freedom within groups)
+&nbsp;     */
+&nbsp;    private static Result aov(Collection&lt;double[]&gt; data, double[] statistic) {
+<b class="nc">&nbsp;        Arguments.checkCategoriesRequiredSize(data.size(), 2);</b>
+<b class="nc">&nbsp;        long n = 0;</b>
+<b class="nc">&nbsp;        for (final double[] array : data) {</b>
+<b class="nc">&nbsp;            n += array.length;</b>
+<b class="nc">&nbsp;            Arguments.checkValuesRequiredSize(array.length, 1);</b>
+<b class="nc">&nbsp;        }</b>
+<b class="nc">&nbsp;        final long dfwg = n - data.size();</b>
+<b class="nc">&nbsp;        if (dfwg == 0) {</b>
+<b class="nc">&nbsp;            throw new InferenceException(InferenceException.ZERO, &quot;Degrees of freedom within groups&quot;);</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        // wg = within group
+&nbsp;        // bg = between group
+&nbsp;
+&nbsp;        // F = Var(bg) / Var(wg)
+&nbsp;        // Var = SS / df
+&nbsp;        // SStotal = sum((x - u)^2) = sum(x^2) - sum(x)^2/n
+&nbsp;        //         = SSwg + SSbg
+&nbsp;        // Some cancellation of terms reduces the computation to 3 sums:
+&nbsp;        // SSwg = [ sum(x^2) - sum(x)^2/n ] - [ sum_g { sum(sum(x^2) - sum(x)^2/n) } ]
+&nbsp;        // SSbg = SStotal - SSwg
+&nbsp;        //      = sum_g { sum(x)^2/n) } - sum(x)^2/n
+&nbsp;        // SSwg = SStotal - SSbg
+&nbsp;        //      = sum(x^2) - sum_g { sum(x)^2/n) }
+&nbsp;
+&nbsp;        // Stabilize the computation by shifting all to a common mean of zero.
+&nbsp;        // This minimise the magnitude of x^2 terms.
+&nbsp;        // The terms sum(x)^2/n -&gt; 0. Included them to capture the round-off.
+<b class="nc">&nbsp;        final double m = StatisticUtils.mean(data);</b>
+<b class="nc">&nbsp;        final Sum sxx = Sum.create();</b>
+<b class="nc">&nbsp;        final Sum sx = Sum.create();</b>
+<b class="nc">&nbsp;        final Sum sg = Sum.create();</b>
+&nbsp;        // Track if each group had the same value
+<b class="nc">&nbsp;        boolean eachSame = true;</b>
+<b class="nc">&nbsp;        for (final double[] array : data) {</b>
+<b class="nc">&nbsp;            eachSame = eachSame &amp;&amp; allMatch(array[0], array);</b>
+<b class="nc">&nbsp;            final Sum s = Sum.create();</b>
+<b class="nc">&nbsp;            for (final double v : array) {</b>
+<b class="nc">&nbsp;                final double x = v - m;</b>
+<b class="nc">&nbsp;                s.add(x);</b>
+&nbsp;                // sum(x)
+<b class="nc">&nbsp;                sx.add(x);</b>
+&nbsp;                // sum(x^2)
+<b class="nc">&nbsp;                sxx.add(x * x);</b>
+&nbsp;            }
+&nbsp;            // Create the negative sum so we can subtract it via &#39;add&#39;
+&nbsp;            // -sum_g { sum(x)^2/n) }
+<b class="nc">&nbsp;            sg.add(-Math.pow(s.getAsDouble(), 2) / array.length);</b>
+<b class="nc">&nbsp;        }</b>
+&nbsp;
+&nbsp;        // Note: SS terms should not be negative given:
+&nbsp;        // SS = sum((x - u)^2)
+&nbsp;        // This can happen due to floating-point error in sum(x^2) - sum(x)^2/n
+<b class="nc">&nbsp;        final double sswg = Math.max(0, sxx.add(sg).getAsDouble());</b>
+&nbsp;        // Flip the sign back
+<b class="nc">&nbsp;        final double ssbg = Math.max(0, -sg.add(Math.pow(sx.getAsDouble(), 2) / n).getAsDouble());</b>
+<b class="nc">&nbsp;        final int dfbg = data.size() - 1;</b>
+&nbsp;        // Handle edge-cases:
+&nbsp;        // Note: 0 / 0 -&gt; NaN : x / 0 -&gt; inf
+&nbsp;        // These are documented results and should output p=NaN or 0.
+&nbsp;        // This result will occur naturally.
+&nbsp;        // However the SS totals may not be 0.0 so we correct these cases.
+<b class="nc">&nbsp;        final boolean allSame = eachSame &amp;&amp; allMatch(data);</b>
+<b class="nc">&nbsp;        final double msbg = allSame ? 0 : ssbg / dfbg;</b>
+<b class="nc">&nbsp;        final double mswg = eachSame ? 0 : sswg / dfwg;</b>
+<b class="nc">&nbsp;        final double f = msbg / mswg;</b>
+<b class="nc">&nbsp;        if (statistic != null) {</b>
+<b class="nc">&nbsp;            statistic[0] = f;</b>
+<b class="nc">&nbsp;            return null;</b>
+&nbsp;        }
+<b class="nc">&nbsp;        final double p = FDistribution.of(dfbg, dfwg).survivalProbability(f);</b>
+&nbsp;
+&nbsp;        // Support partitioning the variance
+&nbsp;        // ni = size of each of the groups
+&nbsp;        // nO=(1/(a?1))*(sum(ni)?(sum(ni^2)/sum(ni))
+<b class="nc">&nbsp;        final double nO = (n - data.stream()</b>
+<b class="nc">&nbsp;                .mapToDouble(x -&gt; Math.pow(x.length, 2)).sum() / n) / dfbg;</b>
+&nbsp;
+<b class="nc">&nbsp;        return new Result(dfbg, dfwg, msbg, mswg, nO, f, p);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Return true if all values in the array match the specified value.
+&nbsp;     *
+&nbsp;     * @param v Value.
+&nbsp;     * @param a Array.
+&nbsp;     * @return true if all match
+&nbsp;     */
+&nbsp;    private static boolean allMatch(double v, double[] a) {
+<b class="nc">&nbsp;        for (final double w : a) {</b>
+<b class="nc">&nbsp;            if (v != w) {</b>
+<b class="nc">&nbsp;                return false;</b>
+&nbsp;            }
+&nbsp;        }
+<b class="nc">&nbsp;        return true;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Return true if all values in the arrays match.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;Assumes that there are at least two arrays and that each array has the same
+&nbsp;     * value throughout. Thus only the first element in each array is checked.
+&nbsp;     *
+&nbsp;     * @param data Arrays.
+&nbsp;     * @return true if all match
+&nbsp;     */
+&nbsp;    private static boolean allMatch(Collection&lt;double[]&gt; data) {
+<b class="nc">&nbsp;        final Iterator&lt;double[]&gt; iter = data.iterator();</b>
+<b class="nc">&nbsp;        final double v = iter.next()[0];</b>
+<b class="nc">&nbsp;        while (iter.hasNext()) {</b>
+<b class="nc">&nbsp;            if (iter.next()[0] != v) {</b>
+<b class="nc">&nbsp;                return false;</b>
+&nbsp;            }
+&nbsp;        }
+<b class="nc">&nbsp;        return true;</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2023-09-04 19:44</div>
+</div>
+</body>
+</html>

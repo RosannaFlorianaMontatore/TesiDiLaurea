@@ -1,0 +1,3039 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=windows-1252"> 
+  <title>Coverage Report > Dfp</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope:     <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">org.apache.commons.math4.legacy.core.dfp</a>
+</div>
+
+<h1>Coverage Summary for Class: Dfp (org.apache.commons.math4.legacy.core.dfp)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">Dfp</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/113)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/1084)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">Dfp$1</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/1)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/114)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/1085)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/*
+&nbsp; * Licensed to the Apache Software Foundation (ASF) under one or more
+&nbsp; * contributor license agreements.  See the NOTICE file distributed with
+&nbsp; * this work for additional information regarding copyright ownership.
+&nbsp; * The ASF licenses this file to You under the Apache License, Version 2.0
+&nbsp; * (the &quot;License&quot;); you may not use this file except in compliance with
+&nbsp; * the License.  You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *      http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package org.apache.commons.math4.legacy.core.dfp;
+&nbsp;
+&nbsp;import java.util.Arrays;
+&nbsp;
+&nbsp;import org.apache.commons.math4.legacy.core.RealFieldElement;
+&nbsp;import org.apache.commons.math4.legacy.exception.DimensionMismatchException;
+&nbsp;
+&nbsp;/**
+&nbsp; *  Decimal floating point library for Java
+&nbsp; *
+&nbsp; *  &lt;p&gt;Another floating point class.  This one is built using radix 10000
+&nbsp; *  which is 10&lt;sup&gt;4&lt;/sup&gt;, so its almost decimal.&lt;/p&gt;
+&nbsp; *
+&nbsp; *  &lt;p&gt;The design goals here are:
+&nbsp; *  &lt;ol&gt;
+&nbsp; *    &lt;li&gt;Decimal math, or close to it&lt;/li&gt;
+&nbsp; *    &lt;li&gt;Settable precision (but no mix between numbers using different settings)&lt;/li&gt;
+&nbsp; *    &lt;li&gt;Portability.  Code should be kept as portable as possible.&lt;/li&gt;
+&nbsp; *    &lt;li&gt;Performance&lt;/li&gt;
+&nbsp; *    &lt;li&gt;Accuracy  - Results should always be +/- 1 ULP for basic
+&nbsp; *         algebraic operation&lt;/li&gt;
+&nbsp; *    &lt;li&gt;Comply with IEEE 854-1987 as much as possible.
+&nbsp; *         (See IEEE 854-1987 notes below)&lt;/li&gt;
+&nbsp; *  &lt;/ol&gt;
+&nbsp; *
+&nbsp; *  &lt;p&gt;Trade offs:
+&nbsp; *  &lt;ol&gt;
+&nbsp; *    &lt;li&gt;Memory foot print.  I&#39;m using more memory than necessary to
+&nbsp; *         represent numbers to get better performance.&lt;/li&gt;
+&nbsp; *    &lt;li&gt;Digits are bigger, so rounding is a greater loss.  So, if you
+&nbsp; *         really need 12 decimal digits, better use 4 base 10000 digits
+&nbsp; *         there can be one partially filled.&lt;/li&gt;
+&nbsp; *  &lt;/ol&gt;
+&nbsp; *
+&nbsp; *  &lt;p&gt;Numbers are represented  in the following form:
+&nbsp; *  &lt;div style=&quot;white-space: pre&quot;&gt;&lt;code&gt;
+&nbsp; *  n  =  sign &amp;times; mant &amp;times; (radix)&lt;sup&gt;exp&lt;/sup&gt;;
+&nbsp; *  &lt;/code&gt;&lt;/div&gt;
+&nbsp; *  where sign is &amp;plusmn;1, mantissa represents a fractional number between
+&nbsp; *  zero and one.  mant[0] is the least significant digit.
+&nbsp; *  exp is in the range of -32767 to 32768
+&nbsp; *
+&nbsp; *  &lt;p&gt;IEEE 854-1987  Notes and differences&lt;/p&gt;
+&nbsp; *
+&nbsp; *  &lt;p&gt;IEEE 854 requires the radix to be either 2 or 10.  The radix here is
+&nbsp; *  10000, so that requirement is not met, but  it is possible that a
+&nbsp; *  subclassed can be made to make it behave as a radix 10
+&nbsp; *  number.  It is my opinion that if it looks and behaves as a radix
+&nbsp; *  10 number then it is one and that requirement would be met.&lt;/p&gt;
+&nbsp; *
+&nbsp; *  &lt;p&gt;The radix of 10000 was chosen because it should be faster to operate
+&nbsp; *  on 4 decimal digits at once instead of one at a time.  Radix 10 behavior
+&nbsp; *  can be realized by adding an additional rounding step to ensure that
+&nbsp; *  the number of decimal digits represented is constant.&lt;/p&gt;
+&nbsp; *
+&nbsp; *  &lt;p&gt;The IEEE standard specifically leaves out internal data encoding,
+&nbsp; *  so it is reasonable to conclude that such a subclass of this radix
+&nbsp; *  10000 system is merely an encoding of a radix 10 system.&lt;/p&gt;
+&nbsp; *
+&nbsp; *  &lt;p&gt;IEEE 854 also specifies the existence of &quot;sub-normal&quot; numbers.  This
+&nbsp; *  class does not contain any such entities.  The most significant radix
+&nbsp; *  10000 digit is always non-zero.  Instead, we support &quot;gradual underflow&quot;
+&nbsp; *  by raising the underflow flag for numbers less with exponent less than
+&nbsp; *  expMin, but don&#39;t flush to zero until the exponent reaches MIN_EXP-digits.
+&nbsp; *  Thus the smallest number we can represent would be:
+&nbsp; *  1E(-(MIN_EXP-digits-1)*4),  eg, for digits=5, MIN_EXP=-32767, that would
+&nbsp; *  be 1e-131092.&lt;/p&gt;
+&nbsp; *
+&nbsp; *  &lt;p&gt;IEEE 854 defines that the implied radix point lies just to the right
+&nbsp; *  of the most significant digit and to the left of the remaining digits.
+&nbsp; *  This implementation puts the implied radix point to the left of all
+&nbsp; *  digits including the most significant one.  The most significant digit
+&nbsp; *  here is the one just to the right of the radix point.  This is a fine
+&nbsp; *  detail and is really only a matter of definition.  Any side effects of
+&nbsp; *  this can be rendered invisible by a subclass.&lt;/p&gt;
+&nbsp; * @see DfpField
+&nbsp; * @since 2.2
+&nbsp; */
+&nbsp;public class Dfp implements RealFieldElement&lt;Dfp&gt; {
+&nbsp;
+&nbsp;    /** The radix, or base of this system.  Set to 10000 */
+&nbsp;    public static final int RADIX = 10000;
+&nbsp;
+&nbsp;    /** The minimum exponent before underflow is signaled.  Flush to zero
+&nbsp;     *  occurs at minExp-DIGITS */
+&nbsp;    public static final int MIN_EXP = -32767;
+&nbsp;
+&nbsp;    /** The maximum exponent before overflow is signaled and results flushed
+&nbsp;     *  to infinity. */
+&nbsp;    public static final int MAX_EXP =  32768;
+&nbsp;
+&nbsp;    /** The amount under/overflows are scaled by before going to trap handler. */
+&nbsp;    public static final int ERR_SCALE = 32760;
+&nbsp;
+&nbsp;    /** Indicator value for normal finite numbers. */
+&nbsp;    public static final byte FINITE = 0;
+&nbsp;
+&nbsp;    /** Indicator value for Infinity. */
+&nbsp;    public static final byte INFINITE = 1;
+&nbsp;
+&nbsp;    /** Indicator value for signaling NaN. */
+&nbsp;    public static final byte SNAN = 2;
+&nbsp;
+&nbsp;    /** Indicator value for quiet NaN. */
+&nbsp;    public static final byte QNAN = 3;
+&nbsp;
+&nbsp;    /** String for NaN representation. */
+&nbsp;    private static final String NAN_STRING = &quot;NaN&quot;;
+&nbsp;
+&nbsp;    /** String for positive infinity representation. */
+&nbsp;    private static final String POS_INFINITY_STRING = &quot;Infinity&quot;;
+&nbsp;
+&nbsp;    /** String for negative infinity representation. */
+&nbsp;    private static final String NEG_INFINITY_STRING = &quot;-Infinity&quot;;
+&nbsp;
+&nbsp;    /** Name for traps triggered by addition. */
+&nbsp;    private static final String ADD_TRAP = &quot;add&quot;;
+&nbsp;
+&nbsp;    /** Name for traps triggered by multiplication. */
+&nbsp;    private static final String MULTIPLY_TRAP = &quot;multiply&quot;;
+&nbsp;
+&nbsp;    /** Name for traps triggered by division. */
+&nbsp;    private static final String DIVIDE_TRAP = &quot;divide&quot;;
+&nbsp;
+&nbsp;    /** Name for traps triggered by square root. */
+&nbsp;    private static final String SQRT_TRAP = &quot;sqrt&quot;;
+&nbsp;
+&nbsp;    /** Name for traps triggered by alignment. */
+&nbsp;    private static final String ALIGN_TRAP = &quot;align&quot;;
+&nbsp;
+&nbsp;    /** Name for traps triggered by truncation. */
+&nbsp;    private static final String TRUNC_TRAP = &quot;trunc&quot;;
+&nbsp;
+&nbsp;    /** Name for traps triggered by nextAfter. */
+&nbsp;    private static final String NEXT_AFTER_TRAP = &quot;nextAfter&quot;;
+&nbsp;
+&nbsp;    /** Name for traps triggered by lessThan. */
+&nbsp;    private static final String LESS_THAN_TRAP = &quot;lessThan&quot;;
+&nbsp;
+&nbsp;    /** Name for traps triggered by greaterThan. */
+&nbsp;    private static final String GREATER_THAN_TRAP = &quot;greaterThan&quot;;
+&nbsp;
+&nbsp;    /** Name for traps triggered by newInstance. */
+&nbsp;    private static final String NEW_INSTANCE_TRAP = &quot;newInstance&quot;;
+&nbsp;
+&nbsp;    /** Mantissa. */
+&nbsp;    protected int[] mant;
+&nbsp;
+&nbsp;    /** Sign bit: 1 for positive, -1 for negative. */
+&nbsp;    protected byte sign;
+&nbsp;
+&nbsp;    /** Exponent. */
+&nbsp;    protected int exp;
+&nbsp;
+&nbsp;    /** Indicator for non-finite / non-number values. */
+&nbsp;    protected byte nans;
+&nbsp;
+&nbsp;    /** Factory building similar Dfp&#39;s. */
+&nbsp;    private final DfpField field;
+&nbsp;
+&nbsp;    /** Makes an instance with a value of zero.
+&nbsp;     * @param field field to which this instance belongs
+&nbsp;     */
+<b class="nc">&nbsp;    protected Dfp(final DfpField field) {</b>
+<b class="nc">&nbsp;        mant = new int[field.getRadixDigits()];</b>
+<b class="nc">&nbsp;        sign = 1;</b>
+<b class="nc">&nbsp;        exp = 0;</b>
+<b class="nc">&nbsp;        nans = FINITE;</b>
+<b class="nc">&nbsp;        this.field = field;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Create an instance from a byte value.
+&nbsp;     * @param field field to which this instance belongs
+&nbsp;     * @param x value to convert to an instance
+&nbsp;     */
+&nbsp;    protected Dfp(final DfpField field, byte x) {
+<b class="nc">&nbsp;        this(field, (long) x);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Create an instance from an int value.
+&nbsp;     * @param field field to which this instance belongs
+&nbsp;     * @param x value to convert to an instance
+&nbsp;     */
+&nbsp;    protected Dfp(final DfpField field, int x) {
+<b class="nc">&nbsp;        this(field, (long) x);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Create an instance from a long value.
+&nbsp;     * @param field field to which this instance belongs
+&nbsp;     * @param x value to convert to an instance
+&nbsp;     */
+<b class="nc">&nbsp;    protected Dfp(final DfpField field, long x) {</b>
+&nbsp;
+&nbsp;        // initialize as if 0
+<b class="nc">&nbsp;        mant = new int[field.getRadixDigits()];</b>
+<b class="nc">&nbsp;        nans = FINITE;</b>
+<b class="nc">&nbsp;        this.field = field;</b>
+&nbsp;
+<b class="nc">&nbsp;        boolean isLongMin = false;</b>
+<b class="nc">&nbsp;        if (x == Long.MIN_VALUE) {</b>
+&nbsp;            // special case for Long.MIN_VALUE (-9223372036854775808)
+&nbsp;            // we must shift it before taking its absolute value
+<b class="nc">&nbsp;            isLongMin = true;</b>
+<b class="nc">&nbsp;            ++x;</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        // set the sign
+<b class="nc">&nbsp;        if (x &lt; 0) {</b>
+<b class="nc">&nbsp;            sign = -1;</b>
+<b class="nc">&nbsp;            x = -x;</b>
+&nbsp;        } else {
+<b class="nc">&nbsp;            sign = 1;</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        exp = 0;</b>
+<b class="nc">&nbsp;        while (x != 0) {</b>
+<b class="nc">&nbsp;            System.arraycopy(mant, mant.length - exp, mant, mant.length - 1 - exp, exp);</b>
+<b class="nc">&nbsp;            mant[mant.length - 1] = (int) (x % RADIX);</b>
+<b class="nc">&nbsp;            x /= RADIX;</b>
+<b class="nc">&nbsp;            exp++;</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        if (isLongMin) {</b>
+&nbsp;            // remove the shift added for Long.MIN_VALUE
+&nbsp;            // we know in this case that fixing the last digit is sufficient
+<b class="nc">&nbsp;            for (int i = 0; i &lt; mant.length - 1; i++) {</b>
+<b class="nc">&nbsp;                if (mant[i] != 0) {</b>
+<b class="nc">&nbsp;                    mant[i]++;</b>
+<b class="nc">&nbsp;                    break;</b>
+&nbsp;                }
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Create an instance from a double value.
+&nbsp;     * @param field field to which this instance belongs
+&nbsp;     * @param x value to convert to an instance
+&nbsp;     */
+<b class="nc">&nbsp;    protected Dfp(final DfpField field, double x) {</b>
+&nbsp;
+&nbsp;        // initialize as if 0
+<b class="nc">&nbsp;        mant = new int[field.getRadixDigits()];</b>
+<b class="nc">&nbsp;        sign = 1;</b>
+<b class="nc">&nbsp;        exp = 0;</b>
+<b class="nc">&nbsp;        nans = FINITE;</b>
+<b class="nc">&nbsp;        this.field = field;</b>
+&nbsp;
+<b class="nc">&nbsp;        long bits = Double.doubleToLongBits(x);</b>
+<b class="nc">&nbsp;        long mantissa = bits &amp; 0x000fffffffffffffL;</b>
+<b class="nc">&nbsp;        int exponent = (int) ((bits &amp; 0x7ff0000000000000L) &gt;&gt; 52) - 1023;</b>
+&nbsp;
+<b class="nc">&nbsp;        if (exponent == -1023) {</b>
+&nbsp;            // Zero or sub-normal
+<b class="nc">&nbsp;            if (x == 0) {</b>
+&nbsp;                // make sure 0 has the right sign
+<b class="nc">&nbsp;                if ((bits &amp; 0x8000000000000000L) != 0) {</b>
+<b class="nc">&nbsp;                    sign = -1;</b>
+&nbsp;                }
+&nbsp;                return;
+&nbsp;            }
+&nbsp;
+<b class="nc">&nbsp;            exponent++;</b>
+&nbsp;
+&nbsp;            // Normalize the subnormal number
+<b class="nc">&nbsp;            while ((mantissa &amp; 0x0010000000000000L) == 0) {</b>
+<b class="nc">&nbsp;                exponent--;</b>
+<b class="nc">&nbsp;                mantissa &lt;&lt;= 1;</b>
+&nbsp;            }
+<b class="nc">&nbsp;            mantissa &amp;= 0x000fffffffffffffL;</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        if (exponent == 1024) {</b>
+&nbsp;            // infinity or NAN
+<b class="nc">&nbsp;            if (Double.isNaN(x)) {</b>
+<b class="nc">&nbsp;                sign = (byte) 1;</b>
+<b class="nc">&nbsp;                nans = QNAN;</b>
+<b class="nc">&nbsp;            } else if (x &lt; 0) {</b>
+<b class="nc">&nbsp;                sign = (byte) -1;</b>
+<b class="nc">&nbsp;                nans = INFINITE;</b>
+&nbsp;            } else {
+<b class="nc">&nbsp;                sign = (byte) 1;</b>
+<b class="nc">&nbsp;                nans = INFINITE;</b>
+&nbsp;            }
+&nbsp;            return;
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        Dfp xdfp = new Dfp(field, mantissa);</b>
+<b class="nc">&nbsp;        xdfp = xdfp.divide(new Dfp(field, 4503599627370496L)).add(field.getOne());  // Divide by 2^52, then add one</b>
+<b class="nc">&nbsp;        xdfp = xdfp.multiply(DfpMath.pow(field.getTwo(), exponent));</b>
+&nbsp;
+<b class="nc">&nbsp;        if ((bits &amp; 0x8000000000000000L) != 0) {</b>
+<b class="nc">&nbsp;            xdfp = xdfp.negate();</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        System.arraycopy(xdfp.mant, 0, mant, 0, mant.length);</b>
+<b class="nc">&nbsp;        sign = xdfp.sign;</b>
+<b class="nc">&nbsp;        exp  = xdfp.exp;</b>
+<b class="nc">&nbsp;        nans = xdfp.nans;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Copy constructor.
+&nbsp;     * @param d instance to copy
+&nbsp;     */
+<b class="nc">&nbsp;    public Dfp(final Dfp d) {</b>
+<b class="nc">&nbsp;        mant  = d.mant.clone();</b>
+<b class="nc">&nbsp;        sign  = d.sign;</b>
+<b class="nc">&nbsp;        exp   = d.exp;</b>
+<b class="nc">&nbsp;        nans  = d.nans;</b>
+<b class="nc">&nbsp;        field = d.field;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Create an instance from a String representation.
+&nbsp;     * @param field field to which this instance belongs
+&nbsp;     * @param s string representation of the instance
+&nbsp;     */
+<b class="nc">&nbsp;    protected Dfp(final DfpField field, final String s) {</b>
+&nbsp;
+&nbsp;        // initialize as if 0
+<b class="nc">&nbsp;        mant = new int[field.getRadixDigits()];</b>
+<b class="nc">&nbsp;        sign = 1;</b>
+<b class="nc">&nbsp;        exp = 0;</b>
+<b class="nc">&nbsp;        nans = FINITE;</b>
+<b class="nc">&nbsp;        this.field = field;</b>
+&nbsp;
+<b class="nc">&nbsp;        boolean decimalFound = false;</b>
+<b class="nc">&nbsp;        final int rsize = 4;   // size of radix in decimal digits</b>
+<b class="nc">&nbsp;        final int offset = 4;  // Starting offset into Striped</b>
+<b class="nc">&nbsp;        final char[] striped = new char[getRadixDigits() * rsize + offset * 2];</b>
+&nbsp;
+&nbsp;        // Check some special cases
+<b class="nc">&nbsp;        if (s.equals(POS_INFINITY_STRING)) {</b>
+<b class="nc">&nbsp;            sign = (byte) 1;</b>
+<b class="nc">&nbsp;            nans = INFINITE;</b>
+&nbsp;            return;
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        if (s.equals(NEG_INFINITY_STRING)) {</b>
+<b class="nc">&nbsp;            sign = (byte) -1;</b>
+<b class="nc">&nbsp;            nans = INFINITE;</b>
+&nbsp;            return;
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        if (s.equals(NAN_STRING)) {</b>
+<b class="nc">&nbsp;            sign = (byte) 1;</b>
+<b class="nc">&nbsp;            nans = QNAN;</b>
+&nbsp;            return;
+&nbsp;        }
+&nbsp;
+&nbsp;        // Check for scientific notation
+<b class="nc">&nbsp;        int p = s.indexOf(&quot;e&quot;);</b>
+<b class="nc">&nbsp;        if (p == -1) { // try upper case?</b>
+<b class="nc">&nbsp;            p = s.indexOf(&quot;E&quot;);</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        final String fpdecimal;
+<b class="nc">&nbsp;        int sciexp = 0;</b>
+<b class="nc">&nbsp;        if (p != -1) {</b>
+&nbsp;            // scientific notation
+<b class="nc">&nbsp;            fpdecimal = s.substring(0, p);</b>
+<b class="nc">&nbsp;            String fpexp = s.substring(p + 1);</b>
+<b class="nc">&nbsp;            boolean negative = false;</b>
+&nbsp;
+<b class="nc">&nbsp;            for (int i = 0; i &lt; fpexp.length(); i++) {</b>
+<b class="nc">&nbsp;                if (fpexp.charAt(i) == &#39;-&#39;) {</b>
+<b class="nc">&nbsp;                    negative = true;</b>
+<b class="nc">&nbsp;                    continue;</b>
+&nbsp;                }
+<b class="nc">&nbsp;                if (fpexp.charAt(i) &gt;= &#39;0&#39; &amp;&amp; fpexp.charAt(i) &lt;= &#39;9&#39;) {</b>
+<b class="nc">&nbsp;                    sciexp = sciexp * 10 + fpexp.charAt(i) - &#39;0&#39;;</b>
+&nbsp;                }
+&nbsp;            }
+&nbsp;
+<b class="nc">&nbsp;            if (negative) {</b>
+<b class="nc">&nbsp;                sciexp = -sciexp;</b>
+&nbsp;            }
+<b class="nc">&nbsp;        } else {</b>
+&nbsp;            // normal case
+<b class="nc">&nbsp;            fpdecimal = s;</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        // If there is a minus sign in the number then it is negative
+<b class="nc">&nbsp;        if (fpdecimal.indexOf(&quot;-&quot;) !=  -1) {</b>
+<b class="nc">&nbsp;            sign = -1;</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        // First off, find all of the leading zeros, trailing zeros, and significant digits
+<b class="nc">&nbsp;        p = 0;</b>
+&nbsp;
+&nbsp;        // Move p to first significant digit
+<b class="nc">&nbsp;        int decimalPos = 0;</b>
+&nbsp;        for (;;) {
+<b class="nc">&nbsp;            if (fpdecimal.charAt(p) &gt;= &#39;1&#39; &amp;&amp; fpdecimal.charAt(p) &lt;= &#39;9&#39;) {</b>
+<b class="nc">&nbsp;                break;</b>
+&nbsp;            }
+&nbsp;
+<b class="nc">&nbsp;            if (decimalFound &amp;&amp; fpdecimal.charAt(p) == &#39;0&#39;) {</b>
+<b class="nc">&nbsp;                decimalPos--;</b>
+&nbsp;            }
+&nbsp;
+<b class="nc">&nbsp;            if (fpdecimal.charAt(p) == &#39;.&#39;) {</b>
+<b class="nc">&nbsp;                decimalFound = true;</b>
+&nbsp;            }
+&nbsp;
+<b class="nc">&nbsp;            p++;</b>
+&nbsp;
+<b class="nc">&nbsp;            if (p == fpdecimal.length()) {</b>
+<b class="nc">&nbsp;                break;</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+&nbsp;        // Copy the string onto Stripped
+<b class="nc">&nbsp;        int q = offset;</b>
+<b class="nc">&nbsp;        striped[0] = &#39;0&#39;;</b>
+<b class="nc">&nbsp;        striped[1] = &#39;0&#39;;</b>
+<b class="nc">&nbsp;        striped[2] = &#39;0&#39;;</b>
+<b class="nc">&nbsp;        striped[3] = &#39;0&#39;;</b>
+<b class="nc">&nbsp;        int significantDigits = 0;</b>
+&nbsp;        for (;;) {
+<b class="nc">&nbsp;            if (p == (fpdecimal.length())) {</b>
+<b class="nc">&nbsp;                break;</b>
+&nbsp;            }
+&nbsp;
+&nbsp;            // Don&#39;t want to run pass the end of the array
+<b class="nc">&nbsp;            if (q == mant.length * rsize + offset + 1) {</b>
+<b class="nc">&nbsp;                break;</b>
+&nbsp;            }
+&nbsp;
+<b class="nc">&nbsp;            if (fpdecimal.charAt(p) == &#39;.&#39;) {</b>
+<b class="nc">&nbsp;                decimalFound = true;</b>
+<b class="nc">&nbsp;                decimalPos = significantDigits;</b>
+<b class="nc">&nbsp;                p++;</b>
+<b class="nc">&nbsp;                continue;</b>
+&nbsp;            }
+&nbsp;
+<b class="nc">&nbsp;            if (fpdecimal.charAt(p) &lt; &#39;0&#39; || fpdecimal.charAt(p) &gt; &#39;9&#39;) {</b>
+<b class="nc">&nbsp;                p++;</b>
+<b class="nc">&nbsp;                continue;</b>
+&nbsp;            }
+&nbsp;
+<b class="nc">&nbsp;            striped[q] = fpdecimal.charAt(p);</b>
+<b class="nc">&nbsp;            q++;</b>
+<b class="nc">&nbsp;            p++;</b>
+<b class="nc">&nbsp;            significantDigits++;</b>
+&nbsp;        }
+&nbsp;
+&nbsp;
+&nbsp;        // If the decimal point has been found then get rid of trailing zeros.
+<b class="nc">&nbsp;        if (decimalFound &amp;&amp; q != offset) {</b>
+&nbsp;            for (;;) {
+<b class="nc">&nbsp;                q--;</b>
+<b class="nc">&nbsp;                if (q == offset) {</b>
+<b class="nc">&nbsp;                    break;</b>
+&nbsp;                }
+<b class="nc">&nbsp;                if (striped[q] == &#39;0&#39;) {</b>
+<b class="nc">&nbsp;                    significantDigits--;</b>
+&nbsp;                } else {
+&nbsp;                    break;
+&nbsp;                }
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+&nbsp;        // special case of numbers like &quot;0.00000&quot;
+<b class="nc">&nbsp;        if (decimalFound &amp;&amp; significantDigits == 0) {</b>
+<b class="nc">&nbsp;            decimalPos = 0;</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        // Implicit decimal point at end of number if not present
+<b class="nc">&nbsp;        if (!decimalFound) {</b>
+<b class="nc">&nbsp;            decimalPos = q - offset;</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        // Find the number of significant trailing zeros
+<b class="nc">&nbsp;        q = offset; // set q to point to first sig digit</b>
+<b class="nc">&nbsp;        p = significantDigits - 1 + offset;</b>
+&nbsp;
+<b class="nc">&nbsp;        while (p &gt; q) {</b>
+<b class="nc">&nbsp;            if (striped[p] != &#39;0&#39;) {</b>
+<b class="nc">&nbsp;                break;</b>
+&nbsp;            }
+<b class="nc">&nbsp;            p--;</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        // Make sure the decimal is on a mod 10000 boundary
+<b class="nc">&nbsp;        int i = ((rsize * 100) - decimalPos - sciexp % rsize) % rsize;</b>
+<b class="nc">&nbsp;        q -= i;</b>
+<b class="nc">&nbsp;        decimalPos += i;</b>
+&nbsp;
+&nbsp;        // Make the mantissa length right by adding zeros at the end if necessary
+<b class="nc">&nbsp;        while ((p - q) &lt; (mant.length * rsize)) {</b>
+<b class="nc">&nbsp;            for (i = 0; i &lt; rsize; i++) {</b>
+<b class="nc">&nbsp;                striped[++p] = &#39;0&#39;;</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+&nbsp;        // Ok, now we know how many trailing zeros there are,
+&nbsp;        // and where the least significant digit is
+<b class="nc">&nbsp;        for (i = mant.length - 1; i &gt;= 0; i--) {</b>
+<b class="nc">&nbsp;            mant[i] = (striped[q]     - &#39;0&#39;) * 1000 +</b>
+&nbsp;                      (striped[q + 1] - &#39;0&#39;) * 100  +
+&nbsp;                      (striped[q + 2] - &#39;0&#39;) * 10   +
+&nbsp;                      (striped[q + 3] - &#39;0&#39;);
+<b class="nc">&nbsp;            q += 4;</b>
+&nbsp;        }
+&nbsp;
+&nbsp;
+<b class="nc">&nbsp;        exp = (decimalPos + sciexp) / rsize;</b>
+&nbsp;
+<b class="nc">&nbsp;        if (q &lt; striped.length) {</b>
+&nbsp;            // Is there possible another digit?
+<b class="nc">&nbsp;            round((striped[q] - &#39;0&#39;) * 1000);</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Creates an instance with a non-finite value.
+&nbsp;     * @param field field to which this instance belongs
+&nbsp;     * @param sign sign of the Dfp to create
+&nbsp;     * @param nans code of the value, must be one of {@link #INFINITE},
+&nbsp;     * {@link #SNAN},  {@link #QNAN}
+&nbsp;     */
+<b class="nc">&nbsp;    protected Dfp(final DfpField field, final byte sign, final byte nans) {</b>
+<b class="nc">&nbsp;        this.field = field;</b>
+<b class="nc">&nbsp;        this.mant    = new int[field.getRadixDigits()];</b>
+<b class="nc">&nbsp;        this.sign    = sign;</b>
+<b class="nc">&nbsp;        this.exp     = 0;</b>
+<b class="nc">&nbsp;        this.nans    = nans;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Create an instance with a value of 0.
+&nbsp;     * Use this internally in preference to constructors to facilitate subclasses
+&nbsp;     * @return a new instance with a value of 0
+&nbsp;     */
+&nbsp;    public Dfp newInstance() {
+<b class="nc">&nbsp;        return new Dfp(getField());</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Create an instance from a byte value.
+&nbsp;     * @param x value to convert to an instance
+&nbsp;     * @return a new instance with value x
+&nbsp;     */
+&nbsp;    public Dfp newInstance(final byte x) {
+<b class="nc">&nbsp;        return new Dfp(getField(), x);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Create an instance from an int value.
+&nbsp;     * @param x value to convert to an instance
+&nbsp;     * @return a new instance with value x
+&nbsp;     */
+&nbsp;    public Dfp newInstance(final int x) {
+<b class="nc">&nbsp;        return new Dfp(getField(), x);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Create an instance from a long value.
+&nbsp;     * @param x value to convert to an instance
+&nbsp;     * @return a new instance with value x
+&nbsp;     */
+&nbsp;    public Dfp newInstance(final long x) {
+<b class="nc">&nbsp;        return new Dfp(getField(), x);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Create an instance from a double value.
+&nbsp;     * @param x value to convert to an instance
+&nbsp;     * @return a new instance with value x
+&nbsp;     */
+&nbsp;    public Dfp newInstance(final double x) {
+<b class="nc">&nbsp;        return new Dfp(getField(), x);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Create an instance by copying an existing one.
+&nbsp;     * Use this internally in preference to constructors to facilitate subclasses.
+&nbsp;     * @param d instance to copy
+&nbsp;     * @return a new instance with the same value as d
+&nbsp;     */
+&nbsp;    public Dfp newInstance(final Dfp d) {
+&nbsp;
+&nbsp;        // make sure we don&#39;t mix number with different precision
+<b class="nc">&nbsp;        if (field.getRadixDigits() != d.field.getRadixDigits()) {</b>
+<b class="nc">&nbsp;            field.setIEEEFlagsBits(DfpField.FLAG_INVALID);</b>
+<b class="nc">&nbsp;            final Dfp result = newInstance(getZero());</b>
+<b class="nc">&nbsp;            result.nans = QNAN;</b>
+<b class="nc">&nbsp;            return dotrap(DfpField.FLAG_INVALID, NEW_INSTANCE_TRAP, d, result);</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        return new Dfp(d);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Create an instance from a String representation.
+&nbsp;     * Use this internally in preference to constructors to facilitate subclasses.
+&nbsp;     * @param s string representation of the instance
+&nbsp;     * @return a new instance parsed from specified string
+&nbsp;     */
+&nbsp;    public Dfp newInstance(final String s) {
+<b class="nc">&nbsp;        return new Dfp(field, s);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Creates an instance with a non-finite value.
+&nbsp;     * @param sig sign of the Dfp to create
+&nbsp;     * @param code code of the value, must be one of {@link #INFINITE},
+&nbsp;     * {@link #SNAN},  {@link #QNAN}
+&nbsp;     * @return a new instance with a non-finite value
+&nbsp;     */
+&nbsp;    public Dfp newInstance(final byte sig, final byte code) {
+<b class="nc">&nbsp;        return field.newDfp(sig, code);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Get the {@link org.apache.commons.math4.legacy.core.Field Field} (really a
+&nbsp;     * {@link DfpField}) to which the instance belongs.
+&nbsp;     * &lt;p&gt;
+&nbsp;     * The field is linked to the number of digits and acts as a factory
+&nbsp;     * for {@link Dfp} instances.
+&nbsp;     * &lt;/p&gt;
+&nbsp;     * @return {@link org.apache.commons.math4.legacy.core.Field Field} (really a {@link DfpField}) to which the instance belongs
+&nbsp;     */
+&nbsp;    @Override
+&nbsp;    public DfpField getField() {
+<b class="nc">&nbsp;        return field;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Get the number of radix digits of the instance.
+&nbsp;     * @return number of radix digits
+&nbsp;     */
+&nbsp;    public int getRadixDigits() {
+<b class="nc">&nbsp;        return field.getRadixDigits();</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Get the constant 0.
+&nbsp;     * @return a Dfp with value zero
+&nbsp;     */
+&nbsp;    public Dfp getZero() {
+<b class="nc">&nbsp;        return field.getZero();</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Get the constant 1.
+&nbsp;     * @return a Dfp with value one
+&nbsp;     */
+&nbsp;    public Dfp getOne() {
+<b class="nc">&nbsp;        return field.getOne();</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Get the constant 2.
+&nbsp;     * @return a Dfp with value two
+&nbsp;     */
+&nbsp;    public Dfp getTwo() {
+<b class="nc">&nbsp;        return field.getTwo();</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Shift the mantissa left, and adjust the exponent to compensate.
+&nbsp;     */
+&nbsp;    protected void shiftLeft() {
+<b class="nc">&nbsp;        for (int i = mant.length - 1; i &gt; 0; i--) {</b>
+<b class="nc">&nbsp;            mant[i] = mant[i - 1];</b>
+&nbsp;        }
+<b class="nc">&nbsp;        mant[0] = 0;</b>
+<b class="nc">&nbsp;        exp--;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /* Note that shiftRight() does not call round() as that round() itself
+&nbsp;     uses shiftRight() */
+&nbsp;    /** Shift the mantissa right, and adjust the exponent to compensate.
+&nbsp;     */
+&nbsp;    protected void shiftRight() {
+<b class="nc">&nbsp;        for (int i = 0; i &lt; mant.length - 1; i++) {</b>
+<b class="nc">&nbsp;            mant[i] = mant[i + 1];</b>
+&nbsp;        }
+<b class="nc">&nbsp;        mant[mant.length - 1] = 0;</b>
+<b class="nc">&nbsp;        exp++;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Make our exp equal to the supplied one, this may cause rounding.
+&nbsp;     *  Also causes de-normalized numbers.  These numbers are generally
+&nbsp;     *  dangerous because most routines assume normalized numbers.
+&nbsp;     *  Align doesn&#39;t round, so it will return the last digit destroyed
+&nbsp;     *  by shifting right.
+&nbsp;     *  @param e desired exponent
+&nbsp;     *  @return last digit destroyed by shifting right
+&nbsp;     */
+&nbsp;    protected int align(int e) {
+<b class="nc">&nbsp;        int lostdigit = 0;</b>
+<b class="nc">&nbsp;        boolean inexact = false;</b>
+&nbsp;
+<b class="nc">&nbsp;        int diff = exp - e;</b>
+&nbsp;
+<b class="nc">&nbsp;        int adiff = diff;</b>
+<b class="nc">&nbsp;        if (adiff &lt; 0) {</b>
+<b class="nc">&nbsp;            adiff = -adiff;</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        if (diff == 0) {</b>
+<b class="nc">&nbsp;            return 0;</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        if (adiff &gt; (mant.length + 1)) {</b>
+&nbsp;            // Special case
+<b class="nc">&nbsp;            Arrays.fill(mant, 0);</b>
+<b class="nc">&nbsp;            exp = e;</b>
+&nbsp;
+<b class="nc">&nbsp;            field.setIEEEFlagsBits(DfpField.FLAG_INEXACT);</b>
+<b class="nc">&nbsp;            dotrap(DfpField.FLAG_INEXACT, ALIGN_TRAP, this, this);</b>
+&nbsp;
+<b class="nc">&nbsp;            return 0;</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        for (int i = 0; i &lt; adiff; i++) {</b>
+<b class="nc">&nbsp;            if (diff &lt; 0) {</b>
+&nbsp;                /* Keep track of loss -- only signal inexact after losing 2 digits.
+&nbsp;                 * the first lost digit is returned to add() and may be incorporated
+&nbsp;                 * into the result.
+&nbsp;                 */
+<b class="nc">&nbsp;                if (lostdigit != 0) {</b>
+<b class="nc">&nbsp;                    inexact = true;</b>
+&nbsp;                }
+&nbsp;
+<b class="nc">&nbsp;                lostdigit = mant[0];</b>
+&nbsp;
+<b class="nc">&nbsp;                shiftRight();</b>
+&nbsp;            } else {
+<b class="nc">&nbsp;                shiftLeft();</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        if (inexact) {</b>
+<b class="nc">&nbsp;            field.setIEEEFlagsBits(DfpField.FLAG_INEXACT);</b>
+<b class="nc">&nbsp;            dotrap(DfpField.FLAG_INEXACT, ALIGN_TRAP, this, this);</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        return lostdigit;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Check if instance is less than x.
+&nbsp;     * @param x number to check instance against
+&nbsp;     * @return true if instance is less than x and neither are NaN, false otherwise
+&nbsp;     */
+&nbsp;    public boolean lessThan(final Dfp x) {
+&nbsp;
+&nbsp;        // make sure we don&#39;t mix number with different precision
+<b class="nc">&nbsp;        if (field.getRadixDigits() != x.field.getRadixDigits()) {</b>
+<b class="nc">&nbsp;            field.setIEEEFlagsBits(DfpField.FLAG_INVALID);</b>
+<b class="nc">&nbsp;            final Dfp result = newInstance(getZero());</b>
+<b class="nc">&nbsp;            result.nans = QNAN;</b>
+<b class="nc">&nbsp;            dotrap(DfpField.FLAG_INVALID, LESS_THAN_TRAP, x, result);</b>
+<b class="nc">&nbsp;            return false;</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        /* if a nan is involved, signal invalid and return false */
+<b class="nc">&nbsp;        if (isNaN() || x.isNaN()) {</b>
+<b class="nc">&nbsp;            field.setIEEEFlagsBits(DfpField.FLAG_INVALID);</b>
+<b class="nc">&nbsp;            dotrap(DfpField.FLAG_INVALID, LESS_THAN_TRAP, x, newInstance(getZero()));</b>
+<b class="nc">&nbsp;            return false;</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        return compare(this, x) &lt; 0;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Check if instance is greater than x.
+&nbsp;     * @param x number to check instance against
+&nbsp;     * @return true if instance is greater than x and neither are NaN, false otherwise
+&nbsp;     */
+&nbsp;    public boolean greaterThan(final Dfp x) {
+&nbsp;
+&nbsp;        // make sure we don&#39;t mix number with different precision
+<b class="nc">&nbsp;        if (field.getRadixDigits() != x.field.getRadixDigits()) {</b>
+<b class="nc">&nbsp;            field.setIEEEFlagsBits(DfpField.FLAG_INVALID);</b>
+<b class="nc">&nbsp;            final Dfp result = newInstance(getZero());</b>
+<b class="nc">&nbsp;            result.nans = QNAN;</b>
+<b class="nc">&nbsp;            dotrap(DfpField.FLAG_INVALID, GREATER_THAN_TRAP, x, result);</b>
+<b class="nc">&nbsp;            return false;</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        /* if a nan is involved, signal invalid and return false */
+<b class="nc">&nbsp;        if (isNaN() || x.isNaN()) {</b>
+<b class="nc">&nbsp;            field.setIEEEFlagsBits(DfpField.FLAG_INVALID);</b>
+<b class="nc">&nbsp;            dotrap(DfpField.FLAG_INVALID, GREATER_THAN_TRAP, x, newInstance(getZero()));</b>
+<b class="nc">&nbsp;            return false;</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        return compare(this, x) &gt; 0;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Check if instance is less than or equal to 0.
+&nbsp;     * @return true if instance is not NaN and less than or equal to 0, false otherwise
+&nbsp;     */
+&nbsp;    public boolean negativeOrNull() {
+&nbsp;
+<b class="nc">&nbsp;        if (isNaN()) {</b>
+<b class="nc">&nbsp;            field.setIEEEFlagsBits(DfpField.FLAG_INVALID);</b>
+<b class="nc">&nbsp;            dotrap(DfpField.FLAG_INVALID, LESS_THAN_TRAP, this, newInstance(getZero()));</b>
+<b class="nc">&nbsp;            return false;</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        return (sign &lt; 0) || ((mant[mant.length - 1] == 0) &amp;&amp; !isInfinite());</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Check if instance is strictly less than 0.
+&nbsp;     * @return true if instance is not NaN and less than or equal to 0, false otherwise
+&nbsp;     */
+&nbsp;    public boolean strictlyNegative() {
+&nbsp;
+<b class="nc">&nbsp;        if (isNaN()) {</b>
+<b class="nc">&nbsp;            field.setIEEEFlagsBits(DfpField.FLAG_INVALID);</b>
+<b class="nc">&nbsp;            dotrap(DfpField.FLAG_INVALID, LESS_THAN_TRAP, this, newInstance(getZero()));</b>
+<b class="nc">&nbsp;            return false;</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        return (sign &lt; 0) &amp;&amp; ((mant[mant.length - 1] != 0) || isInfinite());</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Check if instance is greater than or equal to 0.
+&nbsp;     * @return true if instance is not NaN and greater than or equal to 0, false otherwise
+&nbsp;     */
+&nbsp;    public boolean positiveOrNull() {
+&nbsp;
+<b class="nc">&nbsp;        if (isNaN()) {</b>
+<b class="nc">&nbsp;            field.setIEEEFlagsBits(DfpField.FLAG_INVALID);</b>
+<b class="nc">&nbsp;            dotrap(DfpField.FLAG_INVALID, LESS_THAN_TRAP, this, newInstance(getZero()));</b>
+<b class="nc">&nbsp;            return false;</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        return (sign &gt; 0) || ((mant[mant.length - 1] == 0) &amp;&amp; !isInfinite());</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Check if instance is strictly greater than 0.
+&nbsp;     * @return true if instance is not NaN and greater than or equal to 0, false otherwise
+&nbsp;     */
+&nbsp;    public boolean strictlyPositive() {
+&nbsp;
+<b class="nc">&nbsp;        if (isNaN()) {</b>
+<b class="nc">&nbsp;            field.setIEEEFlagsBits(DfpField.FLAG_INVALID);</b>
+<b class="nc">&nbsp;            dotrap(DfpField.FLAG_INVALID, LESS_THAN_TRAP, this, newInstance(getZero()));</b>
+<b class="nc">&nbsp;            return false;</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        return (sign &gt; 0) &amp;&amp; ((mant[mant.length - 1] != 0) || isInfinite());</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Get the absolute value of instance.
+&nbsp;     * @return absolute value of instance
+&nbsp;     * @since 3.2
+&nbsp;     */
+&nbsp;    @Override
+&nbsp;    public Dfp abs() {
+<b class="nc">&nbsp;        Dfp result = newInstance(this);</b>
+<b class="nc">&nbsp;        result.sign = 1;</b>
+<b class="nc">&nbsp;        return result;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Check if instance is infinite.
+&nbsp;     * @return true if instance is infinite
+&nbsp;     */
+&nbsp;    public boolean isInfinite() {
+<b class="nc">&nbsp;        return nans == INFINITE;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Check if instance is not a number.
+&nbsp;     * @return true if instance is not a number
+&nbsp;     */
+&nbsp;    public boolean isNaN() {
+<b class="nc">&nbsp;        return (nans == QNAN) || (nans == SNAN);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Check if instance is equal to zero.
+&nbsp;     * @return true if instance is equal to zero
+&nbsp;     */
+&nbsp;    public boolean isZero() {
+&nbsp;
+<b class="nc">&nbsp;        if (isNaN()) {</b>
+<b class="nc">&nbsp;            field.setIEEEFlagsBits(DfpField.FLAG_INVALID);</b>
+<b class="nc">&nbsp;            dotrap(DfpField.FLAG_INVALID, LESS_THAN_TRAP, this, newInstance(getZero()));</b>
+<b class="nc">&nbsp;            return false;</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        return (mant[mant.length - 1] == 0) &amp;&amp; !isInfinite();</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Check if instance is equal to x.
+&nbsp;     * @param other object to check instance against
+&nbsp;     * @return true if instance is equal to x and neither are NaN, false otherwise
+&nbsp;     */
+&nbsp;    @Override
+&nbsp;    public boolean equals(final Object other) {
+&nbsp;
+<b class="nc">&nbsp;        if (other instanceof Dfp) {</b>
+<b class="nc">&nbsp;            final Dfp x = (Dfp) other;</b>
+<b class="nc">&nbsp;            if (isNaN() || x.isNaN() || field.getRadixDigits() != x.field.getRadixDigits()) {</b>
+<b class="nc">&nbsp;                return false;</b>
+&nbsp;            }
+&nbsp;
+<b class="nc">&nbsp;            return compare(this, x) == 0;</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        return false;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Gets a hashCode for the instance.
+&nbsp;     * @return a hash code value for this object
+&nbsp;     */
+&nbsp;    @Override
+&nbsp;    public int hashCode() {
+<b class="nc">&nbsp;        return 17 + (isZero() ? 0 : (sign &lt;&lt; 8)) + (nans &lt;&lt; 16) + exp + Arrays.hashCode(mant);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Check if instance is not equal to x.
+&nbsp;     * @param x number to check instance against
+&nbsp;     * @return true if instance is not equal to x and neither are NaN, false otherwise
+&nbsp;     */
+&nbsp;    public boolean unequal(final Dfp x) {
+<b class="nc">&nbsp;        if (isNaN() || x.isNaN() || field.getRadixDigits() != x.field.getRadixDigits()) {</b>
+<b class="nc">&nbsp;            return false;</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        return greaterThan(x) || lessThan(x);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Compare two instances.
+&nbsp;     * @param a first instance in comparison
+&nbsp;     * @param b second instance in comparison
+&nbsp;     * @return -1 if {@code a &lt; b}, 1 if {@code a &gt; b} and 0 if {@code a == b}
+&nbsp;     *  Note this method does not properly handle NaNs or numbers with different precision.
+&nbsp;     */
+&nbsp;    private static int compare(final Dfp a, final Dfp b) {
+&nbsp;        // Ignore the sign of zero
+<b class="nc">&nbsp;        if (a.mant[a.mant.length - 1] == 0 &amp;&amp; b.mant[b.mant.length - 1] == 0 &amp;&amp;</b>
+&nbsp;            a.nans == FINITE &amp;&amp; b.nans == FINITE) {
+<b class="nc">&nbsp;            return 0;</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        if (a.sign != b.sign) {</b>
+<b class="nc">&nbsp;            if (a.sign == -1) {</b>
+<b class="nc">&nbsp;                return -1;</b>
+&nbsp;            } else {
+<b class="nc">&nbsp;                return 1;</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+&nbsp;        // deal with the infinities
+<b class="nc">&nbsp;        if (a.nans == INFINITE &amp;&amp; b.nans == FINITE) {</b>
+<b class="nc">&nbsp;            return a.sign;</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        if (a.nans == FINITE &amp;&amp; b.nans == INFINITE) {</b>
+<b class="nc">&nbsp;            return -b.sign;</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        if (a.nans == INFINITE &amp;&amp; b.nans == INFINITE) {</b>
+<b class="nc">&nbsp;            return 0;</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        // Handle special case when a or b is zero, by ignoring the exponents
+<b class="nc">&nbsp;        if (b.mant[b.mant.length - 1] != 0 &amp;&amp; a.mant[b.mant.length - 1] != 0) {</b>
+<b class="nc">&nbsp;            if (a.exp &lt; b.exp) {</b>
+<b class="nc">&nbsp;                return -a.sign;</b>
+&nbsp;            }
+&nbsp;
+<b class="nc">&nbsp;            if (a.exp &gt; b.exp) {</b>
+<b class="nc">&nbsp;                return a.sign;</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+&nbsp;        // compare the mantissas
+<b class="nc">&nbsp;        for (int i = a.mant.length - 1; i &gt;= 0; i--) {</b>
+<b class="nc">&nbsp;            if (a.mant[i] &gt; b.mant[i]) {</b>
+<b class="nc">&nbsp;                return a.sign;</b>
+&nbsp;            }
+&nbsp;
+<b class="nc">&nbsp;            if (a.mant[i] &lt; b.mant[i]) {</b>
+<b class="nc">&nbsp;                return -a.sign;</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        return 0;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Round to nearest integer using the round-half-even method.
+&nbsp;     *  That is round to nearest integer unless both are equidistant.
+&nbsp;     *  In which case round to the even one.
+&nbsp;     *  @return rounded value
+&nbsp;     * @since 3.2
+&nbsp;     */
+&nbsp;    @Override
+&nbsp;    public Dfp rint() {
+<b class="nc">&nbsp;        return trunc(DfpField.RoundingMode.ROUND_HALF_EVEN);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Round to an integer using the round floor mode.
+&nbsp;     * That is, round toward -Infinity
+&nbsp;     *  @return rounded value
+&nbsp;     * @since 3.2
+&nbsp;     */
+&nbsp;    @Override
+&nbsp;    public Dfp floor() {
+<b class="nc">&nbsp;        return trunc(DfpField.RoundingMode.ROUND_FLOOR);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Round to an integer using the round ceil mode.
+&nbsp;     * That is, round toward +Infinity
+&nbsp;     *  @return rounded value
+&nbsp;     * @since 3.2
+&nbsp;     */
+&nbsp;    @Override
+&nbsp;    public Dfp ceil() {
+<b class="nc">&nbsp;        return trunc(DfpField.RoundingMode.ROUND_CEIL);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Returns the IEEE remainder.
+&nbsp;     * @param d divisor
+&nbsp;     * @return this less n &amp;times; d, where n is the integer closest to this/d
+&nbsp;     * @since 3.2
+&nbsp;     */
+&nbsp;    @Override
+&nbsp;    public Dfp remainder(final Dfp d) {
+&nbsp;
+<b class="nc">&nbsp;        final Dfp result = this.subtract(this.divide(d).rint().multiply(d));</b>
+&nbsp;
+&nbsp;        // IEEE 854-1987 says that if the result is zero, then it carries the sign of this
+<b class="nc">&nbsp;        if (result.mant[mant.length - 1] == 0) {</b>
+<b class="nc">&nbsp;            result.sign = sign;</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        return result;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Does the integer conversions with the specified rounding.
+&nbsp;     * @param rmode rounding mode to use
+&nbsp;     * @return truncated value
+&nbsp;     */
+&nbsp;    protected Dfp trunc(final DfpField.RoundingMode rmode) {
+<b class="nc">&nbsp;        boolean changed = false;</b>
+&nbsp;
+<b class="nc">&nbsp;        if (isNaN()) {</b>
+<b class="nc">&nbsp;            return newInstance(this);</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        if (nans == INFINITE) {</b>
+<b class="nc">&nbsp;            return newInstance(this);</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        if (mant[mant.length - 1] == 0) {</b>
+&nbsp;            // a is zero
+<b class="nc">&nbsp;            return newInstance(this);</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        /* If the exponent is less than zero then we can certainly
+&nbsp;         * return zero */
+<b class="nc">&nbsp;        if (exp &lt; 0) {</b>
+<b class="nc">&nbsp;            field.setIEEEFlagsBits(DfpField.FLAG_INEXACT);</b>
+<b class="nc">&nbsp;            Dfp result = newInstance(getZero());</b>
+<b class="nc">&nbsp;            result = dotrap(DfpField.FLAG_INEXACT, TRUNC_TRAP, this, result);</b>
+<b class="nc">&nbsp;            return result;</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        /* If the exponent is greater than or equal to digits, then it
+&nbsp;         * must already be an integer since there is no precision left
+&nbsp;         * for any fractional part */
+&nbsp;
+<b class="nc">&nbsp;        if (exp &gt;= mant.length) {</b>
+<b class="nc">&nbsp;            return newInstance(this);</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        /* General case:  create another dfp, result, that contains the
+&nbsp;         * a with the fractional part lopped off.  */
+&nbsp;
+<b class="nc">&nbsp;        Dfp result = newInstance(this);</b>
+<b class="nc">&nbsp;        for (int i = 0; i &lt; mant.length - result.exp; i++) {</b>
+<b class="nc">&nbsp;            changed |= result.mant[i] != 0;</b>
+<b class="nc">&nbsp;            result.mant[i] = 0;</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        if (changed) {</b>
+<b class="nc">&nbsp;            switch (rmode) {</b>
+&nbsp;            case ROUND_FLOOR:
+<b class="nc">&nbsp;                if (result.sign == -1) {</b>
+&nbsp;                    // then we must increment the mantissa by one
+<b class="nc">&nbsp;                    result = result.add(newInstance(-1));</b>
+&nbsp;                }
+&nbsp;                break;
+&nbsp;
+&nbsp;            case ROUND_CEIL:
+<b class="nc">&nbsp;                if (result.sign == 1) {</b>
+&nbsp;                    // then we must increment the mantissa by one
+<b class="nc">&nbsp;                    result = result.add(getOne());</b>
+&nbsp;                }
+&nbsp;                break;
+&nbsp;
+&nbsp;            case ROUND_HALF_EVEN:
+&nbsp;            default:
+<b class="nc">&nbsp;                final Dfp half = newInstance(&quot;0.5&quot;);</b>
+<b class="nc">&nbsp;                Dfp a = subtract(result);  // difference between this and result</b>
+<b class="nc">&nbsp;                a.sign = 1;            // force positive (take abs)</b>
+<b class="nc">&nbsp;                if (a.greaterThan(half)) {</b>
+<b class="nc">&nbsp;                    a = newInstance(getOne());</b>
+<b class="nc">&nbsp;                    a.sign = sign;</b>
+<b class="nc">&nbsp;                    result = result.add(a);</b>
+&nbsp;                }
+&nbsp;
+&nbsp;                /* If exactly equal to 1/2 and odd then increment */
+<b class="nc">&nbsp;                if (a.equals(half) &amp;&amp; result.exp &gt; 0 &amp;&amp; (result.mant[mant.length - result.exp] &amp; 1) != 0) {</b>
+<b class="nc">&nbsp;                    a = newInstance(getOne());</b>
+<b class="nc">&nbsp;                    a.sign = sign;</b>
+<b class="nc">&nbsp;                    result = result.add(a);</b>
+&nbsp;                }
+&nbsp;                break;
+&nbsp;            }
+&nbsp;
+<b class="nc">&nbsp;            field.setIEEEFlagsBits(DfpField.FLAG_INEXACT);  // signal inexact</b>
+<b class="nc">&nbsp;            result = dotrap(DfpField.FLAG_INEXACT, TRUNC_TRAP, this, result);</b>
+<b class="nc">&nbsp;            return result;</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        return result;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Convert this to an integer.
+&nbsp;     * If greater than 2147483647, it returns 2147483647. If less than -2147483648 it returns -2147483648.
+&nbsp;     * @return converted number
+&nbsp;     */
+&nbsp;    public int intValue() {
+&nbsp;        Dfp rounded;
+<b class="nc">&nbsp;        int result = 0;</b>
+&nbsp;
+<b class="nc">&nbsp;        rounded = rint();</b>
+&nbsp;
+<b class="nc">&nbsp;        if (rounded.greaterThan(newInstance(2147483647))) {</b>
+<b class="nc">&nbsp;            return 2147483647;</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        if (rounded.lessThan(newInstance(-2147483648))) {</b>
+<b class="nc">&nbsp;            return -2147483648;</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        for (int i = mant.length - 1; i &gt;= mant.length - rounded.exp; i--) {</b>
+<b class="nc">&nbsp;            result = result * RADIX + rounded.mant[i];</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        if (rounded.sign == -1) {</b>
+<b class="nc">&nbsp;            result = -result;</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        return result;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Get the exponent of the greatest power of 10000 that is
+&nbsp;     *  less than or equal to the absolute value of this.  I.E.  if
+&nbsp;     *  this is 10&lt;sup&gt;6&lt;/sup&gt; then log10K would return 1.
+&nbsp;     *  @return integer base 10000 logarithm
+&nbsp;     */
+&nbsp;    public int log10K() {
+<b class="nc">&nbsp;        return exp - 1;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Get the specified  power of 10000.
+&nbsp;     * @param e desired power
+&nbsp;     * @return 10000&lt;sup&gt;e&lt;/sup&gt;
+&nbsp;     */
+&nbsp;    public Dfp power10K(final int e) {
+<b class="nc">&nbsp;        Dfp d = newInstance(getOne());</b>
+<b class="nc">&nbsp;        d.exp = e + 1;</b>
+<b class="nc">&nbsp;        return d;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Get the exponent of the greatest power of 10 that is less than or equal to abs(this).
+&nbsp;     *  @return integer base 10 logarithm
+&nbsp;     * @since 3.2
+&nbsp;     */
+&nbsp;    public int intLog10()  {
+<b class="nc">&nbsp;        if (mant[mant.length - 1] &gt; 1000) {</b>
+<b class="nc">&nbsp;            return exp * 4 - 1;</b>
+&nbsp;        }
+<b class="nc">&nbsp;        if (mant[mant.length - 1] &gt; 100) {</b>
+<b class="nc">&nbsp;            return exp * 4 - 2;</b>
+&nbsp;        }
+<b class="nc">&nbsp;        if (mant[mant.length - 1] &gt; 10) {</b>
+<b class="nc">&nbsp;            return exp * 4 - 3;</b>
+&nbsp;        }
+<b class="nc">&nbsp;        return exp * 4 - 4;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Return the specified  power of 10.
+&nbsp;     * @param e desired power
+&nbsp;     * @return 10&lt;sup&gt;e&lt;/sup&gt;
+&nbsp;     */
+&nbsp;    public Dfp power10(final int e) {
+<b class="nc">&nbsp;        Dfp d = newInstance(getOne());</b>
+&nbsp;
+<b class="nc">&nbsp;        if (e &gt;= 0) {</b>
+<b class="nc">&nbsp;            d.exp = e / 4 + 1;</b>
+&nbsp;        } else {
+<b class="nc">&nbsp;            d.exp = (e + 1) / 4;</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        switch ((e % 4 + 4) % 4) {</b>
+&nbsp;        case 0:
+<b class="nc">&nbsp;            break;</b>
+&nbsp;        case 1:
+<b class="nc">&nbsp;            d = d.multiply(10);</b>
+<b class="nc">&nbsp;            break;</b>
+&nbsp;        case 2:
+<b class="nc">&nbsp;            d = d.multiply(100);</b>
+<b class="nc">&nbsp;            break;</b>
+&nbsp;        default:
+<b class="nc">&nbsp;            d = d.multiply(1000);</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        return d;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Negate the mantissa of this by computing the complement.
+&nbsp;     *  Leaves the sign bit unchanged, used internally by add.
+&nbsp;     *  Denormalized numbers are handled properly here.
+&nbsp;     *  @param extra ???
+&nbsp;     *  @return ???
+&nbsp;     */
+&nbsp;    protected int complement(int extra) {
+&nbsp;
+<b class="nc">&nbsp;        extra = RADIX - extra;</b>
+<b class="nc">&nbsp;        for (int i = 0; i &lt; mant.length; i++) {</b>
+<b class="nc">&nbsp;            mant[i] = RADIX - mant[i] - 1;</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        int rh = extra / RADIX;</b>
+<b class="nc">&nbsp;        extra -= rh * RADIX;</b>
+<b class="nc">&nbsp;        for (int i = 0; i &lt; mant.length; i++) {</b>
+<b class="nc">&nbsp;            final int r = mant[i] + rh;</b>
+<b class="nc">&nbsp;            rh = r / RADIX;</b>
+<b class="nc">&nbsp;            mant[i] = r - rh * RADIX;</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        return extra;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Add x to this.
+&nbsp;     * @param x number to add
+&nbsp;     * @return sum of this and x
+&nbsp;     */
+&nbsp;    @Override
+&nbsp;    public Dfp add(final Dfp x) {
+&nbsp;
+&nbsp;        // make sure we don&#39;t mix number with different precision
+<b class="nc">&nbsp;        if (field.getRadixDigits() != x.field.getRadixDigits()) {</b>
+<b class="nc">&nbsp;            field.setIEEEFlagsBits(DfpField.FLAG_INVALID);</b>
+<b class="nc">&nbsp;            final Dfp result = newInstance(getZero());</b>
+<b class="nc">&nbsp;            result.nans = QNAN;</b>
+<b class="nc">&nbsp;            return dotrap(DfpField.FLAG_INVALID, ADD_TRAP, x, result);</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        /* handle special cases */
+<b class="nc">&nbsp;        if (nans != FINITE || x.nans != FINITE) {</b>
+<b class="nc">&nbsp;            if (isNaN()) {</b>
+<b class="nc">&nbsp;                return this;</b>
+&nbsp;            }
+&nbsp;
+<b class="nc">&nbsp;            if (x.isNaN()) {</b>
+<b class="nc">&nbsp;                return x;</b>
+&nbsp;            }
+&nbsp;
+<b class="nc">&nbsp;            if (nans == INFINITE &amp;&amp; x.nans == FINITE) {</b>
+<b class="nc">&nbsp;                return this;</b>
+&nbsp;            }
+&nbsp;
+<b class="nc">&nbsp;            if (x.nans == INFINITE &amp;&amp; nans == FINITE) {</b>
+<b class="nc">&nbsp;                return x;</b>
+&nbsp;            }
+&nbsp;
+<b class="nc">&nbsp;            if (x.nans == INFINITE &amp;&amp; nans == INFINITE &amp;&amp; sign == x.sign) {</b>
+<b class="nc">&nbsp;                return x;</b>
+&nbsp;            }
+&nbsp;
+<b class="nc">&nbsp;            if (x.nans == INFINITE &amp;&amp; nans == INFINITE &amp;&amp; sign != x.sign) {</b>
+<b class="nc">&nbsp;                field.setIEEEFlagsBits(DfpField.FLAG_INVALID);</b>
+<b class="nc">&nbsp;                Dfp result = newInstance(getZero());</b>
+<b class="nc">&nbsp;                result.nans = QNAN;</b>
+<b class="nc">&nbsp;                result = dotrap(DfpField.FLAG_INVALID, ADD_TRAP, x, result);</b>
+<b class="nc">&nbsp;                return result;</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+&nbsp;        /* copy this and the arg */
+<b class="nc">&nbsp;        Dfp a = newInstance(this);</b>
+<b class="nc">&nbsp;        Dfp b = newInstance(x);</b>
+&nbsp;
+&nbsp;        /* initialize the result object */
+<b class="nc">&nbsp;        Dfp result = newInstance(getZero());</b>
+&nbsp;
+&nbsp;        /* Make all numbers positive, but remember their sign */
+<b class="nc">&nbsp;        final byte asign = a.sign;</b>
+<b class="nc">&nbsp;        final byte bsign = b.sign;</b>
+&nbsp;
+<b class="nc">&nbsp;        a.sign = 1;</b>
+<b class="nc">&nbsp;        b.sign = 1;</b>
+&nbsp;
+&nbsp;        /* The result will be signed like the arg with greatest magnitude */
+<b class="nc">&nbsp;        byte rsign = bsign;</b>
+<b class="nc">&nbsp;        if (compare(a, b) &gt; 0) {</b>
+<b class="nc">&nbsp;            rsign = asign;</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        /*
+&nbsp;         * Handle special case when a or b is zero, by setting the exponent of the zero
+&nbsp;         * number equal to the other one. This avoids an alignment which would cause
+&nbsp;         * catastropic loss of precision
+&nbsp;         */
+<b class="nc">&nbsp;        if (b.mant[mant.length - 1] == 0) {</b>
+<b class="nc">&nbsp;            b.exp = a.exp;</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        if (a.mant[mant.length - 1] == 0) {</b>
+<b class="nc">&nbsp;            a.exp = b.exp;</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        /* align number with the smaller exponent */
+<b class="nc">&nbsp;        int aextradigit = 0;</b>
+<b class="nc">&nbsp;        int bextradigit = 0;</b>
+<b class="nc">&nbsp;        if (a.exp &lt; b.exp) {</b>
+<b class="nc">&nbsp;            aextradigit = a.align(b.exp);</b>
+&nbsp;        } else {
+<b class="nc">&nbsp;            bextradigit = b.align(a.exp);</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        /* complement the smaller of the two if the signs are different */
+<b class="nc">&nbsp;        if (asign != bsign) {</b>
+<b class="nc">&nbsp;            if (asign == rsign) {</b>
+<b class="nc">&nbsp;                bextradigit = b.complement(bextradigit);</b>
+&nbsp;            } else {
+<b class="nc">&nbsp;                aextradigit = a.complement(aextradigit);</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+&nbsp;        /* add the mantissas */
+<b class="nc">&nbsp;        int rh = 0; /* acts as a carry */</b>
+<b class="nc">&nbsp;        for (int i = 0; i &lt; mant.length; i++) {</b>
+<b class="nc">&nbsp;            final int r = a.mant[i] + b.mant[i] + rh;</b>
+<b class="nc">&nbsp;            rh = r / RADIX;</b>
+<b class="nc">&nbsp;            result.mant[i] = r - rh * RADIX;</b>
+&nbsp;        }
+<b class="nc">&nbsp;        result.exp = a.exp;</b>
+<b class="nc">&nbsp;        result.sign = rsign;</b>
+&nbsp;
+&nbsp;        /* handle overflow -- note, when asign!=bsign an overflow is
+&nbsp;         * normal and should be ignored.  */
+&nbsp;
+<b class="nc">&nbsp;        if (rh != 0 &amp;&amp; (asign == bsign)) {</b>
+<b class="nc">&nbsp;            final int lostdigit = result.mant[0];</b>
+<b class="nc">&nbsp;            result.shiftRight();</b>
+<b class="nc">&nbsp;            result.mant[mant.length - 1] = rh;</b>
+<b class="nc">&nbsp;            final int excp = result.round(lostdigit);</b>
+<b class="nc">&nbsp;            if (excp != 0) {</b>
+<b class="nc">&nbsp;                result = dotrap(excp, ADD_TRAP, x, result);</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+&nbsp;        /* normalize the result */
+<b class="nc">&nbsp;        for (int i = 0; i &lt; mant.length; i++) {</b>
+<b class="nc">&nbsp;            if (result.mant[mant.length - 1] != 0) {</b>
+<b class="nc">&nbsp;                break;</b>
+&nbsp;            }
+<b class="nc">&nbsp;            result.shiftLeft();</b>
+<b class="nc">&nbsp;            if (i == 0) {</b>
+<b class="nc">&nbsp;                result.mant[0] = aextradigit + bextradigit;</b>
+<b class="nc">&nbsp;                aextradigit = 0;</b>
+<b class="nc">&nbsp;                bextradigit = 0;</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+&nbsp;        /* result is zero if after normalization the most sig. digit is zero */
+<b class="nc">&nbsp;        if (result.mant[mant.length - 1] == 0) {</b>
+<b class="nc">&nbsp;            result.exp = 0;</b>
+&nbsp;
+<b class="nc">&nbsp;            if (asign != bsign) {</b>
+&nbsp;                // Unless adding 2 negative zeros, sign is positive
+<b class="nc">&nbsp;                result.sign = 1;  // Per IEEE 854-1987 Section 6.3</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+&nbsp;        /* Call round to test for over/under flows */
+<b class="nc">&nbsp;        final int excp = result.round(aextradigit + bextradigit);</b>
+<b class="nc">&nbsp;        if (excp != 0) {</b>
+<b class="nc">&nbsp;            result = dotrap(excp, ADD_TRAP, x, result);</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        return result;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Returns a number that is this number with the sign bit reversed.
+&nbsp;     * @return the opposite of this
+&nbsp;     */
+&nbsp;    @Override
+&nbsp;    public Dfp negate() {
+<b class="nc">&nbsp;        Dfp result = newInstance(this);</b>
+<b class="nc">&nbsp;        result.sign = (byte) -result.sign;</b>
+<b class="nc">&nbsp;        return result;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Subtract x from this.
+&nbsp;     * @param x number to subtract
+&nbsp;     * @return difference of this and a
+&nbsp;     */
+&nbsp;    @Override
+&nbsp;    public Dfp subtract(final Dfp x) {
+<b class="nc">&nbsp;        return add(x.negate());</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Round this given the next digit n using the current rounding mode.
+&nbsp;     * @param n ???
+&nbsp;     * @return the IEEE flag if an exception occurred
+&nbsp;     */
+&nbsp;    protected int round(int n) {
+<b class="nc">&nbsp;        boolean inc = false;</b>
+<b class="nc">&nbsp;        switch (field.getRoundingMode()) {</b>
+&nbsp;        case ROUND_DOWN:
+<b class="nc">&nbsp;            inc = false;</b>
+<b class="nc">&nbsp;            break;</b>
+&nbsp;
+&nbsp;        case ROUND_UP:
+<b class="nc">&nbsp;            inc = n != 0;       // round up if n!=0</b>
+<b class="nc">&nbsp;            break;</b>
+&nbsp;
+&nbsp;        case ROUND_HALF_UP:
+<b class="nc">&nbsp;            inc = n &gt;= 5000;  // round half up</b>
+<b class="nc">&nbsp;            break;</b>
+&nbsp;
+&nbsp;        case ROUND_HALF_DOWN:
+<b class="nc">&nbsp;            inc = n &gt; 5000;  // round half down</b>
+<b class="nc">&nbsp;            break;</b>
+&nbsp;
+&nbsp;        case ROUND_HALF_EVEN:
+<b class="nc">&nbsp;            inc = n &gt; 5000 || (n == 5000 &amp;&amp; (mant[0] &amp; 1) == 1);  // round half-even</b>
+<b class="nc">&nbsp;            break;</b>
+&nbsp;
+&nbsp;        case ROUND_HALF_ODD:
+<b class="nc">&nbsp;            inc = n &gt; 5000 || (n == 5000 &amp;&amp; (mant[0] &amp; 1) == 0);  // round half-odd</b>
+<b class="nc">&nbsp;            break;</b>
+&nbsp;
+&nbsp;        case ROUND_CEIL:
+<b class="nc">&nbsp;            inc = sign == 1 &amp;&amp; n != 0;  // round ceil</b>
+<b class="nc">&nbsp;            break;</b>
+&nbsp;
+&nbsp;        case ROUND_FLOOR:
+&nbsp;        default:
+<b class="nc">&nbsp;            inc = sign == -1 &amp;&amp; n != 0;  // round floor</b>
+&nbsp;            break;
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        if (inc) {</b>
+&nbsp;            // increment if necessary
+<b class="nc">&nbsp;            int rh = 1;</b>
+<b class="nc">&nbsp;            for (int i = 0; i &lt; mant.length; i++) {</b>
+<b class="nc">&nbsp;                final int r = mant[i] + rh;</b>
+<b class="nc">&nbsp;                rh = r / RADIX;</b>
+<b class="nc">&nbsp;                mant[i] = r - rh * RADIX;</b>
+&nbsp;            }
+&nbsp;
+<b class="nc">&nbsp;            if (rh != 0) {</b>
+<b class="nc">&nbsp;                shiftRight();</b>
+<b class="nc">&nbsp;                mant[mant.length - 1] = rh;</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+&nbsp;        // check for exceptional cases and raise signals if necessary
+<b class="nc">&nbsp;        if (exp &lt; MIN_EXP) {</b>
+&nbsp;            // Gradual Underflow
+<b class="nc">&nbsp;            field.setIEEEFlagsBits(DfpField.FLAG_UNDERFLOW);</b>
+<b class="nc">&nbsp;            return DfpField.FLAG_UNDERFLOW;</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        if (exp &gt; MAX_EXP) {</b>
+&nbsp;            // Overflow
+<b class="nc">&nbsp;            field.setIEEEFlagsBits(DfpField.FLAG_OVERFLOW);</b>
+<b class="nc">&nbsp;            return DfpField.FLAG_OVERFLOW;</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        if (n != 0) {</b>
+&nbsp;            // Inexact
+<b class="nc">&nbsp;            field.setIEEEFlagsBits(DfpField.FLAG_INEXACT);</b>
+<b class="nc">&nbsp;            return DfpField.FLAG_INEXACT;</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        return 0;</b>
+&nbsp;
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Multiply this by x.
+&nbsp;     * @param x multiplicand
+&nbsp;     * @return product of this and x
+&nbsp;     */
+&nbsp;    @Override
+&nbsp;    public Dfp multiply(final Dfp x) {
+&nbsp;
+&nbsp;        // make sure we don&#39;t mix number with different precision
+<b class="nc">&nbsp;        if (field.getRadixDigits() != x.field.getRadixDigits()) {</b>
+<b class="nc">&nbsp;            field.setIEEEFlagsBits(DfpField.FLAG_INVALID);</b>
+<b class="nc">&nbsp;            final Dfp result = newInstance(getZero());</b>
+<b class="nc">&nbsp;            result.nans = QNAN;</b>
+<b class="nc">&nbsp;            return dotrap(DfpField.FLAG_INVALID, MULTIPLY_TRAP, x, result);</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        Dfp result = newInstance(getZero());</b>
+&nbsp;
+&nbsp;        /* handle special cases */
+<b class="nc">&nbsp;        if (nans != FINITE || x.nans != FINITE) {</b>
+<b class="nc">&nbsp;            if (isNaN()) {</b>
+<b class="nc">&nbsp;                return this;</b>
+&nbsp;            }
+&nbsp;
+<b class="nc">&nbsp;            if (x.isNaN()) {</b>
+<b class="nc">&nbsp;                return x;</b>
+&nbsp;            }
+&nbsp;
+<b class="nc">&nbsp;            if (nans == INFINITE &amp;&amp; x.nans == FINITE &amp;&amp; x.mant[mant.length - 1] != 0) {</b>
+<b class="nc">&nbsp;                result = newInstance(this);</b>
+<b class="nc">&nbsp;                result.sign = (byte) (sign * x.sign);</b>
+<b class="nc">&nbsp;                return result;</b>
+&nbsp;            }
+&nbsp;
+<b class="nc">&nbsp;            if (x.nans == INFINITE &amp;&amp; nans == FINITE &amp;&amp; mant[mant.length - 1] != 0) {</b>
+<b class="nc">&nbsp;                result = newInstance(x);</b>
+<b class="nc">&nbsp;                result.sign = (byte) (sign * x.sign);</b>
+<b class="nc">&nbsp;                return result;</b>
+&nbsp;            }
+&nbsp;
+<b class="nc">&nbsp;            if (x.nans == INFINITE &amp;&amp; nans == INFINITE) {</b>
+<b class="nc">&nbsp;                result = newInstance(this);</b>
+<b class="nc">&nbsp;                result.sign = (byte) (sign * x.sign);</b>
+<b class="nc">&nbsp;                return result;</b>
+&nbsp;            }
+&nbsp;
+<b class="nc">&nbsp;            if ((x.nans == INFINITE &amp;&amp; nans == FINITE &amp;&amp; mant[mant.length - 1] == 0) ||</b>
+&nbsp;                (nans == INFINITE &amp;&amp; x.nans == FINITE &amp;&amp; x.mant[mant.length - 1] == 0)) {
+<b class="nc">&nbsp;                field.setIEEEFlagsBits(DfpField.FLAG_INVALID);</b>
+<b class="nc">&nbsp;                result = newInstance(getZero());</b>
+<b class="nc">&nbsp;                result.nans = QNAN;</b>
+<b class="nc">&nbsp;                result = dotrap(DfpField.FLAG_INVALID, MULTIPLY_TRAP, x, result);</b>
+<b class="nc">&nbsp;                return result;</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        int[] product = new int[mant.length * 2];  // Big enough to hold even the largest result</b>
+&nbsp;
+<b class="nc">&nbsp;        for (int i = 0; i &lt; mant.length; i++) {</b>
+<b class="nc">&nbsp;            int rh = 0; // acts as a carry</b>
+<b class="nc">&nbsp;            for (int j = 0; j &lt; mant.length; j++) {</b>
+<b class="nc">&nbsp;                int r = mant[i] * x.mant[j]; // multiply the 2 digits</b>
+<b class="nc">&nbsp;                r += product[i + j] + rh; // add to the product digit with carry in</b>
+&nbsp;
+<b class="nc">&nbsp;                rh = r / RADIX;</b>
+<b class="nc">&nbsp;                product[i + j] = r - rh * RADIX;</b>
+&nbsp;            }
+<b class="nc">&nbsp;            product[i + mant.length] = rh;</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        // Find the most sig digit
+<b class="nc">&nbsp;        int md = mant.length * 2 - 1;  // default, in case result is zero</b>
+<b class="nc">&nbsp;        for (int i = mant.length * 2 - 1; i &gt;= 0; i--) {</b>
+<b class="nc">&nbsp;            if (product[i] != 0) {</b>
+<b class="nc">&nbsp;                md = i;</b>
+<b class="nc">&nbsp;                break;</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+&nbsp;        // Copy the digits into the result
+<b class="nc">&nbsp;        for (int i = 0; i &lt; mant.length; i++) {</b>
+<b class="nc">&nbsp;            result.mant[mant.length - i - 1] = product[md - i];</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        // Fixup the exponent.
+<b class="nc">&nbsp;        result.exp = exp + x.exp + md - 2 * mant.length + 1;</b>
+<b class="nc">&nbsp;        result.sign = (byte) ((sign == x.sign) ? 1 : -1);</b>
+&nbsp;
+<b class="nc">&nbsp;        if (result.mant[mant.length - 1] == 0) {</b>
+&nbsp;            // if result is zero, set exp to zero
+<b class="nc">&nbsp;            result.exp = 0;</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        final int excp;
+<b class="nc">&nbsp;        if (md &gt; (mant.length - 1)) {</b>
+<b class="nc">&nbsp;            excp = result.round(product[md - mant.length]);</b>
+&nbsp;        } else {
+<b class="nc">&nbsp;            excp = result.round(0); // has no effect except to check status</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        if (excp != 0) {</b>
+<b class="nc">&nbsp;            result = dotrap(excp, MULTIPLY_TRAP, x, result);</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        return result;</b>
+&nbsp;
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Multiply this by a single digit x.
+&nbsp;     * @param x multiplicand
+&nbsp;     * @return product of this and x
+&nbsp;     */
+&nbsp;    @Override
+&nbsp;    public Dfp multiply(final int x) {
+<b class="nc">&nbsp;        if (x &gt;= 0 &amp;&amp; x &lt; RADIX) {</b>
+<b class="nc">&nbsp;            return multiplyFast(x);</b>
+&nbsp;        } else {
+<b class="nc">&nbsp;            return multiply(newInstance(x));</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Multiply this by a single digit 0&amp;lt;=x&amp;lt;radix.
+&nbsp;     * There are speed advantages in this special case.
+&nbsp;     * @param x multiplicand
+&nbsp;     * @return product of this and x
+&nbsp;     */
+&nbsp;    private Dfp multiplyFast(final int x) {
+<b class="nc">&nbsp;        Dfp result = newInstance(this);</b>
+&nbsp;
+&nbsp;        /* handle special cases */
+<b class="nc">&nbsp;        if (nans != FINITE) {</b>
+<b class="nc">&nbsp;            if (isNaN()) {</b>
+<b class="nc">&nbsp;                return this;</b>
+&nbsp;            }
+&nbsp;
+<b class="nc">&nbsp;            if (nans == INFINITE &amp;&amp; x != 0) {</b>
+<b class="nc">&nbsp;                result = newInstance(this);</b>
+<b class="nc">&nbsp;                return result;</b>
+&nbsp;            }
+&nbsp;
+<b class="nc">&nbsp;            if (nans == INFINITE &amp;&amp; x == 0) {</b>
+<b class="nc">&nbsp;                field.setIEEEFlagsBits(DfpField.FLAG_INVALID);</b>
+<b class="nc">&nbsp;                result = newInstance(getZero());</b>
+<b class="nc">&nbsp;                result.nans = QNAN;</b>
+<b class="nc">&nbsp;                result = dotrap(DfpField.FLAG_INVALID, MULTIPLY_TRAP, newInstance(getZero()), result);</b>
+<b class="nc">&nbsp;                return result;</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+&nbsp;        /* range check x */
+<b class="nc">&nbsp;        if (x &lt; 0 || x &gt;= RADIX) {</b>
+<b class="nc">&nbsp;            field.setIEEEFlagsBits(DfpField.FLAG_INVALID);</b>
+<b class="nc">&nbsp;            result = newInstance(getZero());</b>
+<b class="nc">&nbsp;            result.nans = QNAN;</b>
+<b class="nc">&nbsp;            result = dotrap(DfpField.FLAG_INVALID, MULTIPLY_TRAP, result, result);</b>
+<b class="nc">&nbsp;            return result;</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        int rh = 0;</b>
+<b class="nc">&nbsp;        for (int i = 0; i &lt; mant.length; i++) {</b>
+<b class="nc">&nbsp;            final int r = mant[i] * x + rh;</b>
+<b class="nc">&nbsp;            rh = r / RADIX;</b>
+<b class="nc">&nbsp;            result.mant[i] = r - rh * RADIX;</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        int lostdigit = 0;</b>
+<b class="nc">&nbsp;        if (rh != 0) {</b>
+<b class="nc">&nbsp;            lostdigit = result.mant[0];</b>
+<b class="nc">&nbsp;            result.shiftRight();</b>
+<b class="nc">&nbsp;            result.mant[mant.length - 1] = rh;</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        if (result.mant[mant.length - 1] == 0) { // if result is zero, set exp to zero</b>
+<b class="nc">&nbsp;            result.exp = 0;</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        final int excp = result.round(lostdigit);</b>
+<b class="nc">&nbsp;        if (excp != 0) {</b>
+<b class="nc">&nbsp;            result = dotrap(excp, MULTIPLY_TRAP, result, result);</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        return result;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Divide this by divisor.
+&nbsp;     * @param divisor divisor
+&nbsp;     * @return quotient of this by divisor
+&nbsp;     */
+&nbsp;    @Override
+&nbsp;    public Dfp divide(Dfp divisor) {
+&nbsp;        int[] dividend;  // current status of the dividend
+&nbsp;        int[] quotient;  // quotient
+&nbsp;        int[] remainder; // remainder
+&nbsp;        int qd;          // current quotient digit we&#39;re working with
+&nbsp;        int nsqd;        // number of significant quotient digits we have
+<b class="nc">&nbsp;        int trial = 0;   // trial quotient digit</b>
+&nbsp;        int minadj;      // minimum adjustment
+&nbsp;        boolean trialgood; // Flag to indicate a good trail digit
+<b class="nc">&nbsp;        int md = 0;      // most sig digit in result</b>
+&nbsp;        int excp;        // exceptions
+&nbsp;
+&nbsp;        // make sure we don&#39;t mix number with different precision
+<b class="nc">&nbsp;        if (field.getRadixDigits() != divisor.field.getRadixDigits()) {</b>
+<b class="nc">&nbsp;            field.setIEEEFlagsBits(DfpField.FLAG_INVALID);</b>
+<b class="nc">&nbsp;            final Dfp result = newInstance(getZero());</b>
+<b class="nc">&nbsp;            result.nans = QNAN;</b>
+<b class="nc">&nbsp;            return dotrap(DfpField.FLAG_INVALID, DIVIDE_TRAP, divisor, result);</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        Dfp result = newInstance(getZero());</b>
+&nbsp;
+&nbsp;        /* handle special cases */
+<b class="nc">&nbsp;        if (nans != FINITE || divisor.nans != FINITE) {</b>
+<b class="nc">&nbsp;            if (isNaN()) {</b>
+<b class="nc">&nbsp;                return this;</b>
+&nbsp;            }
+&nbsp;
+<b class="nc">&nbsp;            if (divisor.isNaN()) {</b>
+<b class="nc">&nbsp;                return divisor;</b>
+&nbsp;            }
+&nbsp;
+<b class="nc">&nbsp;            if (nans == INFINITE &amp;&amp; divisor.nans == FINITE) {</b>
+<b class="nc">&nbsp;                result = newInstance(this);</b>
+<b class="nc">&nbsp;                result.sign = (byte) (sign * divisor.sign);</b>
+<b class="nc">&nbsp;                return result;</b>
+&nbsp;            }
+&nbsp;
+<b class="nc">&nbsp;            if (divisor.nans == INFINITE &amp;&amp; nans == FINITE) {</b>
+<b class="nc">&nbsp;                result = newInstance(getZero());</b>
+<b class="nc">&nbsp;                result.sign = (byte) (sign * divisor.sign);</b>
+<b class="nc">&nbsp;                return result;</b>
+&nbsp;            }
+&nbsp;
+<b class="nc">&nbsp;            if (divisor.nans == INFINITE &amp;&amp; nans == INFINITE) {</b>
+<b class="nc">&nbsp;                field.setIEEEFlagsBits(DfpField.FLAG_INVALID);</b>
+<b class="nc">&nbsp;                result = newInstance(getZero());</b>
+<b class="nc">&nbsp;                result.nans = QNAN;</b>
+<b class="nc">&nbsp;                result = dotrap(DfpField.FLAG_INVALID, DIVIDE_TRAP, divisor, result);</b>
+<b class="nc">&nbsp;                return result;</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+&nbsp;        /* Test for divide by zero */
+<b class="nc">&nbsp;        if (divisor.mant[mant.length - 1] == 0) {</b>
+<b class="nc">&nbsp;            field.setIEEEFlagsBits(DfpField.FLAG_DIV_ZERO);</b>
+<b class="nc">&nbsp;            result = newInstance(getZero());</b>
+<b class="nc">&nbsp;            result.sign = (byte) (sign * divisor.sign);</b>
+<b class="nc">&nbsp;            result.nans = INFINITE;</b>
+<b class="nc">&nbsp;            result = dotrap(DfpField.FLAG_DIV_ZERO, DIVIDE_TRAP, divisor, result);</b>
+<b class="nc">&nbsp;            return result;</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        dividend = new int[mant.length + 1]; // one extra digit needed</b>
+<b class="nc">&nbsp;        quotient = new int[mant.length + 2]; // two extra digits needed 1 for overflow, 1 for rounding</b>
+<b class="nc">&nbsp;        remainder = new int[mant.length + 1]; // one extra digit needed</b>
+&nbsp;
+&nbsp;        /* Initialize our most significant digits to zero */
+&nbsp;
+<b class="nc">&nbsp;        dividend[mant.length] = 0;</b>
+<b class="nc">&nbsp;        quotient[mant.length] = 0;</b>
+<b class="nc">&nbsp;        quotient[mant.length + 1] = 0;</b>
+<b class="nc">&nbsp;        remainder[mant.length] = 0;</b>
+&nbsp;
+&nbsp;        /* copy our mantissa into the dividend, initialize the quotient while we are at it */
+&nbsp;
+<b class="nc">&nbsp;        for (int i = 0; i &lt; mant.length; i++) {</b>
+<b class="nc">&nbsp;            dividend[i] = mant[i];</b>
+<b class="nc">&nbsp;            quotient[i] = 0;</b>
+<b class="nc">&nbsp;            remainder[i] = 0;</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        /* outer loop.  Once per quotient digit */
+<b class="nc">&nbsp;        nsqd = 0;</b>
+<b class="nc">&nbsp;        for (qd = mant.length + 1; qd &gt;= 0; qd--) {</b>
+&nbsp;            /* Determine outer limits of our quotient digit */
+&nbsp;
+&nbsp;            // r =  most sig 2 digits of dividend
+<b class="nc">&nbsp;            final int divMsb = dividend[mant.length] * RADIX + dividend[mant.length - 1];</b>
+<b class="nc">&nbsp;            int min = divMsb / (divisor.mant[mant.length - 1] + 1);</b>
+<b class="nc">&nbsp;            int max = (divMsb + 1) / divisor.mant[mant.length - 1];</b>
+&nbsp;
+<b class="nc">&nbsp;            trialgood = false;</b>
+<b class="nc">&nbsp;            while (!trialgood) {</b>
+&nbsp;                // try the mean
+<b class="nc">&nbsp;                trial = (min + max) / 2;</b>
+&nbsp;
+&nbsp;                /* Multiply by divisor and store as remainder */
+<b class="nc">&nbsp;                int rh = 0;</b>
+<b class="nc">&nbsp;                for (int i = 0; i &lt; mant.length + 1; i++) {</b>
+<b class="nc">&nbsp;                    int dm = (i &lt; mant.length) ? divisor.mant[i] : 0;</b>
+<b class="nc">&nbsp;                    final int r = (dm * trial) + rh;</b>
+<b class="nc">&nbsp;                    rh = r / RADIX;</b>
+<b class="nc">&nbsp;                    remainder[i] = r - rh * RADIX;</b>
+&nbsp;                }
+&nbsp;
+&nbsp;                /* subtract the remainder from the dividend */
+<b class="nc">&nbsp;                rh = 1; // carry in to aid the subtraction</b>
+<b class="nc">&nbsp;                for (int i = 0; i &lt; mant.length + 1; i++) {</b>
+<b class="nc">&nbsp;                    final int r = ((RADIX - 1) - remainder[i]) + dividend[i] + rh;</b>
+<b class="nc">&nbsp;                    rh = r / RADIX;</b>
+<b class="nc">&nbsp;                    remainder[i] = r - rh * RADIX;</b>
+&nbsp;                }
+&nbsp;
+&nbsp;                /* Lets analyze what we have here */
+<b class="nc">&nbsp;                if (rh == 0) {</b>
+&nbsp;                    // trial is too big -- negative remainder
+<b class="nc">&nbsp;                    max = trial - 1;</b>
+<b class="nc">&nbsp;                    continue;</b>
+&nbsp;                }
+&nbsp;
+&nbsp;                /* find out how far off the remainder is telling us we are */
+<b class="nc">&nbsp;                minadj = (remainder[mant.length] * RADIX) + remainder[mant.length - 1];</b>
+<b class="nc">&nbsp;                minadj /= divisor.mant[mant.length - 1] + 1;</b>
+&nbsp;
+<b class="nc">&nbsp;                if (minadj &gt;= 2) {</b>
+<b class="nc">&nbsp;                    min = trial + minadj; // update the minimum</b>
+<b class="nc">&nbsp;                    continue;</b>
+&nbsp;                }
+&nbsp;
+&nbsp;                /* May have a good one here, check more thoroughly. Basically its a good
+&nbsp;                 * one if it is less than the divisor */
+<b class="nc">&nbsp;                trialgood = false;  // assume false</b>
+<b class="nc">&nbsp;                for (int i = mant.length - 1; i &gt;= 0; i--) {</b>
+<b class="nc">&nbsp;                    if (divisor.mant[i] &gt; remainder[i]) {</b>
+<b class="nc">&nbsp;                        trialgood = true;</b>
+<b class="nc">&nbsp;                        break;</b>
+&nbsp;                    }
+<b class="nc">&nbsp;                    if (divisor.mant[i] &lt; remainder[i]) {</b>
+<b class="nc">&nbsp;                        break;</b>
+&nbsp;                    }
+&nbsp;                }
+&nbsp;
+<b class="nc">&nbsp;                if (remainder[mant.length] != 0) {</b>
+<b class="nc">&nbsp;                    trialgood = false;</b>
+&nbsp;                }
+&nbsp;
+<b class="nc">&nbsp;                if (!trialgood) {</b>
+<b class="nc">&nbsp;                    min = trial + 1;</b>
+&nbsp;                }
+<b class="nc">&nbsp;            }</b>
+&nbsp;
+&nbsp;            /* Great we have a digit! */
+<b class="nc">&nbsp;            quotient[qd] = trial;</b>
+<b class="nc">&nbsp;            if (trial != 0 || nsqd != 0) {</b>
+<b class="nc">&nbsp;                nsqd++;</b>
+&nbsp;            }
+&nbsp;
+<b class="nc">&nbsp;            if (field.getRoundingMode() == DfpField.RoundingMode.ROUND_DOWN &amp;&amp; nsqd == mant.length) {</b>
+&nbsp;                // We have enough for this mode
+<b class="nc">&nbsp;                break;</b>
+&nbsp;            }
+&nbsp;
+<b class="nc">&nbsp;            if (nsqd &gt; mant.length) {</b>
+&nbsp;                // We have enough digits
+<b class="nc">&nbsp;                break;</b>
+&nbsp;            }
+&nbsp;
+&nbsp;            /* move the remainder into the dividend while left shifting */
+<b class="nc">&nbsp;            dividend[0] = 0;</b>
+<b class="nc">&nbsp;            for (int i = 0; i &lt; mant.length; i++) {</b>
+<b class="nc">&nbsp;                dividend[i + 1] = remainder[i];</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+&nbsp;        /* Find the most sig digit */
+<b class="nc">&nbsp;        md = mant.length;  // default</b>
+<b class="nc">&nbsp;        for (int i = mant.length + 1; i &gt;= 0; i--) {</b>
+<b class="nc">&nbsp;            if (quotient[i] != 0) {</b>
+<b class="nc">&nbsp;                md = i;</b>
+<b class="nc">&nbsp;                break;</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+&nbsp;        /* Copy the digits into the result */
+<b class="nc">&nbsp;        for (int i = 0; i &lt; mant.length; i++) {</b>
+<b class="nc">&nbsp;            result.mant[mant.length - i - 1] = quotient[md - i];</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        /* Fixup the exponent. */
+<b class="nc">&nbsp;        result.exp = exp - divisor.exp + md - mant.length;</b>
+<b class="nc">&nbsp;        result.sign = (byte) ((sign == divisor.sign) ? 1 : -1);</b>
+&nbsp;
+<b class="nc">&nbsp;        if (result.mant[mant.length - 1] == 0) { // if result is zero, set exp to zero</b>
+<b class="nc">&nbsp;            result.exp = 0;</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        if (md &gt; (mant.length - 1)) {</b>
+<b class="nc">&nbsp;            excp = result.round(quotient[md - mant.length]);</b>
+&nbsp;        } else {
+<b class="nc">&nbsp;            excp = result.round(0);</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        if (excp != 0) {</b>
+<b class="nc">&nbsp;            result = dotrap(excp, DIVIDE_TRAP, divisor, result);</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        return result;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Divide by a single digit less than radix.
+&nbsp;     *  Special case, so there are speed advantages. 0 &amp;lt;= divisor &amp;lt; radix
+&nbsp;     * @param divisor divisor
+&nbsp;     * @return quotient of this by divisor
+&nbsp;     */
+&nbsp;    public Dfp divide(int divisor) {
+&nbsp;
+&nbsp;        // Handle special cases
+<b class="nc">&nbsp;        if (nans != FINITE) {</b>
+<b class="nc">&nbsp;            if (isNaN()) {</b>
+<b class="nc">&nbsp;                return this;</b>
+&nbsp;            }
+&nbsp;
+<b class="nc">&nbsp;            if (nans == INFINITE) {</b>
+<b class="nc">&nbsp;                return newInstance(this);</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+&nbsp;        // Test for divide by zero
+<b class="nc">&nbsp;        if (divisor == 0) {</b>
+<b class="nc">&nbsp;            field.setIEEEFlagsBits(DfpField.FLAG_DIV_ZERO);</b>
+<b class="nc">&nbsp;            Dfp result = newInstance(getZero());</b>
+<b class="nc">&nbsp;            result.sign = sign;</b>
+<b class="nc">&nbsp;            result.nans = INFINITE;</b>
+<b class="nc">&nbsp;            result = dotrap(DfpField.FLAG_DIV_ZERO, DIVIDE_TRAP, getZero(), result);</b>
+<b class="nc">&nbsp;            return result;</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        // range check divisor
+<b class="nc">&nbsp;        if (divisor &lt; 0 || divisor &gt;= RADIX) {</b>
+<b class="nc">&nbsp;            field.setIEEEFlagsBits(DfpField.FLAG_INVALID);</b>
+<b class="nc">&nbsp;            Dfp result = newInstance(getZero());</b>
+<b class="nc">&nbsp;            result.nans = QNAN;</b>
+<b class="nc">&nbsp;            result = dotrap(DfpField.FLAG_INVALID, DIVIDE_TRAP, result, result);</b>
+<b class="nc">&nbsp;            return result;</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        Dfp result = newInstance(this);</b>
+&nbsp;
+<b class="nc">&nbsp;        int rl = 0;</b>
+<b class="nc">&nbsp;        for (int i = mant.length - 1; i &gt;= 0; i--) {</b>
+<b class="nc">&nbsp;            final int r = rl * RADIX + result.mant[i];</b>
+<b class="nc">&nbsp;            final int rh = r / divisor;</b>
+<b class="nc">&nbsp;            rl = r - rh * divisor;</b>
+<b class="nc">&nbsp;            result.mant[i] = rh;</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        if (result.mant[mant.length - 1] == 0) {</b>
+&nbsp;            // normalize
+<b class="nc">&nbsp;            result.shiftLeft();</b>
+<b class="nc">&nbsp;            final int r = rl * RADIX;        // compute the next digit and put it in</b>
+<b class="nc">&nbsp;            final int rh = r / divisor;</b>
+<b class="nc">&nbsp;            rl = r - rh * divisor;</b>
+<b class="nc">&nbsp;            result.mant[0] = rh;</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        final int excp = result.round(rl * RADIX / divisor);  // do the rounding</b>
+<b class="nc">&nbsp;        if (excp != 0) {</b>
+<b class="nc">&nbsp;            result = dotrap(excp, DIVIDE_TRAP, result, result);</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        return result;</b>
+&nbsp;
+&nbsp;    }
+&nbsp;
+&nbsp;    /** {@inheritDoc} */
+&nbsp;    @Override
+&nbsp;    public Dfp reciprocal() {
+<b class="nc">&nbsp;        return field.getOne().divide(this);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Compute the square root.
+&nbsp;     * @return square root of the instance
+&nbsp;     * @since 3.2
+&nbsp;     */
+&nbsp;    @Override
+&nbsp;    public Dfp sqrt() {
+&nbsp;
+&nbsp;        // check for unusual cases
+<b class="nc">&nbsp;        if (nans == FINITE &amp;&amp; mant[mant.length - 1] == 0) {</b>
+&nbsp;            // if zero
+<b class="nc">&nbsp;            return newInstance(this);</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        if (nans != FINITE) {</b>
+<b class="nc">&nbsp;            if (nans == INFINITE &amp;&amp; sign == 1) {</b>
+&nbsp;                // if positive infinity
+<b class="nc">&nbsp;                return newInstance(this);</b>
+&nbsp;            }
+&nbsp;
+<b class="nc">&nbsp;            if (nans == QNAN) {</b>
+<b class="nc">&nbsp;                return newInstance(this);</b>
+&nbsp;            }
+&nbsp;
+<b class="nc">&nbsp;            if (nans == SNAN) {</b>
+&nbsp;                Dfp result;
+&nbsp;
+<b class="nc">&nbsp;                field.setIEEEFlagsBits(DfpField.FLAG_INVALID);</b>
+<b class="nc">&nbsp;                result = newInstance(this);</b>
+<b class="nc">&nbsp;                result = dotrap(DfpField.FLAG_INVALID, SQRT_TRAP, null, result);</b>
+<b class="nc">&nbsp;                return result;</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        if (sign == -1) {</b>
+&nbsp;            // if negative
+&nbsp;            Dfp result;
+&nbsp;
+<b class="nc">&nbsp;            field.setIEEEFlagsBits(DfpField.FLAG_INVALID);</b>
+<b class="nc">&nbsp;            result = newInstance(this);</b>
+<b class="nc">&nbsp;            result.nans = QNAN;</b>
+<b class="nc">&nbsp;            result = dotrap(DfpField.FLAG_INVALID, SQRT_TRAP, null, result);</b>
+<b class="nc">&nbsp;            return result;</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        Dfp x = newInstance(this);</b>
+&nbsp;
+&nbsp;        /* Lets make a reasonable guess as to the size of the square root */
+<b class="nc">&nbsp;        if (x.exp &lt; -1 || x.exp &gt; 1) {</b>
+<b class="nc">&nbsp;            x.exp = this.exp / 2;</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        /* Coarsely estimate the mantissa */
+<b class="nc">&nbsp;        switch (x.mant[mant.length - 1] / 2000) {</b>
+&nbsp;        case 0:
+<b class="nc">&nbsp;            x.mant[mant.length - 1] = x.mant[mant.length - 1] / 2 + 1;</b>
+<b class="nc">&nbsp;            break;</b>
+&nbsp;        case 2:
+<b class="nc">&nbsp;            x.mant[mant.length - 1] = 1500;</b>
+<b class="nc">&nbsp;            break;</b>
+&nbsp;        case 3:
+<b class="nc">&nbsp;            x.mant[mant.length - 1] = 2200;</b>
+<b class="nc">&nbsp;            break;</b>
+&nbsp;        default:
+<b class="nc">&nbsp;            x.mant[mant.length - 1] = 3000;</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        Dfp dx = newInstance(x);</b>
+&nbsp;
+&nbsp;        /* Now that we have the first pass estimate, compute the rest
+&nbsp;       by the formula dx = (y - x*x) / (2x); */
+&nbsp;
+<b class="nc">&nbsp;        Dfp px  = getZero();</b>
+<b class="nc">&nbsp;        Dfp ppx = getZero();</b>
+<b class="nc">&nbsp;        while (x.unequal(px)) {</b>
+<b class="nc">&nbsp;            dx = newInstance(x);</b>
+<b class="nc">&nbsp;            dx.sign = -1;</b>
+<b class="nc">&nbsp;            dx = dx.add(this.divide(x));</b>
+<b class="nc">&nbsp;            dx = dx.divide(2);</b>
+<b class="nc">&nbsp;            ppx = px;</b>
+<b class="nc">&nbsp;            px = x;</b>
+<b class="nc">&nbsp;            x = x.add(dx);</b>
+&nbsp;
+<b class="nc">&nbsp;            if (x.equals(ppx)) {</b>
+&nbsp;                // alternating between two values
+<b class="nc">&nbsp;                break;</b>
+&nbsp;            }
+&nbsp;
+&nbsp;            // if dx is zero, break.  Note testing the most sig digit
+&nbsp;            // is a sufficient test since dx is normalized
+<b class="nc">&nbsp;            if (dx.mant[mant.length - 1] == 0) {</b>
+<b class="nc">&nbsp;                break;</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        return x;</b>
+&nbsp;
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Get a string representation of the instance.
+&nbsp;     * @return string representation of the instance
+&nbsp;     */
+&nbsp;    @Override
+&nbsp;    public String toString() {
+<b class="nc">&nbsp;        if (nans != FINITE) {</b>
+&nbsp;            // if non-finite exceptional cases
+<b class="nc">&nbsp;            if (nans == INFINITE) {</b>
+<b class="nc">&nbsp;                return (sign &lt; 0) ? NEG_INFINITY_STRING : POS_INFINITY_STRING;</b>
+&nbsp;            } else {
+<b class="nc">&nbsp;                return NAN_STRING;</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        if (exp &gt; mant.length || exp &lt; -1) {</b>
+<b class="nc">&nbsp;            return dfp2sci();</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        return dfp2string();</b>
+&nbsp;
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Convert an instance to a string using scientific notation.
+&nbsp;     * @return string representation of the instance in scientific notation
+&nbsp;     */
+&nbsp;    protected String dfp2sci() {
+<b class="nc">&nbsp;        char[] rawdigits    = new char[mant.length * 4];</b>
+<b class="nc">&nbsp;        char[] outputbuffer = new char[mant.length * 4 + 20];</b>
+&nbsp;        int p;
+&nbsp;        int q;
+&nbsp;        int e;
+&nbsp;        int ae;
+&nbsp;        int shf;
+&nbsp;
+&nbsp;        // Get all the digits
+<b class="nc">&nbsp;        p = 0;</b>
+<b class="nc">&nbsp;        for (int i = mant.length - 1; i &gt;= 0; i--) {</b>
+<b class="nc">&nbsp;            rawdigits[p++] = (char) ((mant[i] / 1000) + &#39;0&#39;);</b>
+<b class="nc">&nbsp;            rawdigits[p++] = (char) (((mant[i] / 100) % 10) + &#39;0&#39;);</b>
+<b class="nc">&nbsp;            rawdigits[p++] = (char) (((mant[i] / 10) % 10) + &#39;0&#39;);</b>
+<b class="nc">&nbsp;            rawdigits[p++] = (char) (((mant[i]) % 10) + &#39;0&#39;);</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        // Find the first non-zero one
+<b class="nc">&nbsp;        for (p = 0; p &lt; rawdigits.length; p++) {</b>
+<b class="nc">&nbsp;            if (rawdigits[p] != &#39;0&#39;) {</b>
+<b class="nc">&nbsp;                break;</b>
+&nbsp;            }
+&nbsp;        }
+<b class="nc">&nbsp;        shf = p;</b>
+&nbsp;
+&nbsp;        // Now do the conversion
+<b class="nc">&nbsp;        q = 0;</b>
+<b class="nc">&nbsp;        if (sign == -1) {</b>
+<b class="nc">&nbsp;            outputbuffer[q++] = &#39;-&#39;;</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        if (p != rawdigits.length) {</b>
+&nbsp;            // there are non zero digits...
+<b class="nc">&nbsp;            outputbuffer[q++] = rawdigits[p++];</b>
+<b class="nc">&nbsp;            outputbuffer[q++] = &#39;.&#39;;</b>
+&nbsp;
+<b class="nc">&nbsp;            while (p &lt; rawdigits.length) {</b>
+<b class="nc">&nbsp;                outputbuffer[q++] = rawdigits[p++];</b>
+&nbsp;            }
+&nbsp;        } else {
+<b class="nc">&nbsp;            outputbuffer[q++] = &#39;0&#39;;</b>
+<b class="nc">&nbsp;            outputbuffer[q++] = &#39;.&#39;;</b>
+<b class="nc">&nbsp;            outputbuffer[q++] = &#39;0&#39;;</b>
+<b class="nc">&nbsp;            outputbuffer[q++] = &#39;e&#39;;</b>
+<b class="nc">&nbsp;            outputbuffer[q++] = &#39;0&#39;;</b>
+<b class="nc">&nbsp;            return String.valueOf(outputbuffer, 0, 5);</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        outputbuffer[q++] = &#39;e&#39;;</b>
+&nbsp;
+&nbsp;        // Find the msd of the exponent
+&nbsp;
+<b class="nc">&nbsp;        e = exp * 4 - shf - 1;</b>
+<b class="nc">&nbsp;        ae = e;</b>
+<b class="nc">&nbsp;        if (e &lt; 0) {</b>
+<b class="nc">&nbsp;            ae = -e;</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        // Find the largest p such that p &lt; e
+<b class="nc">&nbsp;        p = 1000000000;</b>
+<b class="nc">&nbsp;        while (p &gt; ae) {</b>
+<b class="nc">&nbsp;            p /= 10;</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        if (e &lt; 0) {</b>
+<b class="nc">&nbsp;            outputbuffer[q++] = &#39;-&#39;;</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        while (p &gt; 0) {</b>
+<b class="nc">&nbsp;            outputbuffer[q++] = (char)(ae / p + &#39;0&#39;);</b>
+<b class="nc">&nbsp;            ae %= p;</b>
+<b class="nc">&nbsp;            p /= 10;</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        return String.valueOf(outputbuffer, 0, q);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Convert an instance to a string using normal notation.
+&nbsp;     * @return string representation of the instance in normal notation
+&nbsp;     */
+&nbsp;    protected String dfp2string() {
+<b class="nc">&nbsp;        char[] buffer = new char[mant.length * 4 + 20];</b>
+<b class="nc">&nbsp;        int p = 1;</b>
+&nbsp;        int q;
+<b class="nc">&nbsp;        int e = exp;</b>
+<b class="nc">&nbsp;        boolean pointInserted = false;</b>
+&nbsp;
+<b class="nc">&nbsp;        buffer[0] = &#39; &#39;;</b>
+&nbsp;
+<b class="nc">&nbsp;        if (e &lt;= 0) {</b>
+<b class="nc">&nbsp;            buffer[p++] = &#39;0&#39;;</b>
+<b class="nc">&nbsp;            buffer[p++] = &#39;.&#39;;</b>
+<b class="nc">&nbsp;            pointInserted = true;</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        while (e &lt; 0) {</b>
+<b class="nc">&nbsp;            buffer[p++] = &#39;0&#39;;</b>
+<b class="nc">&nbsp;            buffer[p++] = &#39;0&#39;;</b>
+<b class="nc">&nbsp;            buffer[p++] = &#39;0&#39;;</b>
+<b class="nc">&nbsp;            buffer[p++] = &#39;0&#39;;</b>
+<b class="nc">&nbsp;            e++;</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        for (int i = mant.length - 1; i &gt;= 0; i--) {</b>
+<b class="nc">&nbsp;            buffer[p++] = (char) ((mant[i] / 1000) + &#39;0&#39;);</b>
+<b class="nc">&nbsp;            buffer[p++] = (char) (((mant[i] / 100) % 10) + &#39;0&#39;);</b>
+<b class="nc">&nbsp;            buffer[p++] = (char) (((mant[i] / 10) % 10) + &#39;0&#39;);</b>
+<b class="nc">&nbsp;            buffer[p++] = (char) (((mant[i]) % 10) + &#39;0&#39;);</b>
+<b class="nc">&nbsp;            if (--e == 0) {</b>
+<b class="nc">&nbsp;                buffer[p++] = &#39;.&#39;;</b>
+<b class="nc">&nbsp;                pointInserted = true;</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        while (e &gt; 0) {</b>
+<b class="nc">&nbsp;            buffer[p++] = &#39;0&#39;;</b>
+<b class="nc">&nbsp;            buffer[p++] = &#39;0&#39;;</b>
+<b class="nc">&nbsp;            buffer[p++] = &#39;0&#39;;</b>
+<b class="nc">&nbsp;            buffer[p++] = &#39;0&#39;;</b>
+<b class="nc">&nbsp;            e--;</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        if (!pointInserted) {</b>
+&nbsp;            // Ensure we have a radix point!
+<b class="nc">&nbsp;            buffer[p++] = &#39;.&#39;;</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        // Suppress leading zeros
+<b class="nc">&nbsp;        q = 1;</b>
+<b class="nc">&nbsp;        while (buffer[q] == &#39;0&#39;) {</b>
+<b class="nc">&nbsp;            q++;</b>
+&nbsp;        }
+<b class="nc">&nbsp;        if (buffer[q] == &#39;.&#39;) {</b>
+<b class="nc">&nbsp;            q--;</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        // Suppress trailing zeros
+<b class="nc">&nbsp;        while (buffer[p - 1] == &#39;0&#39;) {</b>
+<b class="nc">&nbsp;            p--;</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        // Insert sign
+<b class="nc">&nbsp;        if (sign &lt; 0) {</b>
+<b class="nc">&nbsp;            buffer[--q] = &#39;-&#39;;</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        return String.valueOf(buffer, q, p - q);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Raises a trap.  This does not set the corresponding flag however.
+&nbsp;     *  @param type the trap type
+&nbsp;     *  @param what - name of routine trap occurred in
+&nbsp;     *  @param oper - input operator to function
+&nbsp;     *  @param result - the result computed prior to the trap
+&nbsp;     *  @return The suggested return value from the trap handler
+&nbsp;     */
+&nbsp;    public Dfp dotrap(int type, String what, Dfp oper, Dfp result) {
+<b class="nc">&nbsp;        Dfp def = result;</b>
+&nbsp;
+<b class="nc">&nbsp;        switch (type) {</b>
+&nbsp;        case DfpField.FLAG_INVALID:
+<b class="nc">&nbsp;            def = newInstance(getZero());</b>
+<b class="nc">&nbsp;            def.sign = result.sign;</b>
+<b class="nc">&nbsp;            def.nans = QNAN;</b>
+<b class="nc">&nbsp;            break;</b>
+&nbsp;
+&nbsp;        case DfpField.FLAG_DIV_ZERO:
+<b class="nc">&nbsp;            if (nans == FINITE &amp;&amp; mant[mant.length - 1] != 0) {</b>
+&nbsp;                // normal case, we are finite, non-zero
+<b class="nc">&nbsp;                def = newInstance(getZero());</b>
+<b class="nc">&nbsp;                def.sign = (byte) (sign * oper.sign);</b>
+<b class="nc">&nbsp;                def.nans = INFINITE;</b>
+&nbsp;            }
+&nbsp;
+<b class="nc">&nbsp;            if (nans == FINITE &amp;&amp; mant[mant.length - 1] == 0) {</b>
+&nbsp;                // 0/0
+<b class="nc">&nbsp;                def = newInstance(getZero());</b>
+<b class="nc">&nbsp;                def.nans = QNAN;</b>
+&nbsp;            }
+&nbsp;
+<b class="nc">&nbsp;            if (nans == INFINITE || nans == QNAN) {</b>
+<b class="nc">&nbsp;                def = newInstance(getZero());</b>
+<b class="nc">&nbsp;                def.nans = QNAN;</b>
+&nbsp;            }
+&nbsp;
+<b class="nc">&nbsp;            if (nans == INFINITE || nans == SNAN) {</b>
+<b class="nc">&nbsp;                def = newInstance(getZero());</b>
+<b class="nc">&nbsp;                def.nans = QNAN;</b>
+&nbsp;            }
+&nbsp;            break;
+&nbsp;
+&nbsp;        case DfpField.FLAG_UNDERFLOW:
+<b class="nc">&nbsp;            if ((result.exp + mant.length) &lt; MIN_EXP) {</b>
+<b class="nc">&nbsp;                def = newInstance(getZero());</b>
+<b class="nc">&nbsp;                def.sign = result.sign;</b>
+&nbsp;            } else {
+<b class="nc">&nbsp;                def = newInstance(result);  // gradual underflow</b>
+&nbsp;            }
+<b class="nc">&nbsp;            result.exp += ERR_SCALE;</b>
+<b class="nc">&nbsp;            break;</b>
+&nbsp;
+&nbsp;        case DfpField.FLAG_OVERFLOW:
+<b class="nc">&nbsp;            result.exp -= ERR_SCALE;</b>
+<b class="nc">&nbsp;            def = newInstance(getZero());</b>
+<b class="nc">&nbsp;            def.sign = result.sign;</b>
+<b class="nc">&nbsp;            def.nans = INFINITE;</b>
+<b class="nc">&nbsp;            break;</b>
+&nbsp;
+<b class="nc">&nbsp;        default: def = result; break;</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        return trap(type, what, oper, def, result);</b>
+&nbsp;
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Trap handler.  Subclasses may override this to provide trap
+&nbsp;     *  functionality per IEEE 854-1987.
+&nbsp;     *
+&nbsp;     *  @param type  The exception type - e.g. FLAG_OVERFLOW
+&nbsp;     *  @param what  The name of the routine we were in e.g. divide()
+&nbsp;     *  @param oper  An operand to this function if any
+&nbsp;     *  @param def   The default return value if trap not enabled
+&nbsp;     *  @param result    The result that is specified to be delivered per
+&nbsp;     *                   IEEE 854, if any
+&nbsp;     *  @return the value that should be return by the operation triggering the trap
+&nbsp;     */
+&nbsp;    protected Dfp trap(int type, String what, Dfp oper, Dfp def, Dfp result) {
+<b class="nc">&nbsp;        return def;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Returns the type - one of FINITE, INFINITE, SNAN, QNAN.
+&nbsp;     * @return type of the number
+&nbsp;     */
+&nbsp;    public int classify() {
+<b class="nc">&nbsp;        return nans;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Creates an instance that is the same as x except that it has the sign of y.
+&nbsp;     * abs(x) = dfp.copysign(x, dfp.one)
+&nbsp;     * @param x number to get the value from
+&nbsp;     * @param y number to get the sign from
+&nbsp;     * @return a number with the value of x and the sign of y
+&nbsp;     */
+&nbsp;    public static Dfp copySign(final Dfp x, final Dfp y) {
+<b class="nc">&nbsp;        Dfp result = x.newInstance(x);</b>
+<b class="nc">&nbsp;        result.sign = y.sign;</b>
+<b class="nc">&nbsp;        return result;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Returns the next number greater than this one in the direction of x.
+&nbsp;     * If this==x then simply returns this.
+&nbsp;     * @param x direction where to look at
+&nbsp;     * @return closest number next to instance in the direction of x
+&nbsp;     */
+&nbsp;    public Dfp nextAfter(final Dfp x) {
+&nbsp;
+&nbsp;        // make sure we don&#39;t mix number with different precision
+<b class="nc">&nbsp;        if (field.getRadixDigits() != x.field.getRadixDigits()) {</b>
+<b class="nc">&nbsp;            field.setIEEEFlagsBits(DfpField.FLAG_INVALID);</b>
+<b class="nc">&nbsp;            final Dfp result = newInstance(getZero());</b>
+<b class="nc">&nbsp;            result.nans = QNAN;</b>
+<b class="nc">&nbsp;            return dotrap(DfpField.FLAG_INVALID, NEXT_AFTER_TRAP, x, result);</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        // if this is greater than x
+<b class="nc">&nbsp;        boolean up = this.lessThan(x);</b>
+&nbsp;
+<b class="nc">&nbsp;        if (compare(this, x) == 0) {</b>
+<b class="nc">&nbsp;            return newInstance(x);</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        if (lessThan(getZero())) {</b>
+<b class="nc">&nbsp;            up = !up;</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        final Dfp inc;
+&nbsp;        Dfp result;
+<b class="nc">&nbsp;        if (up) {</b>
+<b class="nc">&nbsp;            inc = newInstance(getOne());</b>
+<b class="nc">&nbsp;            inc.exp = this.exp - mant.length + 1;</b>
+<b class="nc">&nbsp;            inc.sign = this.sign;</b>
+&nbsp;
+<b class="nc">&nbsp;            if (this.equals(getZero())) {</b>
+<b class="nc">&nbsp;                inc.exp = MIN_EXP - mant.length;</b>
+&nbsp;            }
+&nbsp;
+<b class="nc">&nbsp;            result = add(inc);</b>
+&nbsp;        } else {
+<b class="nc">&nbsp;            inc = newInstance(getOne());</b>
+<b class="nc">&nbsp;            inc.exp = this.exp;</b>
+<b class="nc">&nbsp;            inc.sign = this.sign;</b>
+&nbsp;
+<b class="nc">&nbsp;            if (this.equals(inc)) {</b>
+<b class="nc">&nbsp;                inc.exp = this.exp - mant.length;</b>
+&nbsp;            } else {
+<b class="nc">&nbsp;                inc.exp = this.exp - mant.length + 1;</b>
+&nbsp;            }
+&nbsp;
+<b class="nc">&nbsp;            if (this.equals(getZero())) {</b>
+<b class="nc">&nbsp;                inc.exp = MIN_EXP - mant.length;</b>
+&nbsp;            }
+&nbsp;
+<b class="nc">&nbsp;            result = this.subtract(inc);</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        if (result.classify() == INFINITE &amp;&amp; this.classify() != INFINITE) {</b>
+<b class="nc">&nbsp;            field.setIEEEFlagsBits(DfpField.FLAG_INEXACT);</b>
+<b class="nc">&nbsp;            result = dotrap(DfpField.FLAG_INEXACT, NEXT_AFTER_TRAP, x, result);</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        if (result.equals(getZero()) &amp;&amp; !this.equals(getZero())) {</b>
+<b class="nc">&nbsp;            field.setIEEEFlagsBits(DfpField.FLAG_INEXACT);</b>
+<b class="nc">&nbsp;            result = dotrap(DfpField.FLAG_INEXACT, NEXT_AFTER_TRAP, x, result);</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        return result;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Convert the instance into a double.
+&nbsp;     * @return a double approximating the instance
+&nbsp;     * @see #toSplitDouble()
+&nbsp;     */
+&nbsp;    public double toDouble() {
+&nbsp;
+<b class="nc">&nbsp;        if (isInfinite()) {</b>
+<b class="nc">&nbsp;            if (lessThan(getZero())) {</b>
+<b class="nc">&nbsp;                return Double.NEGATIVE_INFINITY;</b>
+&nbsp;            } else {
+<b class="nc">&nbsp;                return Double.POSITIVE_INFINITY;</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        if (isNaN()) {</b>
+<b class="nc">&nbsp;            return Double.NaN;</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        Dfp y = this;</b>
+<b class="nc">&nbsp;        boolean negate = false;</b>
+<b class="nc">&nbsp;        int cmp0 = compare(this, getZero());</b>
+<b class="nc">&nbsp;        if (cmp0 == 0) {</b>
+<b class="nc">&nbsp;            return sign &lt; 0 ? -0.0 : +0.0;</b>
+<b class="nc">&nbsp;        } else if (cmp0 &lt; 0) {</b>
+<b class="nc">&nbsp;            y = negate();</b>
+<b class="nc">&nbsp;            negate = true;</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        /* Find the exponent, first estimate by integer log10, then adjust.
+&nbsp;         Should be faster than doing a natural logarithm.  */
+<b class="nc">&nbsp;        int exponent = (int)(y.intLog10() * 3.32);</b>
+<b class="nc">&nbsp;        if (exponent &lt; 0) {</b>
+<b class="nc">&nbsp;            exponent--;</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        Dfp tempDfp = DfpMath.pow(getTwo(), exponent);</b>
+<b class="nc">&nbsp;        while (tempDfp.lessThan(y) || tempDfp.equals(y)) {</b>
+<b class="nc">&nbsp;            tempDfp = tempDfp.multiply(2);</b>
+<b class="nc">&nbsp;            exponent++;</b>
+&nbsp;        }
+<b class="nc">&nbsp;        exponent--;</b>
+&nbsp;
+&nbsp;        /* We have the exponent, now work on the mantissa */
+&nbsp;
+<b class="nc">&nbsp;        y = y.divide(DfpMath.pow(getTwo(), exponent));</b>
+<b class="nc">&nbsp;        if (exponent &gt; -1023) {</b>
+<b class="nc">&nbsp;            y = y.subtract(getOne());</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        if (exponent &lt; -1074) {</b>
+<b class="nc">&nbsp;            return 0;</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        if (exponent &gt; 1023) {</b>
+<b class="nc">&nbsp;            return negate ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY;</b>
+&nbsp;        }
+&nbsp;
+&nbsp;
+<b class="nc">&nbsp;        y = y.multiply(newInstance(4503599627370496L)).rint();</b>
+<b class="nc">&nbsp;        String str = y.toString();</b>
+<b class="nc">&nbsp;        str = str.substring(0, str.length() - 1);</b>
+<b class="nc">&nbsp;        long mantissa = Long.parseLong(str);</b>
+&nbsp;
+<b class="nc">&nbsp;        if (mantissa == 4503599627370496L) {</b>
+&nbsp;            // Handle special case where we round up to next power of two
+<b class="nc">&nbsp;            mantissa = 0;</b>
+<b class="nc">&nbsp;            exponent++;</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        /* Its going to be subnormal, so make adjustments */
+<b class="nc">&nbsp;        if (exponent &lt;= -1023) {</b>
+<b class="nc">&nbsp;            exponent--;</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        while (exponent &lt; -1023) {</b>
+<b class="nc">&nbsp;            exponent++;</b>
+<b class="nc">&nbsp;            mantissa &gt;&gt;&gt;= 1;</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        long bits = mantissa | ((exponent + 1023L) &lt;&lt; 52);</b>
+<b class="nc">&nbsp;        double x = Double.longBitsToDouble(bits);</b>
+&nbsp;
+<b class="nc">&nbsp;        if (negate) {</b>
+<b class="nc">&nbsp;            x = -x;</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        return x;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Convert the instance into a split double.
+&nbsp;     * @return an array of two doubles which sum represent the instance
+&nbsp;     * @see #toDouble()
+&nbsp;     */
+&nbsp;    public double[] toSplitDouble() {
+<b class="nc">&nbsp;        double[] split = new double[2];</b>
+<b class="nc">&nbsp;        long mask = 0xffffffffc0000000L;</b>
+&nbsp;
+<b class="nc">&nbsp;        split[0] = Double.longBitsToDouble(Double.doubleToLongBits(toDouble()) &amp; mask);</b>
+<b class="nc">&nbsp;        split[1] = subtract(newInstance(split[0])).toDouble();</b>
+&nbsp;
+<b class="nc">&nbsp;        return split;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** {@inheritDoc}
+&nbsp;     * @since 3.2
+&nbsp;     */
+&nbsp;    @Override
+&nbsp;    public double getReal() {
+<b class="nc">&nbsp;        return toDouble();</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** {@inheritDoc}
+&nbsp;     * @since 3.2
+&nbsp;     */
+&nbsp;    @Override
+&nbsp;    public Dfp add(final double a) {
+<b class="nc">&nbsp;        return add(newInstance(a));</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** {@inheritDoc}
+&nbsp;     * @since 3.2
+&nbsp;     */
+&nbsp;    @Override
+&nbsp;    public Dfp subtract(final double a) {
+<b class="nc">&nbsp;        return subtract(newInstance(a));</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** {@inheritDoc}
+&nbsp;     * @since 3.2
+&nbsp;     */
+&nbsp;    @Override
+&nbsp;    public Dfp multiply(final double a) {
+<b class="nc">&nbsp;        return multiply(newInstance(a));</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** {@inheritDoc}
+&nbsp;     * @since 3.2
+&nbsp;     */
+&nbsp;    @Override
+&nbsp;    public Dfp divide(final double a) {
+<b class="nc">&nbsp;        return divide(newInstance(a));</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** {@inheritDoc}
+&nbsp;     * @since 3.2
+&nbsp;     */
+&nbsp;    @Override
+&nbsp;    public Dfp remainder(final double a) {
+<b class="nc">&nbsp;        return remainder(newInstance(a));</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** {@inheritDoc}
+&nbsp;     * @since 3.2
+&nbsp;     */
+&nbsp;    @Override
+&nbsp;    public long round() {
+<b class="nc">&nbsp;        return Math.round(toDouble());</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** {@inheritDoc}
+&nbsp;     * @since 3.2
+&nbsp;     */
+&nbsp;    @Override
+&nbsp;    public Dfp signum() {
+<b class="nc">&nbsp;        if (isNaN() || isZero()) {</b>
+<b class="nc">&nbsp;            return this;</b>
+&nbsp;        } else {
+<b class="nc">&nbsp;            return newInstance(sign &gt; 0 ? +1 : -1);</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /** {@inheritDoc}
+&nbsp;     * @since 3.2
+&nbsp;     */
+&nbsp;    @Override
+&nbsp;    public Dfp copySign(final Dfp s) {
+<b class="nc">&nbsp;        if ((sign &gt;= 0 &amp;&amp; s.sign &gt;= 0) || (sign &lt; 0 &amp;&amp; s.sign &lt; 0)) { // Sign is currently OK</b>
+<b class="nc">&nbsp;            return this;</b>
+&nbsp;        }
+<b class="nc">&nbsp;        return negate(); // flip sign</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** {@inheritDoc}
+&nbsp;     * @since 3.2
+&nbsp;     */
+&nbsp;    @Override
+&nbsp;    public Dfp copySign(final double s) {
+<b class="nc">&nbsp;        long sb = Double.doubleToLongBits(s);</b>
+<b class="nc">&nbsp;        if ((sign &gt;= 0 &amp;&amp; sb &gt;= 0) || (sign &lt; 0 &amp;&amp; sb &lt; 0)) { // Sign is currently OK</b>
+<b class="nc">&nbsp;            return this;</b>
+&nbsp;        }
+<b class="nc">&nbsp;        return negate(); // flip sign</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** {@inheritDoc}
+&nbsp;     * @since 3.2
+&nbsp;     */
+&nbsp;    @Override
+&nbsp;    public Dfp scalb(final int n) {
+<b class="nc">&nbsp;        return multiply(DfpMath.pow(getTwo(), n));</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** {@inheritDoc}
+&nbsp;     * @since 3.2
+&nbsp;     */
+&nbsp;    @Override
+&nbsp;    public Dfp hypot(final Dfp y) {
+<b class="nc">&nbsp;        return multiply(this).add(y.multiply(y)).sqrt();</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** {@inheritDoc}
+&nbsp;     * @since 3.2
+&nbsp;     */
+&nbsp;    @Override
+&nbsp;    public Dfp cbrt() {
+<b class="nc">&nbsp;        return rootN(3);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** {@inheritDoc}
+&nbsp;     * @since 3.2
+&nbsp;     */
+&nbsp;    @Override
+&nbsp;    public Dfp rootN(final int n) {
+<b class="nc">&nbsp;        return (sign &gt;= 0) ?</b>
+<b class="nc">&nbsp;               DfpMath.pow(this, getOne().divide(n)) :</b>
+<b class="nc">&nbsp;               DfpMath.pow(negate(), getOne().divide(n)).negate();</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** {@inheritDoc}
+&nbsp;     * @since 3.2
+&nbsp;     */
+&nbsp;    @Override
+&nbsp;    public Dfp pow(final double p) {
+<b class="nc">&nbsp;        return DfpMath.pow(this, newInstance(p));</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** {@inheritDoc}
+&nbsp;     * @since 3.2
+&nbsp;     */
+&nbsp;    @Override
+&nbsp;    public Dfp pow(final int n) {
+<b class="nc">&nbsp;        return DfpMath.pow(this, n);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** {@inheritDoc}
+&nbsp;     * @since 3.2
+&nbsp;     */
+&nbsp;    @Override
+&nbsp;    public Dfp pow(final Dfp e) {
+<b class="nc">&nbsp;        return DfpMath.pow(this, e);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** {@inheritDoc}
+&nbsp;     * @since 3.2
+&nbsp;     */
+&nbsp;    @Override
+&nbsp;    public Dfp exp() {
+<b class="nc">&nbsp;        return DfpMath.exp(this);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** {@inheritDoc}
+&nbsp;     * @since 3.2
+&nbsp;     */
+&nbsp;    @Override
+&nbsp;    public Dfp expm1() {
+<b class="nc">&nbsp;        return DfpMath.exp(this).subtract(getOne());</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** {@inheritDoc}
+&nbsp;     * @since 3.2
+&nbsp;     */
+&nbsp;    @Override
+&nbsp;    public Dfp log() {
+<b class="nc">&nbsp;        return DfpMath.log(this);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** {@inheritDoc}
+&nbsp;     * @since 3.2
+&nbsp;     */
+&nbsp;    @Override
+&nbsp;    public Dfp log1p() {
+<b class="nc">&nbsp;        return DfpMath.log(this.add(getOne()));</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** {@inheritDoc}
+&nbsp;     * @since 3.2, return type changed to {@link Dfp} in 4.0
+&nbsp;     */
+&nbsp;    @Override
+&nbsp;    public Dfp log10() {
+<b class="nc">&nbsp;        return DfpMath.log(this).divide(DfpMath.log(newInstance(10)));</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** {@inheritDoc}
+&nbsp;     * @since 3.2
+&nbsp;     */
+&nbsp;    @Override
+&nbsp;    public Dfp cos() {
+<b class="nc">&nbsp;        return DfpMath.cos(this);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** {@inheritDoc}
+&nbsp;     * @since 3.2
+&nbsp;     */
+&nbsp;    @Override
+&nbsp;    public Dfp sin() {
+<b class="nc">&nbsp;        return DfpMath.sin(this);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** {@inheritDoc}
+&nbsp;     * @since 3.2
+&nbsp;     */
+&nbsp;    @Override
+&nbsp;    public Dfp tan() {
+<b class="nc">&nbsp;        return DfpMath.tan(this);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** {@inheritDoc}
+&nbsp;     * @since 3.2
+&nbsp;     */
+&nbsp;    @Override
+&nbsp;    public Dfp acos() {
+<b class="nc">&nbsp;        return DfpMath.acos(this);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** {@inheritDoc}
+&nbsp;     * @since 3.2
+&nbsp;     */
+&nbsp;    @Override
+&nbsp;    public Dfp asin() {
+<b class="nc">&nbsp;        return DfpMath.asin(this);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** {@inheritDoc}
+&nbsp;     * @since 3.2
+&nbsp;     */
+&nbsp;    @Override
+&nbsp;    public Dfp atan() {
+<b class="nc">&nbsp;        return DfpMath.atan(this);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** {@inheritDoc}
+&nbsp;     * @since 3.2
+&nbsp;     */
+&nbsp;    @Override
+&nbsp;    public Dfp atan2(final Dfp x)
+&nbsp;        throws DimensionMismatchException {
+&nbsp;
+&nbsp;        // compute r = sqrt(x^2+y^2)
+<b class="nc">&nbsp;        final Dfp r = x.multiply(x).add(multiply(this)).sqrt();</b>
+&nbsp;
+<b class="nc">&nbsp;        if (x.sign &gt;= 0) {</b>
+&nbsp;
+&nbsp;            // compute atan2(y, x) = 2 atan(y / (r + x))
+<b class="nc">&nbsp;            return getTwo().multiply(divide(r.add(x)).atan());</b>
+&nbsp;
+&nbsp;        } else {
+&nbsp;
+&nbsp;            // compute atan2(y, x) = +/- pi - 2 atan(y / (r - x))
+<b class="nc">&nbsp;            final Dfp tmp = getTwo().multiply(divide(r.subtract(x)).atan());</b>
+<b class="nc">&nbsp;            final Dfp pmPi = newInstance((tmp.sign &lt;= 0) ? -Math.PI : Math.PI);</b>
+<b class="nc">&nbsp;            return pmPi.subtract(tmp);</b>
+&nbsp;
+&nbsp;        }
+&nbsp;
+&nbsp;    }
+&nbsp;
+&nbsp;    /** {@inheritDoc}
+&nbsp;     * @since 3.2
+&nbsp;     */
+&nbsp;    @Override
+&nbsp;    public Dfp cosh() {
+<b class="nc">&nbsp;        return DfpMath.exp(this).add(DfpMath.exp(negate())).divide(2);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** {@inheritDoc}
+&nbsp;     * @since 3.2
+&nbsp;     */
+&nbsp;    @Override
+&nbsp;    public Dfp sinh() {
+<b class="nc">&nbsp;        return DfpMath.exp(this).subtract(DfpMath.exp(negate())).divide(2);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** {@inheritDoc}
+&nbsp;     * @since 3.2
+&nbsp;     */
+&nbsp;    @Override
+&nbsp;    public Dfp tanh() {
+<b class="nc">&nbsp;        final Dfp ePlus  = DfpMath.exp(this);</b>
+<b class="nc">&nbsp;        final Dfp eMinus = DfpMath.exp(negate());</b>
+<b class="nc">&nbsp;        return ePlus.subtract(eMinus).divide(ePlus.add(eMinus));</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** {@inheritDoc}
+&nbsp;     * @since 3.2
+&nbsp;     */
+&nbsp;    @Override
+&nbsp;    public Dfp acosh() {
+<b class="nc">&nbsp;        return multiply(this).subtract(getOne()).sqrt().add(this).log();</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** {@inheritDoc}
+&nbsp;     * @since 3.2
+&nbsp;     */
+&nbsp;    @Override
+&nbsp;    public Dfp asinh() {
+<b class="nc">&nbsp;        return multiply(this).add(getOne()).sqrt().add(this).log();</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** {@inheritDoc}
+&nbsp;     * @since 3.2
+&nbsp;     */
+&nbsp;    @Override
+&nbsp;    public Dfp atanh() {
+<b class="nc">&nbsp;        return getOne().add(this).divide(getOne().subtract(this)).log().divide(2);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** {@inheritDoc}
+&nbsp;     * @since 3.2
+&nbsp;     */
+&nbsp;    @Override
+&nbsp;    public Dfp linearCombination(final Dfp[] a, final Dfp[] b)
+&nbsp;        throws DimensionMismatchException {
+<b class="nc">&nbsp;        if (a.length != b.length) {</b>
+<b class="nc">&nbsp;            throw new DimensionMismatchException(a.length, b.length);</b>
+&nbsp;        }
+<b class="nc">&nbsp;        Dfp r = getZero();</b>
+<b class="nc">&nbsp;        for (int i = 0; i &lt; a.length; ++i) {</b>
+<b class="nc">&nbsp;            r = r.add(a[i].multiply(b[i]));</b>
+&nbsp;        }
+<b class="nc">&nbsp;        return r;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** {@inheritDoc}
+&nbsp;     * @since 3.2
+&nbsp;     */
+&nbsp;    @Override
+&nbsp;    public Dfp linearCombination(final double[] a, final Dfp[] b)
+&nbsp;        throws DimensionMismatchException {
+<b class="nc">&nbsp;        if (a.length != b.length) {</b>
+<b class="nc">&nbsp;            throw new DimensionMismatchException(a.length, b.length);</b>
+&nbsp;        }
+<b class="nc">&nbsp;        Dfp r = getZero();</b>
+<b class="nc">&nbsp;        for (int i = 0; i &lt; a.length; ++i) {</b>
+<b class="nc">&nbsp;            r = r.add(b[i].multiply(a[i]));</b>
+&nbsp;        }
+<b class="nc">&nbsp;        return r;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** {@inheritDoc}
+&nbsp;     * @since 3.2
+&nbsp;     */
+&nbsp;    @Override
+&nbsp;    public Dfp linearCombination(final Dfp a1, final Dfp b1, final Dfp a2, final Dfp b2) {
+<b class="nc">&nbsp;        return a1.multiply(b1).add(a2.multiply(b2));</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** {@inheritDoc}
+&nbsp;     * @since 3.2
+&nbsp;     */
+&nbsp;    @Override
+&nbsp;    public Dfp linearCombination(final double a1, final Dfp b1, final double a2, final Dfp b2) {
+<b class="nc">&nbsp;        return b1.multiply(a1).add(b2.multiply(a2));</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** {@inheritDoc}
+&nbsp;     * @since 3.2
+&nbsp;     */
+&nbsp;    @Override
+&nbsp;    public Dfp linearCombination(final Dfp a1, final Dfp b1,
+&nbsp;                                 final Dfp a2, final Dfp b2,
+&nbsp;                                 final Dfp a3, final Dfp b3) {
+<b class="nc">&nbsp;        return a1.multiply(b1).add(a2.multiply(b2)).add(a3.multiply(b3));</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** {@inheritDoc}
+&nbsp;     * @since 3.2
+&nbsp;     */
+&nbsp;    @Override
+&nbsp;    public Dfp linearCombination(final double a1, final Dfp b1,
+&nbsp;                                 final double a2, final Dfp b2,
+&nbsp;                                 final double a3, final Dfp b3) {
+<b class="nc">&nbsp;        return b1.multiply(a1).add(b2.multiply(a2)).add(b3.multiply(a3));</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** {@inheritDoc}
+&nbsp;     * @since 3.2
+&nbsp;     */
+&nbsp;    @Override
+&nbsp;    public Dfp linearCombination(final Dfp a1, final Dfp b1, final Dfp a2, final Dfp b2,
+&nbsp;                                 final Dfp a3, final Dfp b3, final Dfp a4, final Dfp b4) {
+<b class="nc">&nbsp;        return a1.multiply(b1).add(a2.multiply(b2)).add(a3.multiply(b3)).add(a4.multiply(b4));</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** {@inheritDoc}
+&nbsp;     * @since 3.2
+&nbsp;     */
+&nbsp;    @Override
+&nbsp;    public Dfp linearCombination(final double a1, final Dfp b1, final double a2, final Dfp b2,
+&nbsp;                                 final double a3, final Dfp b3, final double a4, final Dfp b4) {
+<b class="nc">&nbsp;        return b1.multiply(a1).add(b2.multiply(a2)).add(b3.multiply(a3)).add(b4.multiply(a4));</b>
+&nbsp;    }
+&nbsp;
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2023-08-14 14:22</div>
+</div>
+</body>
+</html>

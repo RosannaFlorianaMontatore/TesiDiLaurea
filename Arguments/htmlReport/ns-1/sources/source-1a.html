@@ -1,0 +1,788 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=windows-1252"> 
+  <title>Coverage Report > WilcoxonSignedRankTest</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope:     <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">org.apache.commons.statistics.inference</a>
+</div>
+
+<h1>Coverage Summary for Class: WilcoxonSignedRankTest (org.apache.commons.statistics.inference)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">WilcoxonSignedRankTest</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/25)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/117)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">WilcoxonSignedRankTest$Result</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/3)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/5)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/28)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/122)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/*
+&nbsp; * Licensed to the Apache Software Foundation (ASF) under one or more
+&nbsp; * contributor license agreements.  See the NOTICE file distributed with
+&nbsp; * this work for additional information regarding copyright ownership.
+&nbsp; * The ASF licenses this file to You under the Apache License, Version 2.0
+&nbsp; * (the &quot;License&quot;); you may not use this file except in compliance with
+&nbsp; * the License.  You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *      http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;package org.apache.commons.statistics.inference;
+&nbsp;
+&nbsp;import java.util.Arrays;
+&nbsp;import java.util.EnumSet;
+&nbsp;import java.util.Objects;
+&nbsp;import org.apache.commons.numbers.core.Sum;
+&nbsp;import org.apache.commons.statistics.distribution.NormalDistribution;
+&nbsp;import org.apache.commons.statistics.ranking.NaNStrategy;
+&nbsp;import org.apache.commons.statistics.ranking.NaturalRanking;
+&nbsp;import org.apache.commons.statistics.ranking.RankingAlgorithm;
+&nbsp;import org.apache.commons.statistics.ranking.TiesStrategy;
+&nbsp;
+&nbsp;/**
+&nbsp; * Implements the Wilcoxon signed-rank test.
+&nbsp; *
+&nbsp; * @see &lt;a href=&quot;https://en.wikipedia.org/wiki/Wilcoxon_signed-rank_test&quot;&gt;Wilcoxon signed-rank test (Wikipedia)&lt;/a&gt;
+&nbsp; * @since 1.1
+&nbsp; */
+&nbsp;public final class WilcoxonSignedRankTest {
+&nbsp;    /** Limit on sample size for the exact p-value computation. */
+&nbsp;    private static final int EXACT_LIMIT = 1023;
+&nbsp;    /** Limit on sample size for the exact p-value computation for the auto mode. */
+&nbsp;    private static final int AUTO_LIMIT = 50;
+&nbsp;    /** Ranking instance. */
+<b class="nc">&nbsp;    private static final RankingAlgorithm RANKING = new NaturalRanking(NaNStrategy.FAILED, TiesStrategy.AVERAGE);</b>
+&nbsp;    /** Default instance. */
+<b class="nc">&nbsp;    private static final WilcoxonSignedRankTest DEFAULT = new WilcoxonSignedRankTest(</b>
+&nbsp;        AlternativeHypothesis.TWO_SIDED, PValueMethod.AUTO, true, 0);
+&nbsp;
+&nbsp;    /** Alternative hypothesis. */
+&nbsp;    private final AlternativeHypothesis alternative;
+&nbsp;    /** Method to compute the p-value. */
+&nbsp;    private final PValueMethod pValueMethod;
+&nbsp;    /** Perform continuity correction. */
+&nbsp;    private final boolean continuityCorrection;
+&nbsp;    /** Expected location shift. */
+&nbsp;    private final double mu;
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Result for the Wilcoxon signed-rank test.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;This class is immutable.
+&nbsp;     *
+&nbsp;     * @since 1.1
+&nbsp;     */
+&nbsp;    public static final class Result extends BaseSignificanceResult {
+&nbsp;        /** Flag indicating the data had tied values. */
+&nbsp;        private final boolean tiedValues;
+&nbsp;        /** Flag indicating the data had zero values. */
+&nbsp;        private final boolean zeroValues;
+&nbsp;
+&nbsp;        /**
+&nbsp;         * Create an instance.
+&nbsp;         *
+&nbsp;         * @param statistic Test statistic.
+&nbsp;         * @param tiedValues Flag indicating the data had tied values.
+&nbsp;         * @param zeroValues Flag indicating the data had zero values.
+&nbsp;         * @param p Result p-value.
+&nbsp;         */
+&nbsp;        Result(double statistic, boolean tiedValues, boolean zeroValues, double p) {
+<b class="nc">&nbsp;            super(statistic, p);</b>
+<b class="nc">&nbsp;            this.tiedValues = tiedValues;</b>
+<b class="nc">&nbsp;            this.zeroValues = zeroValues;</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        /**
+&nbsp;         * Return {@code true} if the data had tied values (with equal ranks).
+&nbsp;         *
+&nbsp;         * &lt;p&gt;Note: The exact computation cannot be used when there are tied values.
+&nbsp;         * The p-value uses the asymptotic approximation using a tie correction.
+&nbsp;         *
+&nbsp;         * @return {@code true} if there were tied values
+&nbsp;         */
+&nbsp;        public boolean hasTiedValues() {
+<b class="nc">&nbsp;            return tiedValues;</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        /**
+&nbsp;         * Return {@code true} if the data had zero values. This occurs when the differences between
+&nbsp;         * sample values matched the expected location shift: {@code z = x - y == mu}.
+&nbsp;         *
+&nbsp;         * &lt;p&gt;Note: The exact computation cannot be used when there are zero values.
+&nbsp;         * The p-value uses the asymptotic approximation.
+&nbsp;         *
+&nbsp;         * @return {@code true} if there were zero values
+&nbsp;         */
+&nbsp;        public boolean hasZeroValues() {
+<b class="nc">&nbsp;            return zeroValues;</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * @param alternative Alternative hypothesis.
+&nbsp;     * @param method P-value method.
+&nbsp;     * @param continuityCorrection true to perform continuity correction.
+&nbsp;     * @param mu Expected location shift.
+&nbsp;     */
+&nbsp;    private WilcoxonSignedRankTest(AlternativeHypothesis alternative, PValueMethod method,
+<b class="nc">&nbsp;        boolean continuityCorrection, double mu) {</b>
+<b class="nc">&nbsp;        this.alternative = alternative;</b>
+<b class="nc">&nbsp;        this.pValueMethod = method;</b>
+<b class="nc">&nbsp;        this.continuityCorrection = continuityCorrection;</b>
+<b class="nc">&nbsp;        this.mu = mu;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Return an instance using the default options.
+&nbsp;     *
+&nbsp;     * &lt;ul&gt;
+&nbsp;     * &lt;li&gt;{@link AlternativeHypothesis#TWO_SIDED}
+&nbsp;     * &lt;li&gt;{@link PValueMethod#AUTO}
+&nbsp;     * &lt;li&gt;{@link ContinuityCorrection#ENABLED}
+&nbsp;     * &lt;li&gt;{@linkplain #withMu(double) mu = 0}
+&nbsp;     * &lt;/ul&gt;
+&nbsp;     *
+&nbsp;     * @return default instance
+&nbsp;     */
+&nbsp;    public static WilcoxonSignedRankTest withDefaults() {
+<b class="nc">&nbsp;        return DEFAULT;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Return an instance with the configured alternative hypothesis.
+&nbsp;     *
+&nbsp;     * @param v Value.
+&nbsp;     * @return an instance
+&nbsp;     */
+&nbsp;    public WilcoxonSignedRankTest with(AlternativeHypothesis v) {
+<b class="nc">&nbsp;        return new WilcoxonSignedRankTest(Objects.requireNonNull(v), pValueMethod, continuityCorrection, mu);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Return an instance with the configured p-value method.
+&nbsp;     *
+&nbsp;     * @param v Value.
+&nbsp;     * @return an instance
+&nbsp;     * @throws IllegalArgumentException if the value is not in the allowed options or is null
+&nbsp;     */
+&nbsp;    public WilcoxonSignedRankTest with(PValueMethod v) {
+<b class="nc">&nbsp;        return new WilcoxonSignedRankTest(alternative,</b>
+<b class="nc">&nbsp;            Arguments.checkOption(v, EnumSet.of(PValueMethod.AUTO, PValueMethod.EXACT, PValueMethod.ASYMPTOTIC)),</b>
+&nbsp;            continuityCorrection, mu);
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Return an instance with the configured continuity correction.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;If {@code enabled}, adjust the Wilcoxon rank statistic by 0.5 towards the
+&nbsp;     * mean value when computing the z-statistic if a normal approximation is used
+&nbsp;     * to compute the p-value.
+&nbsp;     *
+&nbsp;     * @param v Value.
+&nbsp;     * @return an instance
+&nbsp;     */
+&nbsp;    public WilcoxonSignedRankTest with(ContinuityCorrection v) {
+<b class="nc">&nbsp;        return new WilcoxonSignedRankTest(alternative, pValueMethod,</b>
+<b class="nc">&nbsp;            Objects.requireNonNull(v) == ContinuityCorrection.ENABLED, mu);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Return an instance with the configured expected difference {@code mu}.
+&nbsp;     *
+&nbsp;     * @param v Value.
+&nbsp;     * @return an instance
+&nbsp;     * @throws IllegalArgumentException if the value is not finite
+&nbsp;     */
+&nbsp;    public WilcoxonSignedRankTest withMu(double v) {
+<b class="nc">&nbsp;        return new WilcoxonSignedRankTest(alternative, pValueMethod, continuityCorrection, Arguments.checkFinite(v));</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Computes the Wilcoxon signed ranked statistic comparing the differences between
+&nbsp;     * sample values {@code z = x - y} to {@code mu}.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;This method handles matching samples {@code z[i] == mu} (no difference)
+&nbsp;     * by including them in the ranking of samples but excludes them from the test statistic
+&nbsp;     * (&lt;i&gt;signed-rank zero procedure&lt;/i&gt;).
+&nbsp;     *
+&nbsp;     * @param z Signed differences between sample values.
+&nbsp;     * @return Wilcoxon &lt;i&gt;positive-rank sum&lt;/i&gt; statistic (W+)
+&nbsp;     * @throws IllegalArgumentException if {@code z} is zero-length; contains NaN values;
+&nbsp;     * or all differences are equal to the expected difference
+&nbsp;     * @see #withMu(double)
+&nbsp;     */
+&nbsp;    public double statistic(double[] z) {
+<b class="nc">&nbsp;        return computeStatistic(z, mu);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Computes the Wilcoxon signed ranked statistic comparing the differences between two related
+&nbsp;     * samples or repeated measurements on a single sample.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;This method handles matching samples {@code x[i] - mu == y[i]} (no difference)
+&nbsp;     * by including them in the ranking of samples but excludes them from the test statistic
+&nbsp;     * (&lt;i&gt;signed-rank zero procedure&lt;/i&gt;).
+&nbsp;     *
+&nbsp;     * &lt;p&gt;This method is functionally equivalent to creating an array of differences
+&nbsp;     * {@code z = x - y} and calling {@link #statistic(double[]) statistic(z)}; the
+&nbsp;     * implementation may use an optimised method to compute the differences and
+&nbsp;     * rank statistic if {@code mu != 0}.
+&nbsp;     *
+&nbsp;     * @param x First sample values.
+&nbsp;     * @param y Second sample values.
+&nbsp;     * @return Wilcoxon &lt;i&gt;positive-rank sum&lt;/i&gt; statistic (W+)
+&nbsp;     * @throws IllegalArgumentException if {@code x} or {@code y} are zero-length; are not
+&nbsp;     * the same length; contain NaN values; or {@code x[i] == y[i]} for all data
+&nbsp;     * @see #withMu(double)
+&nbsp;     */
+&nbsp;    public double statistic(double[] x, double[] y) {
+<b class="nc">&nbsp;        checkSamples(x, y);</b>
+&nbsp;        // Apply mu before creation of differences
+<b class="nc">&nbsp;        final double[] z = calculateDifferences(mu, x, y);</b>
+<b class="nc">&nbsp;        return computeStatistic(z, 0);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Performs a Wilcoxon signed ranked statistic comparing the differences between
+&nbsp;     * sample values {@code z = x - y} to {@code mu}.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;This method handles matching samples {@code z[i] == mu} (no difference)
+&nbsp;     * by including them in the ranking of samples but excludes them from the test statistic
+&nbsp;     * (&lt;i&gt;signed-rank zero procedure&lt;/i&gt;).
+&nbsp;     *
+&nbsp;     * &lt;p&gt;The test is defined by the {@link AlternativeHypothesis}.
+&nbsp;     *
+&nbsp;     * &lt;ul&gt;
+&nbsp;     * &lt;li&gt;&#39;two-sided&#39;: the distribution of the difference is not symmetric about {@code mu}.
+&nbsp;     * &lt;li&gt;&#39;greater&#39;: the distribution of the difference is stochastically greater than a
+&nbsp;     * distribution symmetric about {@code mu}.
+&nbsp;     * &lt;li&gt;&#39;less&#39;: the distribution of the difference is stochastically less than a distribution
+&nbsp;     * symmetric about {@code mu}.
+&nbsp;     * &lt;/ul&gt;
+&nbsp;     *
+&nbsp;     * &lt;p&gt;If the p-value method is {@linkplain PValueMethod#AUTO auto} an exact p-value
+&nbsp;     * is computed if the samples contain less than 50 values; otherwise a normal
+&nbsp;     * approximation is used.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;Computation of the exact p-value is only valid if there are no matching
+&nbsp;     * samples {@code z[i] == mu} and no tied ranks in the data; otherwise the
+&nbsp;     * p-value resorts to the asymptotic Cureton approximation using a tie
+&nbsp;     * correction and an optional continuity correction.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;&lt;strong&gt;Note: &lt;/strong&gt;
+&nbsp;     * Computation of the exact p-value requires the
+&nbsp;     * sample size {@code &lt;= 1023}. Exact computation requires tabulation of values
+&nbsp;     * not exceeding size {@code n(n+1)/2} and computes in Order(n*n/2). Maximum
+&nbsp;     * memory usage is approximately 4 MiB.
+&nbsp;     *
+&nbsp;     * @param z Differences between sample values.
+&nbsp;     * @return test result
+&nbsp;     * @throws IllegalArgumentException if {@code z} is zero-length; contains NaN values;
+&nbsp;     * or all differences are zero
+&nbsp;     * @see #withMu(double)
+&nbsp;     * @see #with(AlternativeHypothesis)
+&nbsp;     * @see #with(ContinuityCorrection)
+&nbsp;     */
+&nbsp;    public Result test(double[] z) {
+<b class="nc">&nbsp;        return computeTest(z, mu);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Performs a Wilcoxon signed ranked statistic comparing mean for two related
+&nbsp;     * samples or repeated measurements on a single sample.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;This method handles matching samples {@code x[i] - mu == y[i]} (no difference)
+&nbsp;     * by including them in the ranking of samples but excludes them
+&nbsp;     * from the test statistic (&lt;i&gt;signed-rank zero procedure&lt;/i&gt;).
+&nbsp;     *
+&nbsp;     * &lt;p&gt;This method is functionally equivalent to creating an array of differences
+&nbsp;     * {@code z = x - y} and calling {@link #test(double[]) test(z)}; the
+&nbsp;     * implementation may use an optimised method to compute the differences and
+&nbsp;     * rank statistic if {@code mu != 0}.
+&nbsp;     *
+&nbsp;     * @param x First sample values.
+&nbsp;     * @param y Second sample values.
+&nbsp;     * @return test result
+&nbsp;     * @throws IllegalArgumentException if {@code x} or {@code y} are zero-length; are not
+&nbsp;     * the same length; contain NaN values; or {@code x[i] - mu == y[i]} for all data
+&nbsp;     * @see #statistic(double[], double[])
+&nbsp;     * @see #test(double[])
+&nbsp;     */
+&nbsp;    public Result test(double[] x, double[] y) {
+<b class="nc">&nbsp;        checkSamples(x, y);</b>
+&nbsp;        // Apply mu before creation of differences
+<b class="nc">&nbsp;        final double[] z = calculateDifferences(mu, x, y);</b>
+<b class="nc">&nbsp;        return computeTest(z, 0);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Computes the Wilcoxon signed ranked statistic comparing the differences between
+&nbsp;     * sample values {@code z = x - y} to {@code mu}.
+&nbsp;     *
+&nbsp;     * @param z Signed differences between sample values.
+&nbsp;     * @param mu Expected difference.
+&nbsp;     * @return Wilcoxon &lt;i&gt;positive-rank sum&lt;/i&gt; statistic (W+)
+&nbsp;     * @throws IllegalArgumentException if {@code z} is zero-length; contains NaN values;
+&nbsp;     * or all differences are equal to the expected difference
+&nbsp;     * @see #withMu(double)
+&nbsp;     */
+&nbsp;    private static double computeStatistic(double[] z, double mu) {
+<b class="nc">&nbsp;        Arguments.checkValuesRequiredSize(z.length, 1);</b>
+<b class="nc">&nbsp;        final double[] x = StatisticUtils.subtract(z, mu);</b>
+&nbsp;        // Raises an error if all zeros
+<b class="nc">&nbsp;        countZeros(x);</b>
+<b class="nc">&nbsp;        final double[] zAbs = calculateAbsoluteDifferences(x);</b>
+<b class="nc">&nbsp;        final double[] ranks = RANKING.apply(zAbs);</b>
+<b class="nc">&nbsp;        return calculateW(x, ranks);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Performs a Wilcoxon signed ranked statistic comparing the differences between
+&nbsp;     * sample values {@code z = x - y} to {@code mu}.
+&nbsp;     *
+&nbsp;     * @param z Differences between sample values.
+&nbsp;     * @param expectedMu Expected difference.
+&nbsp;     * @return test result
+&nbsp;     * @throws IllegalArgumentException if {@code z} is zero-length; contains NaN values;
+&nbsp;     * or all differences are zero
+&nbsp;     */
+&nbsp;    private Result computeTest(double[] z, double expectedMu) {
+&nbsp;        // Computation as above. The ranks are required for tie correction.
+<b class="nc">&nbsp;        Arguments.checkValuesRequiredSize(z.length, 1);</b>
+<b class="nc">&nbsp;        final double[] x = StatisticUtils.subtract(z, expectedMu);</b>
+&nbsp;        // Raises an error if all zeros
+<b class="nc">&nbsp;        final int zeros = countZeros(x);</b>
+<b class="nc">&nbsp;        final double[] zAbs = calculateAbsoluteDifferences(x);</b>
+<b class="nc">&nbsp;        final double[] ranks = RANKING.apply(zAbs);</b>
+<b class="nc">&nbsp;        final double wPlus = calculateW(x, ranks);</b>
+&nbsp;
+&nbsp;        // Exact p has strict requirements for no zeros, no ties
+<b class="nc">&nbsp;        final double c = calculateTieCorrection(ranks);</b>
+<b class="nc">&nbsp;        final boolean tiedValues = c != 0;</b>
+&nbsp;
+<b class="nc">&nbsp;        final int n = z.length;</b>
+&nbsp;        // Exact p requires no ties and no zeros
+&nbsp;        double p;
+<b class="nc">&nbsp;        if (selectMethod(pValueMethod, n) == PValueMethod.EXACT &amp;&amp; n &lt;= EXACT_LIMIT &amp;&amp; !tiedValues &amp;&amp; zeros == 0) {</b>
+<b class="nc">&nbsp;            p = calculateExactPValue((int) wPlus, n, alternative);</b>
+&nbsp;        } else {
+<b class="nc">&nbsp;            p = calculateAsymptoticPValue(wPlus, n, zeros, c, alternative, continuityCorrection);</b>
+&nbsp;        }
+<b class="nc">&nbsp;        return new Result(wPlus, tiedValues, zeros != 0, p);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Ensures that the provided arrays fulfil the assumptions.
+&nbsp;     *
+&nbsp;     * @param x First sample.
+&nbsp;     * @param y Second sample.
+&nbsp;     * @throws IllegalArgumentException if {@code x} or {@code y} are zero-length; or do not
+&nbsp;     * have the same length
+&nbsp;     */
+&nbsp;    private static void checkSamples(double[] x, double[] y) {
+<b class="nc">&nbsp;        Arguments.checkValuesRequiredSize(x.length, 1);</b>
+<b class="nc">&nbsp;        Arguments.checkValuesRequiredSize(y.length, 1);</b>
+<b class="nc">&nbsp;        Arguments.checkValuesSizeMatch(x.length, y.length);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Calculates x[i] - mu - y[i] for all i.
+&nbsp;     *
+&nbsp;     * @param mu Expected difference.
+&nbsp;     * @param x First sample.
+&nbsp;     * @param y Second sample.
+&nbsp;     * @return z = x - y
+&nbsp;     */
+&nbsp;    private static double[] calculateDifferences(double mu, double[] x, double[] y) {
+<b class="nc">&nbsp;        final double[] z = new double[x.length];</b>
+<b class="nc">&nbsp;        for (int i = 0; i &lt; x.length; ++i) {</b>
+<b class="nc">&nbsp;            z[i] = x[i] - mu - y[i];</b>
+&nbsp;        }
+<b class="nc">&nbsp;        return z;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Calculates |z[i]| for all i.
+&nbsp;     *
+&nbsp;     * @param z Sample.
+&nbsp;     * @return |z|
+&nbsp;     */
+&nbsp;    private static double[] calculateAbsoluteDifferences(double[] z) {
+<b class="nc">&nbsp;        final double[] zAbs = new double[z.length];</b>
+<b class="nc">&nbsp;        for (int i = 0; i &lt; z.length; ++i) {</b>
+<b class="nc">&nbsp;            zAbs[i] = Math.abs(z[i]);</b>
+&nbsp;        }
+<b class="nc">&nbsp;        return zAbs;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Calculate the Wilcoxon &lt;i&gt;positive-rank sum&lt;/i&gt; statistic.
+&nbsp;     *
+&nbsp;     * @param obs Observed signed value.
+&nbsp;     * @param ranks Ranks (including averages for ties).
+&nbsp;     * @return Wilcoxon &lt;i&gt;positive-rank sum&lt;/i&gt; statistic (W+)
+&nbsp;     */
+&nbsp;    private static double calculateW(final double[] obs, final double[] ranks) {
+<b class="nc">&nbsp;        final Sum wPlus = Sum.create();</b>
+<b class="nc">&nbsp;        for (int i = 0; i &lt; obs.length; ++i) {</b>
+&nbsp;            // Must be positive (excludes zeros)
+<b class="nc">&nbsp;            if (obs[i] &gt; 0) {</b>
+<b class="nc">&nbsp;                wPlus.add(ranks[i]);</b>
+&nbsp;            }
+&nbsp;        }
+<b class="nc">&nbsp;        return wPlus.getAsDouble();</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Count the number of zeros in the data.
+&nbsp;     *
+&nbsp;     * @param z Input data.
+&nbsp;     * @return the zero count
+&nbsp;     * @throws IllegalArgumentException if the data is all zeros
+&nbsp;     */
+&nbsp;    private static int countZeros(final double[] z) {
+<b class="nc">&nbsp;        int c = 0;</b>
+<b class="nc">&nbsp;        for (final double v : z) {</b>
+<b class="nc">&nbsp;            if (v == 0) {</b>
+<b class="nc">&nbsp;                c++;</b>
+&nbsp;            }
+&nbsp;        }
+<b class="nc">&nbsp;        if (c == z.length) {</b>
+<b class="nc">&nbsp;            throw new InferenceException(&quot;All signed differences are zero&quot;);</b>
+&nbsp;        }
+<b class="nc">&nbsp;        return c;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Calculate the tie correction.
+&nbsp;     * Destructively modifies ranks (by sorting).
+&nbsp;     * &lt;pre&gt;
+&nbsp;     * c = sum(t^3 - t)
+&nbsp;     * &lt;/pre&gt;
+&nbsp;     * &lt;p&gt;where t is the size of each group of tied observations.
+&nbsp;     *
+&nbsp;     * @param ranks Ranks
+&nbsp;     * @return the tie correction
+&nbsp;     */
+&nbsp;    static double calculateTieCorrection(double[] ranks) {
+<b class="nc">&nbsp;        double c = 0;</b>
+<b class="nc">&nbsp;        int ties = 1;</b>
+<b class="nc">&nbsp;        Arrays.sort(ranks);</b>
+<b class="nc">&nbsp;        double last = Double.NaN;</b>
+<b class="nc">&nbsp;        for (final double rank : ranks) {</b>
+&nbsp;            // Deliberate use of equals
+<b class="nc">&nbsp;            if (last == rank) {</b>
+&nbsp;                // Extend the tied group
+<b class="nc">&nbsp;                ties++;</b>
+&nbsp;            } else {
+<b class="nc">&nbsp;                if (ties != 1) {</b>
+<b class="nc">&nbsp;                    c += Math.pow(ties, 3) - ties;</b>
+<b class="nc">&nbsp;                    ties = 1;</b>
+&nbsp;                }
+<b class="nc">&nbsp;                last = rank;</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;        // Final ties count
+<b class="nc">&nbsp;        c += Math.pow(ties, 3) - ties;</b>
+<b class="nc">&nbsp;        return c;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Select the method to compute the p-value.
+&nbsp;     *
+&nbsp;     * @param method P-value method.
+&nbsp;     * @param n Size of the data.
+&nbsp;     * @return p-value method.
+&nbsp;     */
+&nbsp;    private static PValueMethod selectMethod(PValueMethod method, int n) {
+<b class="nc">&nbsp;        return method == PValueMethod.AUTO &amp;&amp; n &lt;= AUTO_LIMIT ? PValueMethod.EXACT : method;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Compute the asymptotic p-value using the Cureton normal approximation. This
+&nbsp;     * corrects for zeros in the signed-rank zero procedure and/or ties corrected using
+&nbsp;     * the average method.
+&nbsp;     *
+&nbsp;     * @param wPlus Wilcoxon signed rank value (W+).
+&nbsp;     * @param n Number of subjects.
+&nbsp;     * @param z Count of number of zeros
+&nbsp;     * @param c Tie-correction
+&nbsp;     * @param alternative Alternative hypothesis.
+&nbsp;     * @param continuityCorrection true to use a continuity correction.
+&nbsp;     * @return two-sided asymptotic p-value
+&nbsp;     */
+&nbsp;    private static double calculateAsymptoticPValue(double wPlus, int n, double z, double c,
+&nbsp;            AlternativeHypothesis alternative, boolean continuityCorrection) {
+&nbsp;        // E[W+] = n * (n + 1) / 4 - z * (z + 1) / 4
+<b class="nc">&nbsp;        final double e = (n * (n + 1.0) - z * (z + 1.0)) * 0.25;</b>
+&nbsp;
+<b class="nc">&nbsp;        final double variance = ((n * (n + 1.0) * (2 * n + 1.0)) -</b>
+&nbsp;                                (z * (z + 1.0) * (2 * z + 1.0)) - c * 0.5) / 24;
+&nbsp;
+<b class="nc">&nbsp;        double x = wPlus - e;</b>
+<b class="nc">&nbsp;        if (continuityCorrection) {</b>
+&nbsp;            // +/- 0.5 is a continuity correction towards the expected.
+<b class="nc">&nbsp;            if (alternative == AlternativeHypothesis.GREATER_THAN) {</b>
+<b class="nc">&nbsp;                x -= 0.5;</b>
+<b class="nc">&nbsp;            } else if (alternative == AlternativeHypothesis.LESS_THAN) {</b>
+<b class="nc">&nbsp;                x += 0.5;</b>
+&nbsp;            } else {
+&nbsp;                // two-sided. Shift towards the expected of zero.
+&nbsp;                // Use of signum ignores x==0 (i.e. not copySign(0.5, z))
+<b class="nc">&nbsp;                x -= Math.signum(x) * 0.5;</b>
+&nbsp;            }
+&nbsp;        }
+<b class="nc">&nbsp;        x /= Math.sqrt(variance);</b>
+&nbsp;
+<b class="nc">&nbsp;        final NormalDistribution standardNormal = NormalDistribution.of(0, 1);</b>
+<b class="nc">&nbsp;        if (alternative == AlternativeHypothesis.GREATER_THAN) {</b>
+<b class="nc">&nbsp;            return standardNormal.survivalProbability(x);</b>
+&nbsp;        }
+<b class="nc">&nbsp;        if (alternative == AlternativeHypothesis.LESS_THAN) {</b>
+<b class="nc">&nbsp;            return standardNormal.cumulativeProbability(x);</b>
+&nbsp;        }
+&nbsp;        // two-sided
+<b class="nc">&nbsp;        return 2 * standardNormal.survivalProbability(Math.abs(x));</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Compute the exact p-value.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;This computation requires that no zeros or ties are found in the data. The input
+&nbsp;     * value n is limited to 1023.
+&nbsp;     *
+&nbsp;     * @param w1 Wilcoxon signed rank value (W+, or W-).
+&nbsp;     * @param n Number of subjects.
+&nbsp;     * @param alternative Alternative hypothesis.
+&nbsp;     * @return exact p-value (two-sided, greater, or less using the options)
+&nbsp;     */
+&nbsp;    private static double calculateExactPValue(int w1, int n, AlternativeHypothesis alternative) {
+&nbsp;        // T+ plus T- equals the sum of the ranks: n(n+1)/2
+&nbsp;        // Compute using the lower half.
+&nbsp;        // No overflow here if n &lt;= 1023.
+<b class="nc">&nbsp;        final int sum = n * (n + 1) / 2;</b>
+<b class="nc">&nbsp;        final int w2 = sum - w1;</b>
+&nbsp;
+&nbsp;        // Return the correct side:
+<b class="nc">&nbsp;        if (alternative == AlternativeHypothesis.GREATER_THAN) {</b>
+&nbsp;            // sf(w1 - 1)
+<b class="nc">&nbsp;            return sf(w1 - 1, w2 + 1, n);</b>
+&nbsp;        }
+<b class="nc">&nbsp;        if (alternative == AlternativeHypothesis.LESS_THAN) {</b>
+&nbsp;            // cdf(w1)
+<b class="nc">&nbsp;            return cdf(w1, w2, n);</b>
+&nbsp;        }
+&nbsp;        // two-sided: 2 * sf(max(w1, w2) - 1) or 2 * cdf(min(w1, w2))
+<b class="nc">&nbsp;        final double p = 2 * computeCdf(Math.min(w1, w2), n);</b>
+&nbsp;        // Clip to range: [0, 1]
+<b class="nc">&nbsp;        return Math.min(1, p);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Compute the cumulative density function of the Wilcoxon signed rank W+ statistic.
+&nbsp;     * The W- statistic is passed for convenience to exploit symmetry in the distribution.
+&nbsp;     *
+&nbsp;     * @param w1 Wilcoxon W+ statistic
+&nbsp;     * @param w2 Wilcoxon W- statistic
+&nbsp;     * @param n Number of subjects.
+&nbsp;     * @return {@code Pr(X &lt;= k)}
+&nbsp;     */
+&nbsp;    private static double cdf(int w1, int w2, int n) {
+&nbsp;        // Exploit symmetry. Note the distribution is discrete thus requiring (w2 - 1).
+<b class="nc">&nbsp;        return w2 &gt; w1 ?</b>
+<b class="nc">&nbsp;            computeCdf(w1, n) :</b>
+<b class="nc">&nbsp;            1 - computeCdf(w2 - 1, n);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Compute the survival function of the Wilcoxon signed rank W+ statistic.
+&nbsp;     * The W- statistic is passed for convenience to exploit symmetry in the distribution.
+&nbsp;     *
+&nbsp;     * @param w1 Wilcoxon W+ statistic
+&nbsp;     * @param w2 Wilcoxon W- statistic
+&nbsp;     * @param n Number of subjects.
+&nbsp;     * @return {@code Pr(X &lt;= k)}
+&nbsp;     */
+&nbsp;    private static double sf(int w1, int w2, int n) {
+&nbsp;        // Opposite of the CDF
+<b class="nc">&nbsp;        return w2 &gt; w1 ?</b>
+<b class="nc">&nbsp;            1 - computeCdf(w1, n) :</b>
+<b class="nc">&nbsp;            computeCdf(w2 - 1, n);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Compute the cumulative density function for the distribution of the Wilcoxon
+&nbsp;     * signed rank statistic. This is a discrete distribution and is only valid
+&nbsp;     * when no zeros or ties are found in the data.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;This should be called with the lower of W+ or W- for computational efficiency.
+&nbsp;     * The input value n is limited to 1023.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;Uses recursion to compute the density for {@code X &lt;= t} and sums the values.
+&nbsp;     * See: https://en.wikipedia.org/wiki/Wilcoxon_signed-rank_test#Computing_the_null_distribution
+&nbsp;     *
+&nbsp;     * @param t Smallest Wilcoxon signed rank value (W+, or W-).
+&nbsp;     * @param n Number of subjects.
+&nbsp;     * @return {@code Pr(T &lt;= t)}
+&nbsp;     */
+&nbsp;    private static double computeCdf(int t, int n) {
+&nbsp;        // Currently limited to n=1023.
+&nbsp;        // Note:
+&nbsp;        // The limit for t is n(n+1)/2.
+&nbsp;        // The highest possible sum is bounded by the normalisation factor 2^n.
+&nbsp;        // n         t              sum          support
+&nbsp;        // 31        [0, 496]       &lt; 2^31       int
+&nbsp;        // 63        [0, 2016]      &lt; 2^63       long
+&nbsp;        // 1023      [0, 523766]    &lt; 2^1023     double
+&nbsp;
+<b class="nc">&nbsp;        if (t &lt;= 0) {</b>
+&nbsp;            // No recursion required
+<b class="nc">&nbsp;            return t &lt; 0 ? 0 : Math.scalb(1, -n);</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        // Define u_n(t) as the number of sign combinations for T = t
+&nbsp;        // Pr(T == t) = u_n(t) / 2^n
+&nbsp;        // Sum them to create the cumulative probability Pr(T &lt;= t).
+&nbsp;        //
+&nbsp;        // Recursive formula:
+&nbsp;        // u_n(t) = u_{n-1}(t) + u_{n-1}(t-n)
+&nbsp;        // u_0(0) = 1
+&nbsp;        // u_0(t) = 0 : t != 0
+&nbsp;        // u_n(t) = 0 : t &lt; 0 || t &gt; n(n+1)/2
+&nbsp;
+&nbsp;        // Compute all u_n(t) up to t.
+<b class="nc">&nbsp;        final double[] u = new double[t + 1];</b>
+&nbsp;        // Initialize u_1(t) using base cases for recursion
+<b class="nc">&nbsp;        u[0] = u[1] = 1;</b>
+&nbsp;
+&nbsp;        // Each u_n(t) is created using the current correct values for u_{n-1}(t)
+<b class="nc">&nbsp;        for (int nn = 2; nn &lt; n + 1; nn++) {</b>
+&nbsp;            // u[t] holds the correct value for u_{n-1}(t)
+&nbsp;            // u_n(t) = u_{n-1}(t) + u_{n-1}(t-n)
+<b class="nc">&nbsp;            for (int tt = t; tt &gt;= nn; tt--) {</b>
+<b class="nc">&nbsp;                u[tt] += u[tt - nn];</b>
+&nbsp;            }
+&nbsp;        }
+<b class="nc">&nbsp;        final double sum = Arrays.stream(u).sum();</b>
+&nbsp;
+&nbsp;        // Finally divide by the number of possible sums: 2^n
+<b class="nc">&nbsp;        return Math.scalb(sum, -n);</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2023-09-04 19:44</div>
+</div>
+</body>
+</html>

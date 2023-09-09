@@ -1,0 +1,1353 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=windows-1252"> 
+  <title>Coverage Report > UnconditionedExactTest</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope:     <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">org.apache.commons.statistics.inference</a>
+</div>
+
+<h1>Coverage Summary for Class: UnconditionedExactTest (org.apache.commons.statistics.inference)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">UnconditionedExactTest</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/22)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/218)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">UnconditionedExactTest$1</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/1)
+  </span>
+</td>
+  </tr>
+  <tr>
+    <td class="name">UnconditionedExactTest$BoschlooStatistic</td>
+  </tr>
+  <tr>
+    <td class="name">UnconditionedExactTest$Candidates</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/6)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/37)
+  </span>
+</td>
+  </tr>
+  <tr>
+    <td class="name">UnconditionedExactTest$Method</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/4)
+  </span>
+</td>
+  </tr>
+  <tr>
+    <td class="name">UnconditionedExactTest$Result</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/6)
+  </span>
+</td>
+  </tr>
+  <tr>
+    <td class="name">UnconditionedExactTest$XYList</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/9)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/14)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/44)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/280)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/*
+&nbsp; * Licensed to the Apache Software Foundation (ASF) under one or more
+&nbsp; * contributor license agreements.  See the NOTICE file distributed with
+&nbsp; * this work for additional information regarding copyright ownership.
+&nbsp; * The ASF licenses this file to You under the Apache License, Version 2.0
+&nbsp; * (the &quot;License&quot;); you may not use this file except in compliance with
+&nbsp; * the License.  You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *      http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;package org.apache.commons.statistics.inference;
+&nbsp;
+&nbsp;import java.util.Arrays;
+&nbsp;import java.util.Objects;
+&nbsp;import java.util.function.Consumer;
+&nbsp;import java.util.function.DoublePredicate;
+&nbsp;import java.util.function.DoubleUnaryOperator;
+&nbsp;import java.util.function.IntToDoubleFunction;
+&nbsp;import org.apache.commons.numbers.combinatorics.LogBinomialCoefficient;
+&nbsp;import org.apache.commons.statistics.inference.BrentOptimizer.PointValuePair;
+&nbsp;
+&nbsp;/**
+&nbsp; * Implements an unconditioned exact test for a contingency table.
+&nbsp; *
+&nbsp; * &lt;p&gt;Performs an exact test for the statistical significance of the association (contingency)
+&nbsp; * between two kinds of categorical classification. A 2x2 contingency table is:
+&nbsp; *
+&nbsp; * &lt;p&gt;\[ \left[ {\begin{array}{cc}
+&nbsp; *         a &amp;amp; b \\
+&nbsp; *         c &amp;amp; d \\
+&nbsp; *       \end{array} } \right] \]
+&nbsp; *
+&nbsp; * &lt;p&gt;This test applies to the case of a 2x2 contingency table with one margin fixed. Note that
+&nbsp; * if both margins are fixed (the row sums and column sums are not random)
+&nbsp; * then Fisher&#39;s exact test can be applied.
+&nbsp; *
+&nbsp; * &lt;p&gt;This implementation fixes the column sums \( m = a + c \) and \( n = b + d \).
+&nbsp; * All possible tables can be created using \( 0 \le a \le m \) and \( 0 \le b \le n \).
+&nbsp; * The random values \( a \) and \( b \) follow a binomial distribution with probabilities
+&nbsp; * \( p_0 \) and \( p_1 \) such that \( a \sim B(m, p_0) \) and \( b \sim B(n, p_1) \).
+&nbsp; * The p-value of the 2x2 table is the product of two binomials:
+&nbsp; *
+&nbsp; * &lt;p&gt;\[ \begin{aligned}
+&nbsp; *       p &amp;amp;= Pr(a; m, p_0) \times Pr(b; n, p_1) \\
+&nbsp; *         &amp;amp;= \binom{m}{a} p_0^a (1-p_0)^{m-a} \times \binom{n}{b} p_1^b (1-p_1)^{n-b} \end{aligned} \]
+&nbsp; *
+&nbsp; * &lt;p&gt;For the binomial model, the null hypothesis is the two nuisance parameters are equal
+&nbsp; * \( p_0 = p_1 = \pi\), with \( \pi \) the probability for equal proportions, and the probability
+&nbsp; * of any single table is:
+&nbsp; *
+&nbsp; * &lt;p&gt;\[ p = \binom{m}{a} \binom{n}{b} \pi^{a+b} (1-\pi)^{m+n-a-b} \]
+&nbsp; *
+&nbsp; * &lt;p&gt;The p-value of the observed table is calculated by maximising the sum of the as or more
+&nbsp; * extreme tables over the domain of the nuisance parameter \( 0 \lt \pi \lt 1 \):
+&nbsp; *
+&nbsp; * &lt;p&gt;\[ p(a, b) = \sum_{i,j} \binom{m}{i} \binom{n}{j} \pi^{i+j} (1-\pi)^{m+n-i-j} \]
+&nbsp; *
+&nbsp; * &lt;p&gt;where table \( (i,j) \) is as or more extreme than the observed table \( (a, b) \). The test
+&nbsp; * can be configured to select more extreme tables using various {@linkplain Method methods}.
+&nbsp; *
+&nbsp; * &lt;p&gt;Note that the sum of the joint binomial distribution is a univariate function for
+&nbsp; * the nuisance parameter \( \pi \). This function may have many local maxima and the
+&nbsp; * search enumerates the range with a configured {@linkplain #withInitialPoints(int)
+&nbsp; * number of points}. The best candidates are optionally used as the start point for an
+&nbsp; * {@linkplain #withOptimize(boolean) optimized} search for a local maxima.
+&nbsp; *
+&nbsp; * &lt;p&gt;References:
+&nbsp; * &lt;ol&gt;
+&nbsp; * &lt;li&gt;
+&nbsp; * Barnard, G.A. (1947).
+&nbsp; * &lt;a href=&quot;https://doi.org/10.1093/biomet/34.1-2.123&quot;&gt;Significance tests for 2x2 tables.&lt;/a&gt;
+&nbsp; * Biometrika, 34, Issue 1-2, 123–138.
+&nbsp; * &lt;li&gt;
+&nbsp; * Boschloo, R.D. (1970).
+&nbsp; * &lt;a href=&quot;https://doi.org/10.1111/j.1467-9574.1970.tb00104.x&quot;&gt;Raised conditional level of
+&nbsp; * significance for the 2 × 2-table when testing the equality of two probabilities.&lt;/a&gt;
+&nbsp; * Statistica neerlandica, 24(1), 1–9.
+&nbsp; * &lt;li&gt;
+&nbsp; * Suisaa, A and Shuster, J.J. (1985).
+&nbsp; * &lt;a href=&quot;https://doi.org/10.2307/2981892&quot;&gt;Exact Unconditional Sample Sizes
+&nbsp; * for the 2 × 2 Binomial Trial.&lt;/a&gt;
+&nbsp; * Journal of the Royal Statistical Society. Series A (General), 148(4), 317-327.
+&nbsp; * &lt;/ol&gt;
+&nbsp; *
+&nbsp; * @see FisherExactTest
+&nbsp; * @see &lt;a href=&quot;https://en.wikipedia.org/wiki/Boschloo%27s_test&quot;&gt;Boschloo&amp;#39;s test (Wikipedia)&lt;/a&gt;
+&nbsp; * @see &lt;a href=&quot;https://en.wikipedia.org/wiki/Barnard%27s_test&quot;&gt;Barnard&amp;#39;s test (Wikipedia)&lt;/a&gt;
+&nbsp; * @since 1.1
+&nbsp; */
+&nbsp;public final class UnconditionedExactTest {
+&nbsp;    /**
+&nbsp;     * Default instance.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;SciPy&#39;s boschloo_exact and barnard_exact tests use 32 points in the interval [0,
+&nbsp;     * 1) The R Exact package uses 100 in the interval [1e-5, 1-1e-5]. Barnards 1947 paper
+&nbsp;     * describes the nuisance parameter in the open interval {@code 0 &lt; pi &lt; 1}. Here we
+&nbsp;     * respect the open-interval for the initial candidates and ignore 0 and 1. The
+&nbsp;     * initial bounds used are the same as the R Exact package. We closely match the inner
+&nbsp;     * 31 points from SciPy by using 33 points by default.
+&nbsp;     */
+<b class="nc">&nbsp;    private static final UnconditionedExactTest DEFAULT = new UnconditionedExactTest(</b>
+&nbsp;        AlternativeHypothesis.TWO_SIDED, Method.BOSCHLOO, 33, true);
+&nbsp;    /** Lower bound for the enumerated interval. The upper bound is {@code 1 - lower}. */
+&nbsp;    private static final double LOWER_BOUND = 1e-5;
+&nbsp;    /** Relative epsilon for the Brent solver. This is limited for a univariate function
+&nbsp;     * to approximately sqrt(eps) with eps = 2^-52. */
+&nbsp;    private static final double SOLVER_RELATIVE_EPS = 1.4901161193847656E-8;
+&nbsp;    /** Fraction of the increment (interval between enumerated points) to initialise the bracket
+&nbsp;     * for the minima. Note the minima should lie between x +/- increment. The bracket should
+&nbsp;     * search within this range. Set to 1/8 and so the initial point of the bracket is
+&nbsp;     * approximately 1.61 * 1/8 = 0.2 of the increment away from initial points a or b. */
+&nbsp;    private static final double INC_FRACTION = 0.125;
+&nbsp;    /** Maximum number of candidate to optimize. This is a safety limit to avoid excess
+&nbsp;     * optimization. Only candidates within a relative tolerance of the best candidate are
+&nbsp;     * stored. If the number of candidates exceeds this value then many candidates have a
+&nbsp;     * very similar p-value and the top candidates will be optimized. Using a value of 3
+&nbsp;     * allows at least one other candidate to be optimized when there is two-fold
+&nbsp;     * symmetry in the energy function. */
+&nbsp;    private static final int MAX_CANDIDATES = 3;
+&nbsp;    /** Relative distance of candidate minima from the lowest candidate. Used to exclude
+&nbsp;     * poor candidates from optimization. */
+&nbsp;    private static final double MINIMA_EPS = 0.02;
+&nbsp;    /** The maximum number of tables. This is limited by the maximum number of indices that
+&nbsp;     * can be maintained in memory. Potentially up to this number of tables must be tracked
+&nbsp;     * during computation of the p-value for as or more extreme tables. The limit is set
+&nbsp;     * using the same limit for maximum capacity as java.util.ArrayList. In practice any
+&nbsp;     * table anywhere near this limit can be computed using an alternative such as a chi-squared
+&nbsp;     * or g test. */
+&nbsp;    private static final int MAX_TABLES = Integer.MAX_VALUE - 8;
+&nbsp;    /** Error message text for zero column sums. */
+&nbsp;    private static final String COLUMN_SUM = &quot;Column sum&quot;;
+&nbsp;
+&nbsp;    /** Alternative hypothesis. */
+&nbsp;    private final AlternativeHypothesis alternative;
+&nbsp;    /** Method to identify more extreme tables. */
+&nbsp;    private final Method method;
+&nbsp;    /** Number of initial points. */
+&nbsp;    private final int points;
+&nbsp;    /** Option to optimize the best initial point(s). */
+&nbsp;    private final boolean optimize;
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Define the method to determine the more extreme tables.
+&nbsp;     *
+&nbsp;     * @since 1.1
+&nbsp;     */
+<b class="nc">&nbsp;    public enum Method {</b>
+&nbsp;        /**
+&nbsp;         * Uses the test statistic from a Z-test using a pooled variance.
+&nbsp;         *
+&nbsp;         * &lt;p&gt;\[ T(X) = \frac{\hat{p}_0 - \hat{p}_1}{\sqrt{\hat{p}(1 - \hat{p}) (\frac{1}{m} + \frac{1}{n})}} \]
+&nbsp;         *
+&nbsp;         * &lt;p&gt;where \( \hat{p}_0 = a / m \), \( \hat{p}_1 = b / n \), and
+&nbsp;         * \( \hat{p} = (a+b) / (m+n) \) are the estimators of \( p_0 \), \( p_1 \) and the
+&nbsp;         * pooled probability \( p \) assuming \( p_0 = p_1 \).
+&nbsp;         *
+&nbsp;         * &lt;p&gt;The more extreme tables are identified using the {@link AlternativeHypothesis}:
+&nbsp;         * &lt;ul&gt;
+&nbsp;         * &lt;li&gt;greater: \( T(X) \ge T(X_0) \)
+&nbsp;         * &lt;li&gt;less: \( T(X) \le T(X_0) \)
+&nbsp;         * &lt;li&gt;two-sided: \( | T(X) | \ge | T(X_0) | \)
+&nbsp;         * &lt;/ul&gt;
+&nbsp;         *
+&nbsp;         * &lt;p&gt;The use of the Z statistic was suggested by Suissa and Shuster (1985).
+&nbsp;         * This method is uniformly more powerful than Fisher&#39;s test for balanced designs
+&nbsp;         * (\( m = n \)).
+&nbsp;         */
+<b class="nc">&nbsp;        Z_POOLED,</b>
+&nbsp;
+&nbsp;        /**
+&nbsp;         * Uses the test statistic from a Z-test using an unpooled variance.
+&nbsp;         *
+&nbsp;         * &lt;p&gt;\[ T(X) = \frac{\hat{p}_0 - \hat{p}_1}
+&nbsp;         * {\sqrt{ \frac{\hat{p}_0(1 - \hat{p}_0)}{m} + \frac{\hat{p}_1(1 - \hat{p}_1)}{n}} } \]
+&nbsp;         *
+&nbsp;         * &lt;p&gt;where \( \hat{p}_0 = a / m \) and \( \hat{p}_1 = b / n \).
+&nbsp;         *
+&nbsp;         * &lt;p&gt;The more extreme tables are identified using the {@link AlternativeHypothesis} as
+&nbsp;         * per the {@link #Z_POOLED} method.
+&nbsp;         */
+<b class="nc">&nbsp;        Z_UNPOOLED,</b>
+&nbsp;
+&nbsp;        /**
+&nbsp;         * Uses the p-value from Fisher&#39;s exact test. This is also known as Boschloo&#39;s test.
+&nbsp;         *
+&nbsp;         * &lt;p&gt;The p-value for Fisher&#39;s test is computed using using the
+&nbsp;         * {@link AlternativeHypothesis}. The more extreme tables are identified using
+&nbsp;         * \( p(X) \le p(X_0) \).
+&nbsp;         *
+&nbsp;         * &lt;p&gt;This method is always uniformly more powerful than Fisher&#39;s test.
+&nbsp;         *
+&nbsp;         * @see FisherExactTest
+&nbsp;         */
+<b class="nc">&nbsp;        BOSCHLOO;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Result for the unconditioned exact test.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;This class is immutable.
+&nbsp;     *
+&nbsp;     * @since 1.1
+&nbsp;     */
+&nbsp;    public static final class Result extends BaseSignificanceResult {
+&nbsp;        /** Nuisance parameter. */
+&nbsp;        private final double pi;
+&nbsp;
+&nbsp;        /**
+&nbsp;         * Create an instance where all tables are more extreme, i.e. the p-value
+&nbsp;         * is 1.0.
+&nbsp;         *
+&nbsp;         * @param statistic Test statistic.
+&nbsp;         */
+&nbsp;        Result(double statistic) {
+<b class="nc">&nbsp;            super(statistic, 1);</b>
+<b class="nc">&nbsp;            this.pi = 0.5;</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        /**
+&nbsp;         * @param statistic Test statistic.
+&nbsp;         * @param pi Nuisance parameter.
+&nbsp;         * @param p Result p-value.
+&nbsp;         */
+&nbsp;        Result(double statistic, double pi, double p) {
+<b class="nc">&nbsp;            super(statistic, p);</b>
+<b class="nc">&nbsp;            this.pi = pi;</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        /**
+&nbsp;         * {@inheritDoc}
+&nbsp;         *
+&nbsp;         * &lt;p&gt;The value of the statistic is dependent on the {@linkplain Method method}
+&nbsp;         * used to determine the more extreme tables.
+&nbsp;         */
+&nbsp;        @Override
+&nbsp;        public double getStatistic() {
+&nbsp;            // Note: This method is here for documentation
+<b class="nc">&nbsp;            return super.getStatistic();</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        /**
+&nbsp;         * Gets the nuisance parameter that maximised the probability sum of the as or more
+&nbsp;         * extreme tables.
+&nbsp;         *
+&nbsp;         * @return the nuisance parameter.
+&nbsp;         */
+&nbsp;        public double getNuisanceParameter() {
+<b class="nc">&nbsp;            return pi;</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * An expandable list of (x,y) values. This allows tracking 2D positions stored as
+&nbsp;     * a single index.
+&nbsp;     */
+&nbsp;    private static class XYList {
+&nbsp;        /** The maximum size of array to allocate. */
+&nbsp;        private final int max;
+&nbsp;        /** Width, or maximum x value (exclusive). */
+&nbsp;        private final int width;
+&nbsp;
+&nbsp;        /** The size of the list. */
+&nbsp;        private int size;
+&nbsp;        /** The list data. */
+<b class="nc">&nbsp;        private int[] data = new int[10];</b>
+&nbsp;
+&nbsp;        /**
+&nbsp;         * Create an instance. It is assumed that (maxx+1)*(maxy+1) does not exceed the
+&nbsp;         * capacity of an array.
+&nbsp;         *
+&nbsp;         * @param maxx Maximum x-value (inclusive).
+&nbsp;         * @param maxy Maximum y-value (inclusive).
+&nbsp;         */
+<b class="nc">&nbsp;        XYList(int maxx, int maxy) {</b>
+<b class="nc">&nbsp;            this.width = maxx + 1;</b>
+<b class="nc">&nbsp;            this.max = width * (maxy + 1);</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        /**
+&nbsp;         * Gets the width.
+&nbsp;         * (x, y) values are stored using y * width + x.
+&nbsp;         *
+&nbsp;         * @return the width
+&nbsp;         */
+&nbsp;        int getWidth() {
+<b class="nc">&nbsp;            return width;</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        /**
+&nbsp;         * Gets the maximum X value (inclusive).
+&nbsp;         *
+&nbsp;         * @return the max X
+&nbsp;         */
+&nbsp;        int getMaxX() {
+<b class="nc">&nbsp;            return width - 1;</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        /**
+&nbsp;         * Gets the maximum Y value (inclusive).
+&nbsp;         *
+&nbsp;         * @return the max Y
+&nbsp;         */
+&nbsp;        int getMaxY() {
+<b class="nc">&nbsp;            return max / width - 1;</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        /**
+&nbsp;         * Adds the value to the list.
+&nbsp;         *
+&nbsp;         * @param x X value.
+&nbsp;         * @param y Y value.
+&nbsp;         */
+&nbsp;        void add(int x, int y) {
+<b class="nc">&nbsp;            if (size == data.length) {</b>
+&nbsp;                // Overflow safe doubling of the current size.
+<b class="nc">&nbsp;                data = Arrays.copyOf(data, (int) Math.min(max, size * 2L));</b>
+&nbsp;            }
+<b class="nc">&nbsp;            data[size++] = width * y + x;</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        /**
+&nbsp;         * Gets the 2D index at the specified {@code index}.
+&nbsp;         * The index is y * width + x:
+&nbsp;         * &lt;pre&gt;
+&nbsp;         * x = index % width
+&nbsp;         * y = index / width
+&nbsp;         * &lt;/pre&gt;
+&nbsp;         *
+&nbsp;         * @param index Element index.
+&nbsp;         * @return the 2D index
+&nbsp;         */
+&nbsp;        int get(int index) {
+<b class="nc">&nbsp;            return data[index];</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        /**
+&nbsp;         * Gets the number of elements in the list.
+&nbsp;         *
+&nbsp;         * @return the size
+&nbsp;         */
+&nbsp;        int size() {
+<b class="nc">&nbsp;            return size;</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        /**
+&nbsp;         * Checks if the list size is zero.
+&nbsp;         *
+&nbsp;         * @return true if empty
+&nbsp;         */
+&nbsp;        boolean isEmpty() {
+<b class="nc">&nbsp;            return size == 0;</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        /**
+&nbsp;         * Checks if the list is the maximum capacity.
+&nbsp;         *
+&nbsp;         * @return true if full
+&nbsp;         */
+&nbsp;        boolean isFull() {
+<b class="nc">&nbsp;            return size == max;</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * A container of (key,value) pairs to store candidate minima. Encapsulates the
+&nbsp;     * logic of storing multiple initial search points for optimization.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;Stores all pairs within a relative tolerance of the lowest minima up to a set
+&nbsp;     * capacity. When at capacity the worst candidate is replaced by addition of a
+&nbsp;     * better candidate.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;Special handling is provided to store only a single NaN value if no non-NaN
+&nbsp;     * values have been observed. This prevents storing a large number of NaN
+&nbsp;     * candidates.
+&nbsp;     */
+&nbsp;    static class Candidates {
+&nbsp;        /** The maximum size of array to allocate. */
+&nbsp;        private final int max;
+&nbsp;        /** Relative distance from lowest candidate. */
+&nbsp;        private final double eps;
+&nbsp;        /** Candidate (key,value) pairs. */
+&nbsp;        private double[][] data;
+&nbsp;        /** Current size of the list. */
+&nbsp;        private int size;
+&nbsp;        /** Current minimum. */
+<b class="nc">&nbsp;        private double min = Double.POSITIVE_INFINITY;</b>
+&nbsp;        /** Current threshold for inclusion. */
+<b class="nc">&nbsp;        private double threshold = Double.POSITIVE_INFINITY;</b>
+&nbsp;
+&nbsp;        /**
+&nbsp;         * Create an instance.
+&nbsp;         *
+&nbsp;         * @param max Maximum number of allowed candidates (limited to at least 1).
+&nbsp;         * @param eps Relative distance of candidate minima from the lowest candidate
+&nbsp;         * (assumed to be positive and finite).
+&nbsp;         */
+<b class="nc">&nbsp;        Candidates(int max, double eps) {</b>
+<b class="nc">&nbsp;            this.max = Math.max(1, max);</b>
+<b class="nc">&nbsp;            this.eps = eps;</b>
+&nbsp;            // Create the initial storage
+<b class="nc">&nbsp;            data = new double[Math.min(this.max, 4)][];</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        /**
+&nbsp;         * Adds the (key, value) pair.
+&nbsp;         *
+&nbsp;         * @param k Key.
+&nbsp;         * @param v Value.
+&nbsp;         */
+&nbsp;        void add(double k, double v) {
+&nbsp;            // Store only a single NaN
+<b class="nc">&nbsp;            if (Double.isNaN(v)) {</b>
+<b class="nc">&nbsp;                if (size == 0) {</b>
+&nbsp;                    // No requirement to check capacity
+<b class="nc">&nbsp;                    data[size++] = new double[] {k, v};</b>
+&nbsp;                }
+&nbsp;                return;
+&nbsp;            }
+&nbsp;            // Here values are non-NaN.
+&nbsp;            // If higher then do not store.
+<b class="nc">&nbsp;            if (v &gt; threshold) {</b>
+&nbsp;                return;
+&nbsp;            }
+&nbsp;            // Check if lower than the current minima.
+<b class="nc">&nbsp;            if (v &lt; min) {</b>
+<b class="nc">&nbsp;                min = v;</b>
+&nbsp;                // Get new threshold
+<b class="nc">&nbsp;                threshold = v + Math.abs(v) * eps;</b>
+&nbsp;                // Remove existing entries above the threshold
+<b class="nc">&nbsp;                int s = 0;</b>
+<b class="nc">&nbsp;                for (int i = 0; i &lt; size; i++) {</b>
+&nbsp;                    // This will filter NaN values
+<b class="nc">&nbsp;                    if (data[i][1] &lt;= threshold) {</b>
+<b class="nc">&nbsp;                        data[s++] = data[i];</b>
+&nbsp;                    }
+&nbsp;                }
+<b class="nc">&nbsp;                size = s;</b>
+&nbsp;                // Caution: This does not clear stale data
+&nbsp;                // by setting all values in [newSize, oldSize) = null
+&nbsp;            }
+<b class="nc">&nbsp;            addPair(k, v);</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        /**
+&nbsp;         * Add the (key, value) pair to the data.
+&nbsp;         * It is assumed the data satisfy the conditions for addition.
+&nbsp;         *
+&nbsp;         * @param k Key.
+&nbsp;         * @param v Value.
+&nbsp;         */
+&nbsp;        private void addPair(double k, double v) {
+<b class="nc">&nbsp;            if (size == data.length) {</b>
+<b class="nc">&nbsp;                if (size == max) {</b>
+&nbsp;                    // At capacity.
+<b class="nc">&nbsp;                    replaceWorst(k, v);</b>
+&nbsp;                    return;
+&nbsp;                }
+&nbsp;                // Expand
+<b class="nc">&nbsp;                data = Arrays.copyOfRange(data, 0, (int) Math.min(max, size * 2L));</b>
+&nbsp;            }
+<b class="nc">&nbsp;            data[size++] = new double[] {k, v};</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        /**
+&nbsp;         * Replace the worst candidate.
+&nbsp;         *
+&nbsp;         * @param k Key.
+&nbsp;         * @param v Value.
+&nbsp;         */
+&nbsp;        private void replaceWorst(double k, double v) {
+&nbsp;            // Note: This only occurs when NaN values have been removed by addition
+&nbsp;            // of non-NaN values.
+<b class="nc">&nbsp;            double[] worst = data[0];</b>
+<b class="nc">&nbsp;            for (int i = 1; i &lt; size; i++) {</b>
+<b class="nc">&nbsp;                if (worst[1] &lt; data[i][1]) {</b>
+<b class="nc">&nbsp;                    worst = data[i];</b>
+&nbsp;                }
+&nbsp;            }
+<b class="nc">&nbsp;            worst[0] = k;</b>
+<b class="nc">&nbsp;            worst[1] = v;</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        /**
+&nbsp;         * Return the minimum (key,value) pair.
+&nbsp;         *
+&nbsp;         * @return the minimum (or null)
+&nbsp;         */
+&nbsp;        double[] getMinimum() {
+&nbsp;            // This will handle size=0 as data[0] will be null
+<b class="nc">&nbsp;            double[] best = data[0];</b>
+<b class="nc">&nbsp;            for (int i = 1; i &lt; size; i++) {</b>
+<b class="nc">&nbsp;                if (best[1] &gt; data[i][1]) {</b>
+<b class="nc">&nbsp;                    best = data[i];</b>
+&nbsp;                }
+&nbsp;            }
+<b class="nc">&nbsp;            return best;</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        /**
+&nbsp;         * Perform the given action for each (key, value) pair.
+&nbsp;         *
+&nbsp;         * @param action Action.
+&nbsp;         */
+&nbsp;        void forEach(Consumer&lt;double[]&gt; action) {
+<b class="nc">&nbsp;            for (int i = 0; i &lt; size; i++) {</b>
+<b class="nc">&nbsp;                action.accept(data[i]);</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Compute the statistic for Boschloo&#39;s test.
+&nbsp;     */
+&nbsp;    private interface BoschlooStatistic {
+&nbsp;        /**
+&nbsp;         * Compute Fisher&#39;s p-value for the 2x2 contingency table with the observed
+&nbsp;         * value {@code x} in position [0][0]. Note that the table margins are fixed
+&nbsp;         * and are defined by the population size, number of successes and sample
+&nbsp;         * size of the specified hypergeometric distribution.
+&nbsp;         *
+&nbsp;         * @param dist Hypergeometric distribution.
+&nbsp;         * @param x Value.
+&nbsp;         * @return Fisher&#39;s p-value
+&nbsp;         */
+&nbsp;        double value(Hypergeom dist, int x);
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * @param alternative Alternative hypothesis.
+&nbsp;     * @param method Method to identify more extreme tables.
+&nbsp;     * @param points Number of initial points.
+&nbsp;     * @param optimize Option to optimize the best initial point(s).
+&nbsp;     */
+&nbsp;    private UnconditionedExactTest(AlternativeHypothesis alternative,
+&nbsp;                                   Method method,
+&nbsp;                                   int points,
+<b class="nc">&nbsp;                                   boolean optimize) {</b>
+<b class="nc">&nbsp;        this.alternative = alternative;</b>
+<b class="nc">&nbsp;        this.method = method;</b>
+<b class="nc">&nbsp;        this.points = points;</b>
+<b class="nc">&nbsp;        this.optimize = optimize;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Return an instance using the default options.
+&nbsp;     *
+&nbsp;     * &lt;ul&gt;
+&nbsp;     * &lt;li&gt;{@link AlternativeHypothesis#TWO_SIDED}
+&nbsp;     * &lt;li&gt;{@link Method#BOSCHLOO}
+&nbsp;     * &lt;li&gt;{@linkplain #withInitialPoints(int) points = 33}
+&nbsp;     * &lt;li&gt;{@linkplain #withOptimize(boolean) optimize = true}
+&nbsp;     * &lt;/ul&gt;
+&nbsp;     *
+&nbsp;     * @return default instance
+&nbsp;     */
+&nbsp;    public static UnconditionedExactTest withDefaults() {
+<b class="nc">&nbsp;        return DEFAULT;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Return an instance with the configured alternative hypothesis.
+&nbsp;     *
+&nbsp;     * @param v Value.
+&nbsp;     * @return an instance
+&nbsp;     */
+&nbsp;    public UnconditionedExactTest with(AlternativeHypothesis v) {
+<b class="nc">&nbsp;        return new UnconditionedExactTest(Objects.requireNonNull(v), method, points, optimize);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Return an instance with the configured method.
+&nbsp;     *
+&nbsp;     * @param v Value.
+&nbsp;     * @return an instance
+&nbsp;     */
+&nbsp;    public UnconditionedExactTest with(Method v) {
+<b class="nc">&nbsp;        return new UnconditionedExactTest(alternative, Objects.requireNonNull(v), points, optimize);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Return an instance with the configured number of initial points.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;The search for the nuisance parameter will use \( v \) points in the open interval
+&nbsp;     * \( (0, 1) \). The interval is evaluated by including start and end points approximately
+&nbsp;     * equal to 0 and 1. Additional internal points are enumerated using increments of
+&nbsp;     * approximately \( \frac{1}{v-1} \). The minimum number of points is 2. Increasing the
+&nbsp;     * number of points increases the precision of the search at the cost of performance.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;To approximately double the number of points so that all existing points are included
+&nbsp;     * and additional points half-way between them are sampled requires using {@code 2p - 1}
+&nbsp;     * where {@code p} is the existing number of points.
+&nbsp;     *
+&nbsp;     * @param v Value.
+&nbsp;     * @return an instance
+&nbsp;     * @throws IllegalArgumentException if the value is {@code &lt; 2}.
+&nbsp;     */
+&nbsp;    public UnconditionedExactTest withInitialPoints(int v) {
+<b class="nc">&nbsp;        if (v &lt;= 1) {</b>
+<b class="nc">&nbsp;            throw new InferenceException(InferenceException.X_LT_Y, v, 2);</b>
+&nbsp;        }
+<b class="nc">&nbsp;        return new UnconditionedExactTest(alternative, method, v, optimize);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Return an instance with the configured optimization of initial search points.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;If enabled then the initial point(s) with the highest probability is/are used as the start
+&nbsp;     * for an optimization to find a local maxima.
+&nbsp;     *
+&nbsp;     * @param v Value.
+&nbsp;     * @return an instance
+&nbsp;     * @see #withInitialPoints(int)
+&nbsp;     */
+&nbsp;    public UnconditionedExactTest withOptimize(boolean v) {
+<b class="nc">&nbsp;        return new UnconditionedExactTest(alternative, method, points, v);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Compute the statistic for the unconditioned exact test. The statistic returned
+&nbsp;     * depends on the configured {@linkplain Method method}.
+&nbsp;     *
+&nbsp;     * @param table 2-by-2 contingency table.
+&nbsp;     * @return test statistic
+&nbsp;     * @throws IllegalArgumentException if the {@code table} is not a 2-by-2 table; any
+&nbsp;     * table entry is negative; any column sum is zero; the table sum is zero or not an
+&nbsp;     * integer; or the number of possible tables exceeds the maximum array capacity.
+&nbsp;     * @see #with(Method)
+&nbsp;     * @see #test(int[][])
+&nbsp;     */
+&nbsp;    public double statistic(int[][] table) {
+<b class="nc">&nbsp;        checkTable(table);</b>
+<b class="nc">&nbsp;        final int a = table[0][0];</b>
+<b class="nc">&nbsp;        final int b = table[0][1];</b>
+<b class="nc">&nbsp;        final int c = table[1][0];</b>
+<b class="nc">&nbsp;        final int d = table[1][1];</b>
+<b class="nc">&nbsp;        final int m = a + c;</b>
+<b class="nc">&nbsp;        final int n = b + d;</b>
+<b class="nc">&nbsp;        switch (method) {</b>
+&nbsp;        case Z_POOLED:
+<b class="nc">&nbsp;            return statisticZ(a, b, m, n, true);</b>
+&nbsp;        case Z_UNPOOLED:
+<b class="nc">&nbsp;            return statisticZ(a, b, m, n, false);</b>
+&nbsp;        case BOSCHLOO:
+<b class="nc">&nbsp;            return statisticBoschloo(a, b, m, n);</b>
+&nbsp;        default:
+<b class="nc">&nbsp;            throw new IllegalStateException(String.valueOf(method));</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Performs an unconditioned exact test on the 2-by-2 contingency table. The statistic and
+&nbsp;     * p-value returned depends on the configured {@linkplain Method method} and
+&nbsp;     * {@linkplain AlternativeHypothesis alternative hypothesis}.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;The search for the nuisance parameter that maximises the p-value can be configured to:
+&nbsp;     * start with a number of {@linkplain #withInitialPoints(int) initial points}; and
+&nbsp;     * {@linkplain #withOptimize(boolean) optimize} the best points.
+&nbsp;     *
+&nbsp;     * @param table 2-by-2 contingency table.
+&nbsp;     * @return test result
+&nbsp;     * @throws IllegalArgumentException if the {@code table} is not a 2-by-2 table; any
+&nbsp;     * table entry is negative; any column sum is zero; the table sum is zero or not an
+&nbsp;     * integer; or the number of possible tables exceeds the maximum array capacity.
+&nbsp;     * @see #with(Method)
+&nbsp;     * @see #with(AlternativeHypothesis)
+&nbsp;     * @see #statistic(int[][])
+&nbsp;     */
+&nbsp;    public Result test(int[][] table) {
+<b class="nc">&nbsp;        checkTable(table);</b>
+<b class="nc">&nbsp;        final int a = table[0][0];</b>
+<b class="nc">&nbsp;        final int b = table[0][1];</b>
+<b class="nc">&nbsp;        final int c = table[1][0];</b>
+<b class="nc">&nbsp;        final int d = table[1][1];</b>
+<b class="nc">&nbsp;        final int m = a + c;</b>
+<b class="nc">&nbsp;        final int n = b + d;</b>
+&nbsp;
+&nbsp;        // Used to track more extreme tables
+<b class="nc">&nbsp;        final XYList tableList = new XYList(m, n);</b>
+&nbsp;
+<b class="nc">&nbsp;        final double statistic = findExtremeTables(a, b, tableList);</b>
+<b class="nc">&nbsp;        if (tableList.isEmpty() || tableList.isFull()) {</b>
+&nbsp;            // All possible tables are more extreme, e.g. a two-sided test where the
+&nbsp;            // z-statistic is zero.
+<b class="nc">&nbsp;            return new Result(statistic);</b>
+&nbsp;        }
+<b class="nc">&nbsp;        final double[] opt = computePValue(tableList);</b>
+&nbsp;
+<b class="nc">&nbsp;        return new Result(statistic, opt[0], opt[1]);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Find all tables that are as or more extreme than the observed table.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;If the list of tables is full then all tables are more extreme.
+&nbsp;     * Some configurations can detect this without performing a search
+&nbsp;     * and in this case the list of tables is returned as empty.
+&nbsp;     *
+&nbsp;     * @param a Observed value for a.
+&nbsp;     * @param b Observed value for b.
+&nbsp;     * @param tableList List to track more extreme tables.
+&nbsp;     * @return the test statistic
+&nbsp;     */
+&nbsp;    private double findExtremeTables(int a, int b, XYList tableList) {
+<b class="nc">&nbsp;        final int m = tableList.getMaxX();</b>
+<b class="nc">&nbsp;        final int n = tableList.getMaxY();</b>
+<b class="nc">&nbsp;        switch (method) {</b>
+&nbsp;        case Z_POOLED:
+<b class="nc">&nbsp;            return findExtremeTablesZ(a, b, m, n, true, tableList);</b>
+&nbsp;        case Z_UNPOOLED:
+<b class="nc">&nbsp;            return findExtremeTablesZ(a, b, m, n, false, tableList);</b>
+&nbsp;        case BOSCHLOO:
+<b class="nc">&nbsp;            return findExtremeTablesBoschloo(a, b, m, n, tableList);</b>
+&nbsp;        default:
+<b class="nc">&nbsp;            throw new IllegalStateException(String.valueOf(method));</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Compute the statistic from a Z-test.
+&nbsp;     *
+&nbsp;     * @param a Observed value for a.
+&nbsp;     * @param b Observed value for b.
+&nbsp;     * @param m Column sum m.
+&nbsp;     * @param n Column sum n.
+&nbsp;     * @param pooled true to use a pooled variance.
+&nbsp;     * @return z
+&nbsp;     */
+&nbsp;    private static double statisticZ(int a, int b, int m, int n, boolean pooled) {
+<b class="nc">&nbsp;        final double p0 = (double) a / m;</b>
+<b class="nc">&nbsp;        final double p1 = (double) b / n;</b>
+&nbsp;        // Avoid NaN generation 0 / 0 when the variance is 0
+<b class="nc">&nbsp;        if (p0 != p1) {</b>
+&nbsp;            double variance;
+<b class="nc">&nbsp;            if (pooled) {</b>
+&nbsp;                // Integer sums will not overflow
+<b class="nc">&nbsp;                final double p = (double) (a + b) / (m + n);</b>
+<b class="nc">&nbsp;                variance = p * (1 - p) * (1.0 / m + 1.0 / n);</b>
+<b class="nc">&nbsp;            } else {</b>
+<b class="nc">&nbsp;                variance = p0 * (1 - p0) / m + p1 * (1 - p1) / n;</b>
+&nbsp;            }
+<b class="nc">&nbsp;            return (p0 - p1) / Math.sqrt(variance);</b>
+&nbsp;        }
+<b class="nc">&nbsp;        return 0;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Find all tables that are as or more extreme than the observed table using the Z statistic.
+&nbsp;     *
+&nbsp;     * @param a Observed value for a.
+&nbsp;     * @param b Observed value for b.
+&nbsp;     * @param m Column sum m.
+&nbsp;     * @param n Column sum n.
+&nbsp;     * @param pooled true to use a pooled variance.
+&nbsp;     * @param tableList List to track more extreme tables.
+&nbsp;     * @return observed z
+&nbsp;     */
+&nbsp;    private double findExtremeTablesZ(int a, int b, int m, int n, boolean pooled, XYList tableList) {
+<b class="nc">&nbsp;        final double statistic = statisticZ(a, b, m, n, pooled);</b>
+&nbsp;        // Identify more extreme tables using the alternate hypothesis
+&nbsp;        DoublePredicate test;
+<b class="nc">&nbsp;        if (alternative == AlternativeHypothesis.GREATER_THAN) {</b>
+<b class="nc">&nbsp;            test = z -&gt; z &gt;= statistic;</b>
+<b class="nc">&nbsp;        } else if (alternative == AlternativeHypothesis.LESS_THAN) {</b>
+<b class="nc">&nbsp;            test = z -&gt; z &lt;= statistic;</b>
+&nbsp;        } else {
+&nbsp;            // two-sided
+<b class="nc">&nbsp;            if (statistic == 0) {</b>
+&nbsp;                // Early exit: all tables are as extreme
+<b class="nc">&nbsp;                return 0;</b>
+&nbsp;            }
+<b class="nc">&nbsp;            final double za = Math.abs(statistic);</b>
+<b class="nc">&nbsp;            test = z -&gt; Math.abs(z) &gt;= za;</b>
+&nbsp;        }
+&nbsp;        // Precompute factors
+<b class="nc">&nbsp;        final double mn = (double) m + n;</b>
+<b class="nc">&nbsp;        final double norm = 1.0 / m + 1.0 / n;</b>
+&nbsp;        double z;
+&nbsp;        // Process all possible tables
+<b class="nc">&nbsp;        for (int i = 0; i &lt;= m; i++) {</b>
+<b class="nc">&nbsp;            final double p0 = (double) i / m;</b>
+<b class="nc">&nbsp;            final double vp0 = p0 * (1 - p0) / m;</b>
+<b class="nc">&nbsp;            for (int j = 0; j &lt;= n; j++) {</b>
+<b class="nc">&nbsp;                final double p1 = (double) j / n;</b>
+&nbsp;                // Avoid NaN generation 0 / 0 when the variance is 0
+<b class="nc">&nbsp;                if (p0 == p1) {</b>
+<b class="nc">&nbsp;                    z = 0;</b>
+&nbsp;                } else {
+&nbsp;                    double variance;
+<b class="nc">&nbsp;                    if (pooled) {</b>
+&nbsp;                        // Integer sums will not overflow
+<b class="nc">&nbsp;                        final double p = (i + j) / mn;</b>
+<b class="nc">&nbsp;                        variance = p * (1 - p) * norm;</b>
+<b class="nc">&nbsp;                    } else {</b>
+<b class="nc">&nbsp;                        variance = vp0 + p1 * (1 - p1) / n;</b>
+&nbsp;                    }
+<b class="nc">&nbsp;                    z = (p0 - p1) / Math.sqrt(variance);</b>
+&nbsp;                }
+<b class="nc">&nbsp;                if (test.test(z)) {</b>
+<b class="nc">&nbsp;                    tableList.add(i, j);</b>
+&nbsp;                }
+&nbsp;            }
+&nbsp;        }
+<b class="nc">&nbsp;        return statistic;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Compute the statistic using Fisher&#39;s p-value (also known as Boschloo&#39;s test).
+&nbsp;     *
+&nbsp;     * @param a Observed value for a.
+&nbsp;     * @param b Observed value for b.
+&nbsp;     * @param m Column sum m.
+&nbsp;     * @param n Column sum n.
+&nbsp;     * @return p-value
+&nbsp;     */
+&nbsp;    private double statisticBoschloo(int a, int b, int m, int n) {
+<b class="nc">&nbsp;        final int nn = m + n;</b>
+<b class="nc">&nbsp;        final int k = a + b;</b>
+&nbsp;        // Re-use the cached Hypergeometric implementation to allow the value
+&nbsp;        // to be identical for the statistic and test methods.
+<b class="nc">&nbsp;        final Hypergeom dist = new Hypergeom(nn, k, m);</b>
+<b class="nc">&nbsp;        if (alternative == AlternativeHypothesis.GREATER_THAN) {</b>
+<b class="nc">&nbsp;            return dist.sf(a - 1);</b>
+<b class="nc">&nbsp;        } else if (alternative == AlternativeHypothesis.LESS_THAN) {</b>
+<b class="nc">&nbsp;            return dist.cdf(a);</b>
+&nbsp;        }
+&nbsp;        // two-sided: Find all i where Pr(X = i) &lt;= Pr(X = a) and sum them.
+<b class="nc">&nbsp;        return statisticBoschlooTwoSided(dist, a);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Compute the two-sided statistic using Fisher&#39;s p-value (also known as Boschloo&#39;s test).
+&nbsp;     *
+&nbsp;     * @param distribution Hypergeometric distribution.
+&nbsp;     * @param k Observed value.
+&nbsp;     * @return p-value
+&nbsp;     */
+&nbsp;    private static double statisticBoschlooTwoSided(Hypergeom distribution, int k) {
+&nbsp;        // two-sided: Find all i where Pr(X = i) &lt;= Pr(X = k) and sum them.
+&nbsp;        // Logic is the same as FisherExactTest but using the probability (PMF), which
+&nbsp;        // is cached, rather than the logProbability.
+<b class="nc">&nbsp;        final double pk = distribution.pmf(k);</b>
+&nbsp;
+<b class="nc">&nbsp;        final int m1 = distribution.getLowerMode();</b>
+<b class="nc">&nbsp;        final int m2 = distribution.getUpperMode();</b>
+<b class="nc">&nbsp;        if (k &lt; m1) {</b>
+&nbsp;            // Lower half = cdf(k)
+&nbsp;            // Find upper half. As k &lt; lower mode i should never
+&nbsp;            // reach the lower mode based on the probability alone.
+&nbsp;            // Bracket with the upper mode.
+<b class="nc">&nbsp;            final int i = Searches.searchDescending(m2, distribution.getSupportUpperBound(), pk,</b>
+<b class="nc">&nbsp;                distribution::pmf);</b>
+<b class="nc">&nbsp;            return distribution.cdf(k) +</b>
+<b class="nc">&nbsp;                   distribution.sf(i - 1);</b>
+<b class="nc">&nbsp;        } else if (k &gt; m2) {</b>
+&nbsp;            // Upper half = sf(k - 1)
+&nbsp;            // Find lower half. As k &gt; upper mode i should never
+&nbsp;            // reach the upper mode based on the probability alone.
+&nbsp;            // Bracket with the lower mode.
+<b class="nc">&nbsp;            final int i = Searches.searchAscending(distribution.getSupportLowerBound(), m1, pk,</b>
+<b class="nc">&nbsp;                distribution::pmf);</b>
+<b class="nc">&nbsp;            return distribution.cdf(i) +</b>
+<b class="nc">&nbsp;                   distribution.sf(k - 1);</b>
+&nbsp;        }
+&nbsp;        // k == mode
+&nbsp;        // Edge case where the sum of probabilities will be either
+&nbsp;        // 1 or 1 - Pr(X = mode) where mode != k
+<b class="nc">&nbsp;        final double pm = distribution.pmf(k == m1 ? m2 : m1);</b>
+<b class="nc">&nbsp;        return pm &gt; pk ? 1 - pm : 1;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Find all tables that are as or more extreme than the observed table using the
+&nbsp;     * Fisher&#39;s p-value as the statistic (also known as Boschloo&#39;s test).
+&nbsp;     *
+&nbsp;     * @param a Observed value for a.
+&nbsp;     * @param b Observed value for b.
+&nbsp;     * @param m Column sum m.
+&nbsp;     * @param n Column sum n.
+&nbsp;     * @param tableList List to track more extreme tables.
+&nbsp;     * @return observed p-value
+&nbsp;     */
+&nbsp;    private double findExtremeTablesBoschloo(int a, int b, int m, int n, XYList tableList) {
+<b class="nc">&nbsp;        final double statistic = statisticBoschloo(a, b, m, n);</b>
+&nbsp;
+&nbsp;        // Function to compute the statistic
+&nbsp;        BoschlooStatistic func;
+<b class="nc">&nbsp;        if (alternative == AlternativeHypothesis.GREATER_THAN) {</b>
+<b class="nc">&nbsp;            func = (dist, x) -&gt; dist.sf(x - 1);</b>
+<b class="nc">&nbsp;        } else if (alternative == AlternativeHypothesis.LESS_THAN) {</b>
+<b class="nc">&nbsp;            func = Hypergeom::cdf;</b>
+&nbsp;        } else {
+<b class="nc">&nbsp;            func = UnconditionedExactTest::statisticBoschlooTwoSided;</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        // All tables are: 0 &lt;= i &lt;= m  by  0 &lt;= j &lt;= n
+&nbsp;        // Diagonal (upper-left to lower-right) strips of the possible
+&nbsp;        // tables use the same hypergeometric distribution
+&nbsp;        // (i.e. i+j == number of successes). To enumerate all requires
+&nbsp;        // using the full range of all distributions: 0 &lt;= i+j &lt;= m+n.
+&nbsp;        // Note the column sum m is fixed.
+<b class="nc">&nbsp;        final int mn = m + n;</b>
+<b class="nc">&nbsp;        for (int k = 0; k &lt;= mn; k++) {</b>
+<b class="nc">&nbsp;            final Hypergeom dist = new Hypergeom(mn, k, m);</b>
+<b class="nc">&nbsp;            final int lo = dist.getSupportLowerBound();</b>
+<b class="nc">&nbsp;            final int hi = dist.getSupportUpperBound();</b>
+<b class="nc">&nbsp;            for (int i = lo; i &lt;= hi; i++) {</b>
+<b class="nc">&nbsp;                if (func.value(dist, i) &lt;= statistic) {</b>
+&nbsp;                    // j = k - i
+<b class="nc">&nbsp;                    tableList.add(i, k - i);</b>
+&nbsp;                }
+&nbsp;            }
+&nbsp;        }
+<b class="nc">&nbsp;        return statistic;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Compute the nuisance parameter and p-value for the binomial model given the list
+&nbsp;     * of possible tables.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;The current method enumerates an initial set of points and stores local
+&nbsp;     * extrema as candidates. Any candidate within 2% of the best is optionally
+&nbsp;     * optimized; this is limited to the top 3 candidates. These settings
+&nbsp;     * could be exposed as configurable options. Currently only the choice to optimize
+&nbsp;     * or not is exposed.
+&nbsp;     *
+&nbsp;     * @param tableList List of tables.
+&nbsp;     * @return [nuisance parameter, p-value]
+&nbsp;     */
+&nbsp;    private double[] computePValue(XYList tableList) {
+<b class="nc">&nbsp;        final DoubleUnaryOperator func = createBinomialModel(tableList);</b>
+&nbsp;
+&nbsp;        // Enumerate the range [LOWER, 1-LOWER] and save the best points for optimization
+<b class="nc">&nbsp;        final Candidates minima = new Candidates(MAX_CANDIDATES, MINIMA_EPS);</b>
+<b class="nc">&nbsp;        final int n = points - 1;</b>
+<b class="nc">&nbsp;        final double inc = (1.0 - 2 * LOWER_BOUND) / n;</b>
+&nbsp;        // Moving window of 3 values to identify minima.
+&nbsp;        // px holds the position of the previous evaluated point.
+<b class="nc">&nbsp;        double v2 = 0;</b>
+<b class="nc">&nbsp;        double v3 = func.applyAsDouble(LOWER_BOUND);</b>
+<b class="nc">&nbsp;        double px = LOWER_BOUND;</b>
+<b class="nc">&nbsp;        for (int i = 1; i &lt; n; i++) {</b>
+<b class="nc">&nbsp;            final double x = LOWER_BOUND + i * inc;</b>
+<b class="nc">&nbsp;            final double v1 = v2;</b>
+<b class="nc">&nbsp;            v2 = v3;</b>
+<b class="nc">&nbsp;            v3 = func.applyAsDouble(x);</b>
+<b class="nc">&nbsp;            addCandidate(minima, v1, v2, v3, px);</b>
+<b class="nc">&nbsp;            px = x;</b>
+&nbsp;        }
+&nbsp;        // Add the upper bound
+<b class="nc">&nbsp;        final double x = 1 - LOWER_BOUND;</b>
+<b class="nc">&nbsp;        final double vn = func.applyAsDouble(x);</b>
+<b class="nc">&nbsp;        addCandidate(minima, v2, v3, vn, px);</b>
+<b class="nc">&nbsp;        addCandidate(minima, v3, vn, 0, x);</b>
+&nbsp;
+<b class="nc">&nbsp;        final double[] min = minima.getMinimum();</b>
+&nbsp;
+&nbsp;        // Optionally optimize the best point(s) (if not already optimal)
+<b class="nc">&nbsp;        if (optimize &amp;&amp; min[1] &gt; -1) {</b>
+<b class="nc">&nbsp;            final BrentOptimizer opt = new BrentOptimizer(SOLVER_RELATIVE_EPS, Double.MIN_VALUE);</b>
+<b class="nc">&nbsp;            final BracketFinder bf = new BracketFinder();</b>
+<b class="nc">&nbsp;            minima.forEach(candidate -&gt; {</b>
+<b class="nc">&nbsp;                double a = candidate[0];</b>
+&nbsp;                double fa;
+&nbsp;                // Attempt to bracket the minima. Use an initial second point placed relative to
+&nbsp;                // the size of the interval: [x - increment, x + increment].
+&nbsp;                // if a &lt; 0.5 then add a small delta ; otherwise subtract the delta.
+<b class="nc">&nbsp;                final double b = a - Math.copySign(inc * INC_FRACTION, a - 0.5);</b>
+<b class="nc">&nbsp;                if (bf.search(func, a, b, 0, 1)) {</b>
+&nbsp;                    // The bracket a &lt; b &lt; c must have f(b) &lt; min(f(a), f(b))
+<b class="nc">&nbsp;                    final PointValuePair p = opt.optimize(func, bf.getLo(), bf.getHi(), bf.getMid(), bf.getFMid());</b>
+<b class="nc">&nbsp;                    a = p.getPoint();</b>
+<b class="nc">&nbsp;                    fa = p.getValue();</b>
+<b class="nc">&nbsp;                } else {</b>
+&nbsp;                    // Mid-point is at one of the bounds (i.e. is 0 or 1)
+<b class="nc">&nbsp;                    a = bf.getMid();</b>
+<b class="nc">&nbsp;                    fa = bf.getFMid();</b>
+&nbsp;                }
+<b class="nc">&nbsp;                if (fa &lt; min[1]) {</b>
+<b class="nc">&nbsp;                    min[0] = a;</b>
+<b class="nc">&nbsp;                    min[1] = fa;</b>
+&nbsp;                }
+&nbsp;            });
+&nbsp;        }
+&nbsp;        // Reverse the sign of the p-value to create a maximum.
+&nbsp;        // Note that due to the summation the p-value can be above 1 so we clip the final result.
+&nbsp;        // Note: Apply max then reverse sign. This will pass through spurious NaN values if
+&nbsp;        // the p-value computation produced all NaNs.
+<b class="nc">&nbsp;        min[1] = -Math.max(-1, min[1]);</b>
+<b class="nc">&nbsp;        return min;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Creates the binomial model p-value function for the nuisance parameter.
+&nbsp;     * Note: This function computes the negative p-value so is suitable for
+&nbsp;     * optimization by a search for a minimum.
+&nbsp;     *
+&nbsp;     * @param tableList List of tables.
+&nbsp;     * @return the function
+&nbsp;     */
+&nbsp;    private static DoubleUnaryOperator createBinomialModel(XYList tableList) {
+<b class="nc">&nbsp;        final int m = tableList.getMaxX();</b>
+<b class="nc">&nbsp;        final int n = tableList.getMaxY();</b>
+<b class="nc">&nbsp;        final int mn = m + n;</b>
+&nbsp;        // Compute the probability using logs
+<b class="nc">&nbsp;        final double[] c = new double[tableList.size()];</b>
+<b class="nc">&nbsp;        final int[] ij = new int[tableList.size()];</b>
+<b class="nc">&nbsp;        final int width = tableList.getWidth();</b>
+&nbsp;
+&nbsp;        // Compute the log binomial dynamically for a small number of values
+&nbsp;        IntToDoubleFunction binomM;
+&nbsp;        IntToDoubleFunction binomN;
+<b class="nc">&nbsp;        if (tableList.size() &lt; mn) {</b>
+<b class="nc">&nbsp;            binomM = k -&gt; LogBinomialCoefficient.value(m, k);</b>
+<b class="nc">&nbsp;            binomN = k -&gt; LogBinomialCoefficient.value(n, k);</b>
+&nbsp;        } else {
+&nbsp;            // Pre-compute all values
+<b class="nc">&nbsp;            binomM = createLogBinomialCoefficients(m);</b>
+<b class="nc">&nbsp;            binomN = m == n ? binomM : createLogBinomialCoefficients(n);</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        // Handle special cases i+j == 0 and i+j == m+n.
+&nbsp;        // These will occur only once, if at all. Mark if they occur.
+<b class="nc">&nbsp;        int flag = 0;</b>
+<b class="nc">&nbsp;        int j = 0;</b>
+<b class="nc">&nbsp;        for (int i = 0; i &lt; c.length; i++) {</b>
+<b class="nc">&nbsp;            final int index = tableList.get(i);</b>
+<b class="nc">&nbsp;            final int x = index % width;</b>
+<b class="nc">&nbsp;            final int y = index / width;</b>
+<b class="nc">&nbsp;            final int xy = x + y;</b>
+<b class="nc">&nbsp;            if (xy == 0) {</b>
+<b class="nc">&nbsp;                flag |= 1;</b>
+<b class="nc">&nbsp;            } else if (xy == mn) {</b>
+<b class="nc">&nbsp;                flag |= 2;</b>
+&nbsp;            } else {
+<b class="nc">&nbsp;                ij[j] = xy;</b>
+<b class="nc">&nbsp;                c[j] = binomM.applyAsDouble(x) + binomN.applyAsDouble(y);</b>
+<b class="nc">&nbsp;                j++;</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        final int size = j;</b>
+<b class="nc">&nbsp;        final boolean ij0 = (flag &amp; 1) != 0;</b>
+<b class="nc">&nbsp;        final boolean ijmn = (flag &amp; 2) != 0;</b>
+<b class="nc">&nbsp;        return pi -&gt; {</b>
+<b class="nc">&nbsp;            final double logp = Math.log(pi);</b>
+<b class="nc">&nbsp;            final double log1mp = Math.log1p(-pi);</b>
+<b class="nc">&nbsp;            double sum = 0;</b>
+<b class="nc">&nbsp;            for (int i = 0; i &lt; size; i++) {</b>
+&nbsp;                // binom(m, i) * binom(n, j) * pi^(i+j) * (1-pi)^(m+n-i-j)
+<b class="nc">&nbsp;                sum += Math.exp(ij[i] * logp + (mn - ij[i]) * log1mp + c[i]);</b>
+&nbsp;            }
+&nbsp;            // Add the simplified terms where the binomial is 1.0 and one power is x^0 == 1.0.
+&nbsp;            // This avoids 0 * log(x) generating NaN when x is 0 in the case where pi was 0 or 1.
+&nbsp;            // Reuse exp (not pow) to support pi approaching 0 or 1.
+<b class="nc">&nbsp;            if (ij0) {</b>
+&nbsp;                // pow(1-pi, mn)
+<b class="nc">&nbsp;                sum += Math.exp(mn * log1mp);</b>
+&nbsp;            }
+<b class="nc">&nbsp;            if (ijmn) {</b>
+&nbsp;                // pow(pi, mn)
+<b class="nc">&nbsp;                sum += Math.exp(mn * logp);</b>
+&nbsp;            }
+&nbsp;            // The optimizer minimises the function so this returns -p.
+<b class="nc">&nbsp;            return -sum;</b>
+&nbsp;        };
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Create the natural logarithm of the binomial coefficient for all {@code k = [0, n]}.
+&nbsp;     *
+&nbsp;     * @param n Limit N.
+&nbsp;     * @return ln binom(n, k)
+&nbsp;     */
+&nbsp;    private static IntToDoubleFunction createLogBinomialCoefficients(int n) {
+<b class="nc">&nbsp;        final double[] binom = new double[n + 1];</b>
+&nbsp;        // Exploit symmetry.
+&nbsp;        // ignore: binom(n, 0) == binom(n, n) == 1
+<b class="nc">&nbsp;        int j = n - 1;</b>
+<b class="nc">&nbsp;        for (int i = 1; i &lt;= j; i++, j--) {</b>
+<b class="nc">&nbsp;            binom[i] = binom[j] = LogBinomialCoefficient.value(n, i);</b>
+&nbsp;        }
+<b class="nc">&nbsp;        return k -&gt; binom[k];</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Add point 2 to the list of minima if neither neighbour value is lower.
+&nbsp;     * &lt;pre&gt;
+&nbsp;     * !(v1 &lt; v2 || v3 &lt; v2)
+&nbsp;     * &lt;/pre&gt;
+&nbsp;     *
+&nbsp;     * @param minima Candidate minima.
+&nbsp;     * @param v1 First point function value.
+&nbsp;     * @param v2 Second point function value.
+&nbsp;     * @param v3 Third point function value.
+&nbsp;     * @param x2 Second point.
+&nbsp;     */
+&nbsp;    private void addCandidate(Candidates minima, double v1, double v2, double v3, double x2) {
+<b class="nc">&nbsp;        final double min = v1 &lt; v3 ? v1 : v3;</b>
+<b class="nc">&nbsp;        if (min &lt; v2) {</b>
+&nbsp;            // Lower neighbour(s)
+&nbsp;            return;
+&nbsp;        }
+&nbsp;        // Add the candidate. This could be NaN but the candidate list handles this by storing
+&nbsp;        // NaN only when no non-NaN values have been observed.
+<b class="nc">&nbsp;        minima.add(x2, v2);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Check the input is a 2-by-2 contingency table.
+&nbsp;     *
+&nbsp;     * @param table Contingency table.
+&nbsp;     * @throws IllegalArgumentException if the {@code table} is not a 2-by-2 table; any
+&nbsp;     * table entry is negative; any column sum is zero; the table sum is zero or not an
+&nbsp;     * integer; or the number of possible tables exceeds the maximum array capacity.
+&nbsp;     */
+&nbsp;    private static void checkTable(int[][] table) {
+<b class="nc">&nbsp;        Arguments.checkTable(table);</b>
+&nbsp;        // Must all be positive
+<b class="nc">&nbsp;        final int a = table[0][0];</b>
+<b class="nc">&nbsp;        final int c = table[1][0];</b>
+&nbsp;        // checkTable has validated the total sum is &lt; 2^31
+<b class="nc">&nbsp;        final int m = a + c;</b>
+<b class="nc">&nbsp;        if (m == 0) {</b>
+<b class="nc">&nbsp;            throw new InferenceException(InferenceException.ZERO_AT, COLUMN_SUM, 0);</b>
+&nbsp;        }
+<b class="nc">&nbsp;        final int b = table[0][1];</b>
+<b class="nc">&nbsp;        final int d = table[1][1];</b>
+<b class="nc">&nbsp;        final int n = b + d;</b>
+<b class="nc">&nbsp;        if (n == 0) {</b>
+<b class="nc">&nbsp;            throw new InferenceException(InferenceException.ZERO_AT, COLUMN_SUM, 1);</b>
+&nbsp;        }
+&nbsp;        // Total possible tables must be a size we can track in an array (to compute the p-value)
+<b class="nc">&nbsp;        final long size = (m + 1L) * (n + 1L);</b>
+<b class="nc">&nbsp;        if (size &gt; MAX_TABLES) {</b>
+<b class="nc">&nbsp;            throw new InferenceException(InferenceException.X_GT_Y, size, MAX_TABLES);</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2023-09-04 19:44</div>
+</div>
+</body>
+</html>

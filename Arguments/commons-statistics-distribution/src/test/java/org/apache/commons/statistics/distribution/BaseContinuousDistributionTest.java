@@ -1,0 +1,976 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.statistics.distribution;
+
+import java.lang.reflect.Modifier;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Properties;
+import java.util.function.Function;
+import java.util.stream.Stream;
+import org.apache.commons.math3.analysis.UnivariateFunction;
+import org.apache.commons.math3.analysis.integration.BaseAbstractUnivariateIntegrator;
+import org.apache.commons.math3.analysis.integration.IterativeLegendreGaussIntegrator;
+import org.apache.commons.math3.exception.MaxCountExceededException;
+import org.apache.commons.math3.util.MathArrays;
+import org.apache.commons.rng.simple.RandomSource;
+import org.apache.commons.statistics.distribution.DistributionTestData.ContinuousDistributionTestData;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.TestInstance.Lifecycle;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+
+/**
+ * Abstract base class for {@link ContinuousDistribution} tests.
+ *
+ * <p>This class uses parameterized tests that are repeated for instances of a
+ * distribution. The distribution, test input and expected values are generated
+ * dynamically from properties files loaded from resources.
+ *
+ * <p>The class has a single instance (see {@link Lifecycle#PER_CLASS}) that loads properties
+ * files from resources on creation. Resource files are assumed to be in the corresponding package
+ * for the class and named sequentially from 1:
+ * <pre>
+ * test.distname.1.properties
+ * test.distname.2.properties
+ * </pre>
+ * <p>Where {@code distname} is the name of the distribution. The name is dynamically
+ * created in {@link #getDistributionName()} and can be overridden by implementing classes.
+ * A single parameterization of a distribution is tested using a single properties file.
+ *
+ * <p>To test a distribution create a sub-class and override the following methods:
+ * <ul>
+ * <li>{@link #makeDistribution(Object...) makeDistribution(Object...)} - Creates the distribution from the parameters
+ * <li>{@link #makeInvalidParameters()} - Generate invalid parameters for the distribution
+ * <li>{@link #getParameterNames()} - Return the names of parameter accessors
+ * </ul>
+ *
+ * <p>The distribution is created using
+ * {@link #makeDistribution(Object...) makeDistribution(Object...)}. This should
+ * create an instance of the distribution using parameters defined in the properties file.
+ * The parameters are parsed from String values to the appropriate parameter object. Currently
+ * this supports Double and Integer; numbers can be unboxed and used to create the distribution.
+ *
+ * <p>Illegal arguments for the distribution are tested from parameters provided by
+ * {@link #makeInvalidParameters()}. If there are no illegal arguments this method may return
+ * null to skip the test. Primitive parameters are boxed to objects so ensure the canonical form
+ * is used, e.g. {@code 1.0} not {@code 1} for a {@code double} argument.
+ *
+ * <p>If the distribution provides parameter accessors then the child test class can return
+ * the accessor names using {@link #getParameterNames()}. The distribution method accessors
+ * will be detected and invoked using reflection. The accessor must provide the same value
+ * as that passed to the {@link #makeDistribution(Object...)} method to create the distribution.
+ * This method may return null to skip the test, or null for the name to skip the test for a
+ * single parameter accessor.
+ *
+ * <p>The properties file must contain parameters for the distribution, properties of the
+ * distribution (moments and bounds) and points to test the CDF and PDF with the expected values.
+ * This information can be used to evaluate the distribution CDF and PDF but also the survival
+ * function, consistency of the probability computations and random sampling.
+ *
+ * <p>Optionally:
+ * <ul>
+ * <li>Points for the PDF (and log PDF) can be specified. The default will use the CDF points.
+ * Note: It is not expected that evaluation of the PDF will require different points to the CDF.
+ * <li>Points and expected values for the inverse CDF can be specified. These are used in
+ * addition to test the inverse mapping of the CDF values to the CDF test points.
+ * <li>Expected values for the log PDF can be specified. The default will use
+ * {@link Math#log(double)} on the PDF values.
+ * <li>Points and expected values for the survival function can be specified. These are used in
+ * addition to test the inverse mapping of the SF values to the SF test points.
+ * The default will use the expected CDF values (SF = 1 - CDF).
+ * <li>A tolerance for equality assertions. The default is set by {@link #getAbsoluteTolerance()}
+ * and {@link #getRelativeTolerance()}.
+ * </ul>
+ *
+ * <p>If the distribution provides higher precision implementations of
+ * cumulative probability and/or survival probability as the values approach zero, then test
+ * points and expected values can be provided for high-precision computations. If the default
+ * absolute tolerance has been set to non-zero, then very small p-values will require the
+ * high-precision absolute tolerance is configured for the test to a suitable magnitude (see below).
+ *
+ * <p>Per-test configuration
+ *
+ * <p>Each test is identified with a {@link TestName} key in the properties file. This key
+ * can be used to set a per-test tolerance, or disable the test:
+ * <pre>
+ * cdf.hp.relative = 1e-14
+ * cdf.hp.absolute = 1e-50
+ * sampling.disable
+ * </pre>
+ *
+ * <p>Note: All properties files are read during test initialization. Any errors in a single
+ * property file will throw an exception, invalidating the initialization and no tests
+ * will be executed.
+ *
+ * <p>The parameterized tests in this class are inherited. The tests are final and cannot be
+ * changed. This ensures each instance of a distribution is tested for all functionality in
+ * the {@link ContinuousDistribution} interface. Arguments to the parameterized tests are
+ * generated dynamically using methods of the same name. These can be over-ridden in child
+ * classes to alter parameters. Throwing a
+ * {@link org.opentest4j.TestAbortedException TestAbortedException} in this method will
+ * skip the test as the arguments will not be generated.
+ *
+ * <p>Each parameterized test is effectively static; it uses no instance data.
+ * To implement additional test cases with a specific distribution instance and test
+ * data, create a test in the child class and call the relevant test case to verify
+ * results. Note that it is recommended to use the properties file as this ensures the
+ * entire functionality of the distribution is tested for that parameterization.
+ *
+ * <p>Tests using floating-point equivalence comparisons are asserted using a {@link DoubleTolerance}.
+ * This interface computes true or false for the comparison of two {@code double} types.
+ * This allows the flexibility to use absolute, relative or ULP thresholds in combinations
+ * built using And or Or conditions to compare numbers. The default uses an Or combination
+ * of the absolute and relative thresholds. See {@link DoubleTolerances} to construct
+ * custom instances for additional tests.
+ *
+ * <p>Test data should be validated against reference tables or other packages where
+ * possible, and the source of the reference data and/or validation should be documented
+ * in the properties file or additional test cases as appropriate.
+ *
+ * <p>The properties file uses {@code key=value} pairs loaded using a
+ * {@link java.util.Properties} object. Values will be read as String and then parsed to
+ * numeric data, and data arrays. Multi-line values can use a {@code \} character to join lines.
+ * Data in the properties file will be converted to numbers using standard parsing
+ * functions appropriate to the primitive type, e.g. {@link Double#parseDouble(String)}.
+ * Special double values should use NaN, Infinity and -Infinity. As a convenience
+ * for creating test data parsing of doubles supports the following notations from
+ * other languages ('inf', 'Inf').
+ *
+ * <p>The following is a complete properties file for a distribution:
+ * <pre>
+ * parameters = 0.5 1.0
+ * # Computed using XYZ
+ * mean = 1.0
+ * variance = NaN
+ * # optional (default -Infinity)
+ * lower = 0
+ * # optional (default Infinity)
+ * upper = Infinity
+ * # optional (default 1e-14 or over-ridden in getRelativeTolerance())
+ * tolerance.relative = 1e-9
+ * # optional (default 0.0 or over-ridden in getAbsoluteTolerance())
+ * tolerance.absolute = 0.0
+ * cdf.points = 0, 0.2
+ * cdf.values = 0.0, 0.5
+ * # optional (default uses cdf.points)
+ * pdf.points = 0, 40000
+ * pdf.values = 0.0,\
+ *  0.0
+ * # optional (default uses log pdf.values)
+ * logpdf.values = -1900.123, -Infinity
+ * # optional (default uses cdf.points and 1 - cdf.values)
+ * sf.points = 400.0
+ * sf.values = 0.0
+ * # optional high-precision CDF test
+ * cdf.hp.points = 1e-16
+ * cdf.hp.values = 1.23e-17
+ * # optional high-precision survival function test
+ * sf.hp.points = 9.0
+ * sf.hp.values = 2.34e-18
+ * # optional inverse CDF test (defaults to ignore)
+ * icdf.points = 0.0, 0.5
+ * icdf.values = 0.0, 0.2
+ * # optional inverse CDF test (defaults to ignore)
+ * isf.points = 1.0, 0.5
+ * isf.values = 0.0, 0.2
+ * # Optional per-test tolerance and disable
+ * cdf.hp.relative = 1e-14
+ * cdf.hp.absolute = 1e-50
+ * sampling.disable = true
+ * </pre>
+ *
+ * <p>See {@link NakagamiDistributionTest} for an example and the resource file {@code test.nakagami.1.properties}.
+ */
+@TestInstance(Lifecycle.PER_CLASS)
+abstract class BaseContinuousDistributionTest
+    extends BaseDistributionTest<ContinuousDistribution, ContinuousDistributionTestData> {
+
+    /** Absolute accuracy of the integrator result. */
+    private static final double INTEGRATOR_ABS_ACCURACY = 1e-10;
+    /** Relative accuracy of the integrator result. */
+    private static final double INTEGRATOR_REL_ACCURACY = 1e-12;
+
+    @Override
+    ContinuousDistributionTestData makeDistributionData(Properties properties) {
+        return new ContinuousDistributionTestData(properties);
+    }
+
+    //------------------------ Methods to stream the test data -----------------------------
+
+    // The @MethodSource annotation will default to a no arguments method of the same name
+    // as the @ParameterizedTest method. These can be overridden by child classes to
+    // stream different arguments to the test case.
+
+    /**
+     * Create a stream of arguments containing the distribution to test, the PDF test points
+     * and values, and the test tolerance.
+     *
+     * @return the stream
+     */
+    Stream<Arguments> testDensity() {
+        return stream(TestName.PDF,
+                      ContinuousDistributionTestData::getPdfPoints,
+                      ContinuousDistributionTestData::getPdfValues);
+    }
+
+    /**
+     * Create a stream of arguments containing the distribution to test, the log PDF test points
+     * and values, and the test tolerance.
+     *
+     * @return the stream
+     */
+    Stream<Arguments> testLogDensity() {
+        return stream(TestName.LOGPDF,
+                      ContinuousDistributionTestData::getPdfPoints,
+                      ContinuousDistributionTestData::getLogPdfValues);
+    }
+
+    /**
+     * Create a stream of arguments containing the distribution to test, the CDF test points
+     * and values, and the test tolerance.
+     *
+     * @return the stream
+     */
+    Stream<Arguments> testCumulativeProbability() {
+        return stream(TestName.CDF,
+                      ContinuousDistributionTestData::getCdfPoints,
+                      ContinuousDistributionTestData::getCdfValues);
+    }
+
+    /**
+     * Create a stream of arguments containing the distribution to test, the survival function
+     * test points and values, and the test tolerance.
+     *
+     * <p>This defaults to using the CDF points. The survival function is tested as 1 - CDF.
+     *
+     * @return the stream
+     */
+    Stream<Arguments> testSurvivalProbability() {
+        return stream(TestName.SF,
+                      ContinuousDistributionTestData::getSfPoints,
+                      ContinuousDistributionTestData::getSfValues);
+    }
+
+    /**
+     * Create a stream of arguments containing the distribution to test, the CDF test points
+     * and values, and the test tolerance for high-precision computations.
+     *
+     * @return the stream
+     */
+    Stream<Arguments> testCumulativeProbabilityHighPrecision() {
+        return stream(TestName.CDF_HP,
+                      ContinuousDistributionTestData::getCdfHpPoints,
+                      ContinuousDistributionTestData::getCdfHpValues);
+    }
+
+    /**
+     * Create a stream of arguments containing the distribution to test, the survival function
+     * test points and values, and the test tolerance for high-precision computations.
+     *
+     * @return the stream
+     */
+    Stream<Arguments> testSurvivalProbabilityHighPrecision() {
+        return stream(TestName.SF_HP,
+                      ContinuousDistributionTestData::getSfHpPoints,
+                      ContinuousDistributionTestData::getSfHpValues);
+    }
+
+    /**
+     * Create a stream of arguments containing the distribution to test, the inverse CDF test points
+     * and values, and the test tolerance.
+     *
+     * @return the stream
+     */
+    Stream<Arguments> testInverseCumulativeProbability() {
+        return stream(TestName.ICDF,
+                      ContinuousDistributionTestData::getIcdfPoints,
+                      ContinuousDistributionTestData::getIcdfValues);
+    }
+
+    /**
+     * Create a stream of arguments containing the distribution to test, the inverse SF test points
+     * and values, and the test tolerance.
+     *
+     * @return the stream
+     */
+    Stream<Arguments> testInverseSurvivalProbability() {
+        return stream(TestName.ISF,
+                      ContinuousDistributionTestData::getIsfPoints,
+                      ContinuousDistributionTestData::getIsfValues);
+    }
+
+    /**
+     * Create a stream of arguments containing the distribution to test, the test points
+     * to evaluate the CDF, and the test tolerance. The equality
+     * {@code cdf(x) = cdf(icdf(cdf(x)))} must be true within the tolerance.
+     *
+     * @return the stream
+     */
+    Stream<Arguments> testCumulativeProbabilityInverseMapping() {
+        return stream(TestName.CDF_MAPPING,
+                      ContinuousDistributionTestData::getCdfPoints);
+    }
+
+    /**
+     * Create a stream of arguments containing the distribution to test, the test points
+     * to evaluate the SF, and the test tolerance. The equality
+     * {@code sf(x) = sf(isf(sf(x)))} must be true within the tolerance.
+     *
+     * @return the stream
+     */
+    Stream<Arguments> testSurvivalProbabilityInverseMapping() {
+        return stream(TestName.SF_MAPPING,
+                      ContinuousDistributionTestData::getSfPoints);
+    }
+
+    /**
+     * Create a stream of arguments containing the distribution to test, the test points
+     * to evaluate the CDF, and the test tolerance. The equality
+     * {@code cdf(x) = cdf(icdf(cdf(x)))} must be true within the tolerance.
+     * This uses the points for the high-precision CDF.
+     *
+     * @return the stream
+     */
+    Stream<Arguments> testCumulativeProbabilityHighPrecisionInverseMapping() {
+        return stream(TestName.CDF_HP_MAPPING,
+                      ContinuousDistributionTestData::getCdfHpPoints);
+    }
+
+    /**
+     * Create a stream of arguments containing the distribution to test, the test points
+     * to evaluate the SF, and the test tolerance. The equality
+     * {@code sf(x) = sf(isf(sf(x)))} must be true within the tolerance.
+     * This uses the points for the high-precision SF.
+     *
+     * @return the stream
+     */
+    Stream<Arguments> testSurvivalProbabilityHighPrecisionInverseMapping() {
+        return stream(TestName.SF_HP_MAPPING,
+                      ContinuousDistributionTestData::getSfHpPoints);
+    }
+
+    /**
+     * Create a stream of arguments containing the distribution to test, the test points
+     * to evaluate the CDF and survival function, and the test tolerance. CDF + SF must equal 1.
+     *
+     * @return the stream
+     */
+    Stream<Arguments> testSurvivalAndCumulativeProbabilityComplement() {
+        // This is not disabled based on cdf.disable && sf.disable.
+        // Those flags are intended to ignore tests against reference values.
+        return stream(TestName.COMPLEMENT,
+                      ContinuousDistributionTestData::getCdfPoints);
+    }
+
+    /**
+     * Create a stream of arguments containing the distribution to test, the test points
+     * to evaluate the CDF and probability in a range, and the test tolerance.
+     * Used to test CDF(x1) - CDF(x0) = probability(x0, x1).
+     *
+     * @return the stream
+     */
+    Stream<Arguments> testConsistency() {
+        // This is not disabled based on cdf.disable.
+        // That flag is intended to ignore tests against reference values.
+        return stream(TestName.CONSISTENCY,
+                      ContinuousDistributionTestData::getCdfPoints);
+    }
+
+    /**
+     * Create a stream of arguments containing the distribution to test sampling.
+     *
+     * @return the stream
+     */
+    Stream<Arguments> testSampling() {
+        return stream(TestName.SAMPLING);
+    }
+
+    /**
+     * Stream the arguments to test the density integrals. The test
+     * integrates the density function between consecutive test points for the cumulative
+     * density function. The default tolerance is based on the convergence tolerance of
+     * the underlying integrator (abs=1e-10, rel=1e-12).
+     * Override this method to change the tolerance.
+     *
+     * @return the stream
+     */
+    Stream<Arguments> testDensityIntegrals() {
+        // Create a tolerance suitable for the same thresholds used by the integrator.
+        final Function<ContinuousDistributionTestData, DoubleTolerance> tolerance =
+            d -> createAbsOrRelTolerance(INTEGRATOR_ABS_ACCURACY * 10, INTEGRATOR_REL_ACCURACY * 10);
+        final TestName name = TestName.INTEGRALS;
+        return stream(d -> d.isDisabled(name),
+                      ContinuousDistributionTestData::getCdfPoints,
+                      ContinuousDistributionTestData::getCdfValues,
+                      tolerance, name.toString());
+    }
+
+    /**
+     * Create a stream of arguments containing the distribution to test, the support
+     * lower and upper bound, and the support connect flag.
+     *
+     * @return the stream
+     */
+    Stream<Arguments> testSupport() {
+        return streamArguments(TestName.SUPPORT,
+            d -> Arguments.of(namedDistribution(d.getParameters()), d.getLower(), d.getUpper()));
+    }
+
+    /**
+     * Create a stream of arguments containing the distribution to test, the mean
+     * and variance, and the test tolerance.
+     *
+     * @return the stream
+     */
+    Stream<Arguments> testMoments() {
+        final TestName name = TestName.MOMENTS;
+        return streamArguments(name,
+            d -> Arguments.of(namedDistribution(d.getParameters()), d.getMean(), d.getVariance(),
+                              createTestTolerance(d, name)));
+    }
+
+    /**
+     * Create a stream of arguments containing the distribution to test and the test tolerance.
+     *
+     * @return the stream
+     */
+    Stream<Arguments> testMedian() {
+        final TestName name = TestName.MEDIAN;
+        return streamArguments(name,
+            d -> Arguments.of(namedDistribution(d.getParameters()), createTestTolerance(d, name)));
+    }
+
+    //------------------------ Tests -----------------------------
+
+    // Tests are final. It is expected that the test can be modified by overriding
+    // the method used to stream the arguments, for example to use a specific tolerance
+    // for a test in preference to the tolerance defined in the properties file.
+
+    /**
+     * Test that density calculations match expected values.
+     */
+    @ParameterizedTest
+    @MethodSource
+    final void testDensity(ContinuousDistribution dist,
+                           double[] points,
+                           double[] values,
+                           DoubleTolerance tolerance) {
+        for (int i = 0; i < points.length; i++) {
+            final double x = points[i];
+            TestUtils.assertEquals(values[i],
+                dist.density(x), tolerance,
+                () -> "Incorrect probability density value returned for " + x);
+        }
+    }
+
+    /**
+     * Test that logarithmic density calculations match expected values.
+     */
+    @ParameterizedTest
+    @MethodSource
+    final void testLogDensity(ContinuousDistribution dist,
+                              double[] points,
+                              double[] values,
+                              DoubleTolerance tolerance) {
+        for (int i = 0; i < points.length; i++) {
+            final double x = points[i];
+            TestUtils.assertEquals(values[i],
+                dist.logDensity(x), tolerance,
+                () -> "Incorrect probability density value returned for " + x);
+        }
+    }
+
+    /**
+     * Test that cumulative probability density calculations match expected values.
+     */
+    @ParameterizedTest
+    @MethodSource
+    final void testCumulativeProbability(ContinuousDistribution dist,
+                                         double[] points,
+                                         double[] values,
+                                         DoubleTolerance tolerance) {
+        // verify cumulativeProbability(double)
+        for (int i = 0; i < points.length; i++) {
+            final double x = points[i];
+            TestUtils.assertEquals(values[i],
+                dist.cumulativeProbability(x),
+                tolerance,
+                () -> "Incorrect cumulative probability value returned for " + x);
+        }
+    }
+
+    /**
+     * Test that survival probability density calculations match expected values.
+     */
+    @ParameterizedTest
+    @MethodSource
+    final void testSurvivalProbability(ContinuousDistribution dist,
+                                       double[] points,
+                                       double[] values,
+                                       DoubleTolerance tolerance) {
+        for (int i = 0; i < points.length; i++) {
+            final double x = points[i];
+            TestUtils.assertEquals(
+                values[i],
+                dist.survivalProbability(points[i]),
+                tolerance,
+                () -> "Incorrect survival probability value returned for " + x);
+        }
+    }
+
+    /**
+     * Test that cumulative probability is not {@code (1 - survival probability)} by testing values
+     * that would result in inaccurate results if simply calculating (1 - sf).
+     */
+    @ParameterizedTest
+    @MethodSource
+    final void testCumulativeProbabilityHighPrecision(ContinuousDistribution dist,
+                                                      double[] points,
+                                                      double[] values,
+                                                      DoubleTolerance tolerance) {
+        assertHighPrecision(tolerance, values);
+        testCumulativeProbability(dist, points, values, tolerance);
+    }
+
+    /**
+     * Test that survival probability is not {@code (1 - cumulative probability)} by testing values
+     * that would result in inaccurate results if simply calculating (1 - cdf).
+     */
+    @ParameterizedTest
+    @MethodSource
+    final void testSurvivalProbabilityHighPrecision(ContinuousDistribution dist,
+                                                    double[] points,
+                                                    double[] values,
+                                                    DoubleTolerance tolerance) {
+        assertHighPrecision(tolerance, values);
+        testSurvivalProbability(dist, points, values, tolerance);
+    }
+
+    /**
+     * Test that inverse cumulative probability density calculations match expected values.
+     *
+     * <p>Note: Any expected values outside the support of the distribution are ignored.
+     */
+    @ParameterizedTest
+    @MethodSource
+    final void testInverseCumulativeProbability(ContinuousDistribution dist,
+                                                double[] points,
+                                                double[] values,
+                                                DoubleTolerance tolerance) {
+        final double lower = dist.getSupportLowerBound();
+        final double upper = dist.getSupportUpperBound();
+        for (int i = 0; i < points.length; i++) {
+            final double x = values[i];
+            if (x < lower || x > upper) {
+                continue;
+            }
+            final double p = points[i];
+            TestUtils.assertEquals(
+                x,
+                dist.inverseCumulativeProbability(p),
+                tolerance,
+                () -> "Incorrect inverse cumulative probability value returned for " + p);
+        }
+    }
+
+    /**
+     * Test that inverse survival probability density calculations match expected values.
+     *
+     * <p>Note: Any expected values outside the support of the distribution are ignored.
+     */
+    @ParameterizedTest
+    @MethodSource
+    final void testInverseSurvivalProbability(ContinuousDistribution dist,
+                                              double[] points,
+                                              double[] values,
+                                              DoubleTolerance tolerance) {
+        final double lower = dist.getSupportLowerBound();
+        final double upper = dist.getSupportUpperBound();
+        for (int i = 0; i < points.length; i++) {
+            final double x = values[i];
+            if (x < lower || x > upper) {
+                continue;
+            }
+            final double p = points[i];
+            TestUtils.assertEquals(
+                x,
+                dist.inverseSurvivalProbability(p),
+                tolerance,
+                () -> "Incorrect inverse survival probability value returned for " + p);
+        }
+    }
+
+    /**
+     * Test that an inverse mapping of the cumulative probability density values matches
+     * the original point, {@code x = icdf(cdf(x))}.
+     *
+     * <p>Note: It is possible for two points to compute the same CDF value. In this
+     * case the mapping is not a bijection. Thus a further forward mapping is performed
+     * to check {@code cdf(x) = cdf(icdf(cdf(x)))} within the allowed tolerance.
+     *
+     * <p>Note: Any points outside the support of the distribution are ignored.
+     */
+    @ParameterizedTest
+    @MethodSource
+    final void testCumulativeProbabilityInverseMapping(ContinuousDistribution dist,
+                                                       double[] points,
+                                                       DoubleTolerance tolerance) {
+        final double lower = dist.getSupportLowerBound();
+        final double upper = dist.getSupportUpperBound();
+        for (int i = 0; i < points.length; i++) {
+            final double x = points[i];
+            if (x < lower || x > upper) {
+                continue;
+            }
+            final double p = dist.cumulativeProbability(x);
+            final double x1 = dist.inverseCumulativeProbability(p);
+            final double p1 = dist.cumulativeProbability(x1);
+            // Check the inverse CDF computed a value that will return to the
+            // same probability value.
+            TestUtils.assertEquals(
+                p,
+                p1,
+                tolerance,
+                () -> "Incorrect CDF(inverse CDF(CDF(x))) value returned for " + x);
+        }
+    }
+
+    /**
+     * Test that an inverse mapping of the survival probability density values matches
+     * the original point, {@code x = isf(sf(x))}.
+     *
+     * <p>Note: It is possible for two points to compute the same SF value. In this
+     * case the mapping is not a bijection. Thus a further forward mapping is performed
+     * to check {@code sf(x) = sf(isf(sf(x)))} within the allowed tolerance.
+     *
+     * <p>Note: Any points outside the support of the distribution are ignored.
+     */
+    @ParameterizedTest
+    @MethodSource
+    final void testSurvivalProbabilityInverseMapping(ContinuousDistribution dist,
+                                                     double[] points,
+                                                     DoubleTolerance tolerance) {
+        final double lower = dist.getSupportLowerBound();
+        final double upper = dist.getSupportUpperBound();
+        for (int i = 0; i < points.length; i++) {
+            final double x = points[i];
+            if (x < lower || x > upper) {
+                continue;
+            }
+            final double p = dist.survivalProbability(x);
+            final double x1 = dist.inverseSurvivalProbability(p);
+            final double p1 = dist.survivalProbability(x1);
+            // Check the inverse SF computed a value that will return to the
+            // same probability value.
+            TestUtils.assertEquals(
+                p,
+                p1,
+                tolerance,
+                () -> "Incorrect SF(inverse SF(SF(x))) value returned for " + x);
+        }
+    }
+
+    /**
+     * Test that an inverse mapping of the cumulative probability density values matches
+     * the original point, {@code x = icdf(cdf(x))} using the points for the high-precision
+     * CDF.
+     */
+    @ParameterizedTest
+    @MethodSource
+    final void testCumulativeProbabilityHighPrecisionInverseMapping(
+            ContinuousDistribution dist,
+            double[] points,
+            DoubleTolerance tolerance) {
+        testCumulativeProbabilityInverseMapping(dist, points, tolerance);
+    }
+
+    /**
+     * Test that an inverse mapping of the survival probability density values matches
+     * the original point, {@code x = isf(sf(x))} using the points for the high-precision
+     * SF.
+     */
+    @ParameterizedTest
+    @MethodSource
+    final void testSurvivalProbabilityHighPrecisionInverseMapping(
+            ContinuousDistribution dist,
+            double[] points,
+            DoubleTolerance tolerance) {
+        testSurvivalProbabilityInverseMapping(dist, points, tolerance);
+    }
+
+    /**
+     * Test that cumulative probability density and survival probability calculations
+     * sum to approximately 1.0.
+     */
+    @ParameterizedTest
+    @MethodSource
+    final void testSurvivalAndCumulativeProbabilityComplement(ContinuousDistribution dist,
+                                                              double[] points,
+                                                              DoubleTolerance tolerance) {
+        for (final double x : points) {
+            TestUtils.assertEquals(
+                1.0,
+                dist.survivalProbability(x) + dist.cumulativeProbability(x),
+                tolerance,
+                () -> "survival + cumulative probability were not close to 1.0 for " + x);
+        }
+    }
+
+    /**
+     * Test that probability computations are consistent.
+     * This checks probability(x, x) = 0; and probability(x0, x1) = CDF(x1) - CDF(x0).
+     */
+    @ParameterizedTest
+    @MethodSource
+    final void testConsistency(ContinuousDistribution dist,
+                               double[] points,
+                               DoubleTolerance tolerance) {
+        for (int i = 0; i < points.length; i++) {
+            final double x0 = points[i];
+
+            // Check that probability(x, x) == 0
+            Assertions.assertEquals(
+                0.0,
+                dist.probability(x0, x0),
+                () -> "Non-zero probability(x, x) for " + x0);
+
+            final double cdf0 = dist.cumulativeProbability(x0);
+            final double sf0 = cdf0 >= 0.5 ? dist.survivalProbability(x0) : Double.NaN;
+            for (int j = 0; j < points.length; j++) {
+                final double x1 = points[j];
+                // Ignore the same point
+                if (x0 < x1) {
+                    // Check that probability(x0, x1) = CDF(x1) - CDF(x0).
+                    // If x0 is above the median it is more accurate to use the
+                    // survival probability: probability(x0, x1) = SF(x0) - SF(x1).
+                    double expected;
+                    if (cdf0 >= 0.5) {
+                        expected = sf0 - dist.survivalProbability(x1);
+                    } else {
+                        expected = dist.cumulativeProbability(x1) - cdf0;
+                    }
+                    TestUtils.assertEquals(
+                        expected,
+                        dist.probability(x0, x1),
+                        tolerance,
+                        () -> "Inconsistent probability for (" + x0 + "," + x1 + ")");
+                } else if (x0 > x1) {
+                    Assertions.assertThrows(IllegalArgumentException.class,
+                        () -> dist.probability(x0, x1),
+                        "probability(double, double) should have thrown an exception that first argument is too large");
+                }
+            }
+        }
+    }
+
+    /**
+     * Test CDF and inverse CDF values at the edge of the support of the distribution return
+     * expected values and the CDF outside the support returns consistent values.
+     */
+    @ParameterizedTest
+    @MethodSource(value = "streamDistribution")
+    final void testOutsideSupport(ContinuousDistribution dist) {
+        // Test various quantities when the variable is outside the support.
+        final double lo = dist.getSupportLowerBound();
+        Assertions.assertEquals(0.0, dist.cumulativeProbability(lo), "cdf(lower)");
+        Assertions.assertEquals(lo, dist.inverseCumulativeProbability(-0.0), "icdf(-0.0)");
+        Assertions.assertEquals(lo, dist.inverseCumulativeProbability(0.0), "icdf(0.0)");
+        Assertions.assertEquals(lo, dist.inverseSurvivalProbability(1.0), "isf(1.0)");
+        // Test for rounding errors during inversion
+        Assertions.assertTrue(lo <= dist.inverseCumulativeProbability(Double.MIN_VALUE), "lo <= icdf(min)");
+        Assertions.assertTrue(lo <= dist.inverseCumulativeProbability(Double.MIN_NORMAL), "lo <= icdf(min_normal)");
+        Assertions.assertTrue(lo <= dist.inverseSurvivalProbability(Math.nextDown(1.0)), "lo <= isf(nextDown(1.0))");
+
+        final double below = Math.nextDown(lo);
+        Assertions.assertEquals(0.0, dist.density(below), "pdf(x < lower)");
+        Assertions.assertEquals(Double.NEGATIVE_INFINITY, dist.logDensity(below), "logpdf(x < lower)");
+        Assertions.assertEquals(0.0, dist.cumulativeProbability(below), "cdf(x < lower)");
+        Assertions.assertEquals(1.0, dist.survivalProbability(below), "sf(x < lower)");
+
+        final double hi = dist.getSupportUpperBound();
+        Assertions.assertTrue(lo <= hi, "lower <= upper");
+        Assertions.assertEquals(1.0, dist.cumulativeProbability(hi), "cdf(upper)");
+        Assertions.assertEquals(0.0, dist.survivalProbability(hi), "sf(upper)");
+        Assertions.assertEquals(hi, dist.inverseCumulativeProbability(1.0), "icdf(1.0)");
+        Assertions.assertEquals(hi, dist.inverseSurvivalProbability(-0.0), "isf(-0.0)");
+        Assertions.assertEquals(hi, dist.inverseSurvivalProbability(0.0), "isf(0.0)");
+        // Test for rounding errors during inversion
+        Assertions.assertTrue(hi >= dist.inverseCumulativeProbability(Math.nextDown(1.0)), "hi >= icdf(nextDown(1.0))");
+        Assertions.assertTrue(hi >= dist.inverseSurvivalProbability(Double.MIN_VALUE), "lo <= isf(min)");
+        Assertions.assertTrue(hi >= dist.inverseSurvivalProbability(Double.MIN_NORMAL), "lo <= isf(min_normal)");
+
+        final double above = Math.nextUp(hi);
+        Assertions.assertEquals(0.0, dist.density(above), "pdf(x > upper)");
+        Assertions.assertEquals(Double.NEGATIVE_INFINITY, dist.logDensity(above), "logpdf(x > upper)");
+        Assertions.assertEquals(1.0, dist.cumulativeProbability(above), "cdf(x > upper)");
+        Assertions.assertEquals(0.0, dist.survivalProbability(above), "sf(x > upper)");
+    }
+
+    /**
+     * Test invalid probabilities passed to computations that require a p-value in {@code [0, 1]}
+     * or a range where {@code p1 <= p2}.
+     */
+    @ParameterizedTest
+    @MethodSource(value = "streamDistribution")
+    final void testInvalidProbabilities(ContinuousDistribution dist) {
+        final double lo = dist.getSupportLowerBound();
+        final double hi = dist.getSupportUpperBound();
+        if (lo < hi) {
+            Assertions.assertThrows(DistributionException.class, () -> dist.probability(hi, lo), "x0 > x1");
+        }
+        Assertions.assertThrows(DistributionException.class, () -> dist.inverseCumulativeProbability(-1), "p < 0.0");
+        Assertions.assertThrows(DistributionException.class, () -> dist.inverseCumulativeProbability(2), "p > 1.0");
+        Assertions.assertThrows(DistributionException.class, () -> dist.inverseSurvivalProbability(-1), "q < 0.0");
+        Assertions.assertThrows(DistributionException.class, () -> dist.inverseSurvivalProbability(2), "q > 1.0");
+    }
+
+    /**
+     * Test sampling from the distribution.
+     */
+    @ParameterizedTest
+    @MethodSource
+    final void testSampling(ContinuousDistribution dist) {
+        final double[] quartiles = TestUtils.getDistributionQuartiles(dist);
+        // The distribution quartiles are created using the inverse CDF.
+        // This may not be accurate for extreme parameterizations of the distribution.
+        // So use the values to compute the expected probability for each interval.
+        final double[] expected = {
+            dist.cumulativeProbability(quartiles[0]),
+            dist.probability(quartiles[0], quartiles[1]),
+            dist.probability(quartiles[1], quartiles[2]),
+            dist.survivalProbability(quartiles[2]),
+        };
+        // Fail if the quartiles are different from a quarter.
+        // Note: Set the tolerance to a high value to allow the sampling test
+        // to run with uneven intervals. This will determine if the sampler
+        // if broken for this parameterization of the distribution that has
+        // an incorrect CDF(inverse CDF(p)) mapping.
+        final DoubleTolerance tolerance = DoubleTolerances.relative(1e-3);
+        for (final double p : expected) {
+            TestUtils.assertEquals(0.25, p, tolerance,
+                () -> "Unexpected quartiles: " + Arrays.toString(expected));
+        }
+
+        final int sampleSize = 1000;
+        MathArrays.scaleInPlace(sampleSize, expected);
+
+        // Use fixed seed.
+        final ContinuousDistribution.Sampler sampler =
+            dist.createSampler(RandomSource.XO_SHI_RO_256_PP.create(123456789L));
+        final double[] sample = TestUtils.sample(sampleSize, sampler);
+
+        final long[] counts = new long[4];
+        for (int i = 0; i < sampleSize; i++) {
+            TestUtils.updateCounts(sample[i], counts, quartiles);
+        }
+
+        TestUtils.assertChiSquareAccept(expected, counts, 0.001);
+    }
+
+    /**
+     * Test that density integrals match the distribution.
+     * The (filtered, sorted) points array is used to source
+     * integration limits. The integral of the density (estimated using a
+     * Legendre-Gauss integrator) is compared with the cdf over the same
+     * interval. Test points outside of the domain of the density function
+     * are discarded.
+     */
+    @ParameterizedTest
+    @MethodSource
+    final void testDensityIntegrals(ContinuousDistribution dist,
+                                    double[] points,
+                                    double[] values,
+                                    DoubleTolerance tolerance) {
+        final BaseAbstractUnivariateIntegrator integrator =
+            new IterativeLegendreGaussIntegrator(5, INTEGRATOR_REL_ACCURACY, INTEGRATOR_ABS_ACCURACY);
+        final UnivariateFunction d = dist::density;
+        final ArrayList<Double> integrationTestPoints = new ArrayList<>();
+        for (int i = 0; i < points.length; i++) {
+            if (Double.isNaN(values[i]) ||
+                values[i] < 1e-5 ||
+                values[i] > 1 - 1e-5) {
+                continue; // exclude integrals outside domain.
+            }
+            integrationTestPoints.add(points[i]);
+        }
+        Collections.sort(integrationTestPoints);
+        for (int i = 1; i < integrationTestPoints.size(); i++) {
+            final double x0 = integrationTestPoints.get(i - 1);
+            final double x1 = integrationTestPoints.get(i);
+            // Exclude extremely steep integrals
+            // (e.g. the gamma distribution with shape < 1)
+            if (Math.max(dist.density(x0), dist.density(x1)) > 1e3) {
+                continue;
+            }
+            double integral = 0;
+            try {
+                // Integrals may be slow to converge
+                integral = integrator.integrate(1000000,
+                                                d, x0, x1);
+            } catch (MaxCountExceededException e) {
+                Assertions.fail("Failed density integral: " + x0 + " to " + x1, e);
+            }
+            TestUtils.assertEquals(
+                dist.probability(x0, x1),
+                integral,
+                tolerance,
+                () -> "Invalid density integral: " + x0 + " to " + x1);
+        }
+    }
+
+    /**
+     * Test the support of the distribution matches the expected values.
+     */
+    @ParameterizedTest
+    @MethodSource
+    final void testSupport(ContinuousDistribution dist, double lower, double upper) {
+        Assertions.assertEquals(lower, dist.getSupportLowerBound(), "lower bound");
+        Assertions.assertEquals(upper, dist.getSupportUpperBound(), "upper bound");
+    }
+
+    /**
+     * Test the moments of the distribution matches the expected values.
+     */
+    @ParameterizedTest
+    @MethodSource
+    final void testMoments(ContinuousDistribution dist, double mean, double variance, DoubleTolerance tolerance) {
+        TestUtils.assertEquals(mean, dist.getMean(), tolerance, "mean");
+        TestUtils.assertEquals(variance, dist.getVariance(), tolerance, "variance");
+    }
+
+    /**
+     * Test the median of the distribution is equal to the value returned from the inverse CDF.
+     * The median is used internally for computation of the probability of a range
+     * using either the CDF or survival function. If overridden by a distribution it should
+     * be equivalent to the inverse CDF called with 0.5.
+     *
+     * <p>The method modifiers are asserted to check the method is not public or protected.
+     */
+    @ParameterizedTest
+    @MethodSource
+    final void testMedian(ContinuousDistribution dist, DoubleTolerance tolerance) {
+        if (dist instanceof AbstractContinuousDistribution) {
+            final AbstractContinuousDistribution d = (AbstractContinuousDistribution) dist;
+            TestUtils.assertEquals(d.inverseCumulativeProbability(0.5), d.getMedian(), tolerance, "median");
+            assertMethodNotModified(dist.getClass(), Modifier.PUBLIC | Modifier.PROTECTED, "getMedian");
+        }
+    }
+}

@@ -1,0 +1,1271 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=windows-1252"> 
+  <title>Coverage Report > MathArrays</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope:     <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">org.apache.commons.math4.legacy.core</a>
+</div>
+
+<h1>Coverage Summary for Class: MathArrays (org.apache.commons.math4.legacy.core)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">MathArrays</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (42/42)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    99,3%
+  </span>
+  <span class="absValue">
+    (266/268)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">MathArrays$1</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+  </tr>
+  <tr>
+    <td class="name">MathArrays$Function</td>
+  </tr>
+  <tr>
+    <td class="name">MathArrays$OrderDirection</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (2/2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (3/3)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (45/45)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    99,3%
+  </span>
+  <span class="absValue">
+    (270/272)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/*
+&nbsp; * Licensed to the Apache Software Foundation (ASF) under one or more
+&nbsp; * contributor license agreements.  See the NOTICE file distributed with
+&nbsp; * this work for additional information regarding copyright ownership.
+&nbsp; * The ASF licenses this file to You under the Apache License, Version 2.0
+&nbsp; * (the &quot;License&quot;); you may not use this file except in compliance with
+&nbsp; * the License.  You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *      http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package org.apache.commons.math4.legacy.core;
+&nbsp;
+&nbsp;import java.lang.reflect.Array;
+&nbsp;import java.util.Arrays;
+&nbsp;import java.util.Iterator;
+&nbsp;import java.util.TreeSet;
+&nbsp;
+&nbsp;import org.apache.commons.numbers.core.Precision;
+&nbsp;import org.apache.commons.math4.legacy.exception.DimensionMismatchException;
+&nbsp;import org.apache.commons.math4.legacy.exception.MathArithmeticException;
+&nbsp;import org.apache.commons.math4.legacy.exception.MathIllegalArgumentException;
+&nbsp;import org.apache.commons.math4.legacy.exception.MathInternalError;
+&nbsp;import org.apache.commons.math4.legacy.exception.NoDataException;
+&nbsp;import org.apache.commons.math4.legacy.exception.NonMonotonicSequenceException;
+&nbsp;import org.apache.commons.math4.legacy.exception.NotANumberException;
+&nbsp;import org.apache.commons.math4.legacy.exception.NotPositiveException;
+&nbsp;import org.apache.commons.math4.legacy.exception.NotStrictlyPositiveException;
+&nbsp;import org.apache.commons.math4.legacy.exception.NullArgumentException;
+&nbsp;import org.apache.commons.math4.legacy.exception.NumberIsTooLargeException;
+&nbsp;import org.apache.commons.math4.legacy.exception.util.LocalizedFormats;
+&nbsp;import org.apache.commons.math4.legacy.core.jdkmath.AccurateMath;
+&nbsp;
+&nbsp;/**
+&nbsp; * Arrays utilities.
+&nbsp; *
+&nbsp; * @since 3.0
+&nbsp; */
+&nbsp;public final class MathArrays {
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Private constructor.
+&nbsp;     */
+&nbsp;    private MathArrays() {}
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Real-valued function that operate on an array or a part of it.
+&nbsp;     * @since 3.1
+&nbsp;     */
+&nbsp;    public interface Function {
+&nbsp;        /**
+&nbsp;         * Operates on an entire array.
+&nbsp;         *
+&nbsp;         * @param array Array to operate on.
+&nbsp;         * @return the result of the operation.
+&nbsp;         */
+&nbsp;        double evaluate(double[] array);
+&nbsp;        /**
+&nbsp;         * @param array Array to operate on.
+&nbsp;         * @param startIndex Index of the first element to take into account.
+&nbsp;         * @param numElements Number of elements to take into account.
+&nbsp;         * @return the result of the operation.
+&nbsp;         */
+&nbsp;        double evaluate(double[] array,
+&nbsp;                        int startIndex,
+&nbsp;                        int numElements);
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Create a copy of an array scaled by a value.
+&nbsp;     *
+&nbsp;     * @param arr Array to scale.
+&nbsp;     * @param val Scalar.
+&nbsp;     * @return scaled copy of array with each entry multiplied by val.
+&nbsp;     * @since 3.2
+&nbsp;     */
+&nbsp;    public static double[] scale(double val, final double[] arr) {
+<b class="fc">&nbsp;        double[] newArr = new double[arr.length];</b>
+<b class="fc">&nbsp;        for (int i = 0; i &lt; arr.length; i++) {</b>
+<b class="fc">&nbsp;            newArr[i] = arr[i] * val;</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return newArr;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * &lt;p&gt;Multiply each element of an array by a value.&lt;/p&gt;
+&nbsp;     *
+&nbsp;     * &lt;p&gt;The array is modified in place (no copy is created).&lt;/p&gt;
+&nbsp;     *
+&nbsp;     * @param arr Array to scale
+&nbsp;     * @param val Scalar
+&nbsp;     * @since 3.2
+&nbsp;     */
+&nbsp;    public static void scaleInPlace(double val, final double[] arr) {
+<b class="fc">&nbsp;        for (int i = 0; i &lt; arr.length; i++) {</b>
+<b class="fc">&nbsp;            arr[i] *= val;</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Creates an array whose contents will be the element-by-element
+&nbsp;     * addition of the arguments.
+&nbsp;     *
+&nbsp;     * @param a First term of the addition.
+&nbsp;     * @param b Second term of the addition.
+&nbsp;     * @return a new array {@code r} where {@code r[i] = a[i] + b[i]}.
+&nbsp;     * @throws DimensionMismatchException if the array lengths differ.
+&nbsp;     * @since 3.1
+&nbsp;     */
+&nbsp;    public static double[] ebeAdd(double[] a, double[] b) {
+<b class="fc">&nbsp;        checkEqualLength(a, b);</b>
+&nbsp;
+<b class="fc">&nbsp;        final double[] result = a.clone();</b>
+<b class="fc">&nbsp;        for (int i = 0; i &lt; a.length; i++) {</b>
+<b class="fc">&nbsp;            result[i] += b[i];</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return result;</b>
+&nbsp;    }
+&nbsp;    /**
+&nbsp;     * Creates an array whose contents will be the element-by-element
+&nbsp;     * subtraction of the second argument from the first.
+&nbsp;     *
+&nbsp;     * @param a First term.
+&nbsp;     * @param b Element to be subtracted.
+&nbsp;     * @return a new array {@code r} where {@code r[i] = a[i] - b[i]}.
+&nbsp;     * @throws DimensionMismatchException if the array lengths differ.
+&nbsp;     * @since 3.1
+&nbsp;     */
+&nbsp;    public static double[] ebeSubtract(double[] a, double[] b) {
+<b class="fc">&nbsp;        checkEqualLength(a, b);</b>
+&nbsp;
+<b class="fc">&nbsp;        final double[] result = a.clone();</b>
+<b class="fc">&nbsp;        for (int i = 0; i &lt; a.length; i++) {</b>
+<b class="fc">&nbsp;            result[i] -= b[i];</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return result;</b>
+&nbsp;    }
+&nbsp;    /**
+&nbsp;     * Creates an array whose contents will be the element-by-element
+&nbsp;     * multiplication of the arguments.
+&nbsp;     *
+&nbsp;     * @param a First factor of the multiplication.
+&nbsp;     * @param b Second factor of the multiplication.
+&nbsp;     * @return a new array {@code r} where {@code r[i] = a[i] * b[i]}.
+&nbsp;     * @throws DimensionMismatchException if the array lengths differ.
+&nbsp;     * @since 3.1
+&nbsp;     */
+&nbsp;    public static double[] ebeMultiply(double[] a, double[] b) {
+<b class="fc">&nbsp;        checkEqualLength(a, b);</b>
+&nbsp;
+<b class="fc">&nbsp;        final double[] result = a.clone();</b>
+<b class="fc">&nbsp;        for (int i = 0; i &lt; a.length; i++) {</b>
+<b class="fc">&nbsp;            result[i] *= b[i];</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return result;</b>
+&nbsp;    }
+&nbsp;    /**
+&nbsp;     * Creates an array whose contents will be the element-by-element
+&nbsp;     * division of the first argument by the second.
+&nbsp;     *
+&nbsp;     * @param a Numerator of the division.
+&nbsp;     * @param b Denominator of the division.
+&nbsp;     * @return a new array {@code r} where {@code r[i] = a[i] / b[i]}.
+&nbsp;     * @throws DimensionMismatchException if the array lengths differ.
+&nbsp;     * @since 3.1
+&nbsp;     */
+&nbsp;    public static double[] ebeDivide(double[] a, double[] b) {
+<b class="fc">&nbsp;        checkEqualLength(a, b);</b>
+&nbsp;
+<b class="fc">&nbsp;        final double[] result = a.clone();</b>
+<b class="fc">&nbsp;        for (int i = 0; i &lt; a.length; i++) {</b>
+<b class="fc">&nbsp;            result[i] /= b[i];</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return result;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Calculates the L&lt;sub&gt;1&lt;/sub&gt; (sum of abs) distance between two points.
+&nbsp;     *
+&nbsp;     * @param p1 the first point
+&nbsp;     * @param p2 the second point
+&nbsp;     * @return the L&lt;sub&gt;1&lt;/sub&gt; distance between the two points
+&nbsp;     * @throws DimensionMismatchException if the array lengths differ.
+&nbsp;     */
+&nbsp;    public static double distance1(double[] p1, double[] p2) {
+<b class="fc">&nbsp;        checkEqualLength(p1, p2);</b>
+<b class="fc">&nbsp;        double sum = 0;</b>
+<b class="fc">&nbsp;        for (int i = 0; i &lt; p1.length; i++) {</b>
+<b class="fc">&nbsp;            sum += AccurateMath.abs(p1[i] - p2[i]);</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return sum;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Calculates the L&lt;sub&gt;1&lt;/sub&gt; (sum of abs) distance between two points.
+&nbsp;     *
+&nbsp;     * @param p1 the first point
+&nbsp;     * @param p2 the second point
+&nbsp;     * @return the L&lt;sub&gt;1&lt;/sub&gt; distance between the two points
+&nbsp;     * @throws DimensionMismatchException if the array lengths differ.
+&nbsp;     */
+&nbsp;    public static int distance1(int[] p1, int[] p2) {
+<b class="fc">&nbsp;        checkEqualLength(p1, p2);</b>
+<b class="fc">&nbsp;        int sum = 0;</b>
+<b class="fc">&nbsp;        for (int i = 0; i &lt; p1.length; i++) {</b>
+<b class="fc">&nbsp;            sum += AccurateMath.abs(p1[i] - p2[i]);</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return sum;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Calculates the L&lt;sub&gt;2&lt;/sub&gt; (Euclidean) distance between two points.
+&nbsp;     *
+&nbsp;     * @param p1 the first point
+&nbsp;     * @param p2 the second point
+&nbsp;     * @return the L&lt;sub&gt;2&lt;/sub&gt; distance between the two points
+&nbsp;     * @throws DimensionMismatchException if the array lengths differ.
+&nbsp;     */
+&nbsp;    public static double distance(double[] p1, double[] p2) {
+<b class="fc">&nbsp;        checkEqualLength(p1, p2);</b>
+<b class="fc">&nbsp;        double sum = 0;</b>
+<b class="fc">&nbsp;        for (int i = 0; i &lt; p1.length; i++) {</b>
+<b class="fc">&nbsp;            final double dp = p1[i] - p2[i];</b>
+<b class="fc">&nbsp;            sum += dp * dp;</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return AccurateMath.sqrt(sum);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Calculates the L&lt;sub&gt;2&lt;/sub&gt; (Euclidean) distance between two points.
+&nbsp;     *
+&nbsp;     * @param p1 the first point
+&nbsp;     * @param p2 the second point
+&nbsp;     * @return the L&lt;sub&gt;2&lt;/sub&gt; distance between the two points
+&nbsp;     * @throws DimensionMismatchException if the array lengths differ.
+&nbsp;     */
+&nbsp;    public static double distance(int[] p1, int[] p2) {
+<b class="fc">&nbsp;        checkEqualLength(p1, p2);</b>
+<b class="fc">&nbsp;        double sum = 0;</b>
+<b class="fc">&nbsp;        for (int i = 0; i &lt; p1.length; i++) {</b>
+<b class="fc">&nbsp;            final double dp = (double) p1[i] - p2[i];</b>
+<b class="fc">&nbsp;            sum += dp * dp;</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return AccurateMath.sqrt(sum);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Calculates the L&lt;sub&gt;&amp;infin;&lt;/sub&gt; (max of abs) distance between two points.
+&nbsp;     *
+&nbsp;     * @param p1 the first point
+&nbsp;     * @param p2 the second point
+&nbsp;     * @return the L&lt;sub&gt;&amp;infin;&lt;/sub&gt; distance between the two points
+&nbsp;     * @throws DimensionMismatchException if the array lengths differ.
+&nbsp;     */
+&nbsp;    public static double distanceInf(double[] p1, double[] p2) {
+<b class="fc">&nbsp;        checkEqualLength(p1, p2);</b>
+<b class="fc">&nbsp;        double max = 0;</b>
+<b class="fc">&nbsp;        for (int i = 0; i &lt; p1.length; i++) {</b>
+<b class="fc">&nbsp;            max = AccurateMath.max(max, AccurateMath.abs(p1[i] - p2[i]));</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return max;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Calculates the L&lt;sub&gt;&amp;infin;&lt;/sub&gt; (max of abs) distance between two points.
+&nbsp;     *
+&nbsp;     * @param p1 the first point
+&nbsp;     * @param p2 the second point
+&nbsp;     * @return the L&lt;sub&gt;&amp;infin;&lt;/sub&gt; distance between the two points
+&nbsp;     * @throws DimensionMismatchException if the array lengths differ.
+&nbsp;     */
+&nbsp;    public static int distanceInf(int[] p1, int[] p2) {
+<b class="fc">&nbsp;        checkEqualLength(p1, p2);</b>
+<b class="fc">&nbsp;        int max = 0;</b>
+<b class="fc">&nbsp;        for (int i = 0; i &lt; p1.length; i++) {</b>
+<b class="fc">&nbsp;            max = AccurateMath.max(max, AccurateMath.abs(p1[i] - p2[i]));</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return max;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Specification of ordering direction.
+&nbsp;     */
+<b class="fc">&nbsp;    public enum OrderDirection {</b>
+&nbsp;        /** Constant for increasing direction. */
+<b class="fc">&nbsp;        INCREASING,</b>
+&nbsp;        /** Constant for decreasing direction. */
+<b class="fc">&nbsp;        DECREASING</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Check that an array is monotonically increasing or decreasing.
+&nbsp;     *
+&nbsp;     * @param &lt;T&gt; the type of the elements in the specified array
+&nbsp;     * @param val Values.
+&nbsp;     * @param dir Ordering direction.
+&nbsp;     * @param strict Whether the order should be strict.
+&nbsp;     * @return {@code true} if sorted, {@code false} otherwise.
+&nbsp;     */
+&nbsp;    public static  &lt;T extends Comparable&lt;? super T&gt;&gt; boolean isMonotonic(T[] val,
+&nbsp;                                      OrderDirection dir,
+&nbsp;                                      boolean strict) {
+<b class="fc">&nbsp;        T previous = val[0];</b>
+<b class="fc">&nbsp;        final int max = val.length;</b>
+<b class="fc">&nbsp;        for (int i = 1; i &lt; max; i++) {</b>
+&nbsp;            final int comp;
+<b class="fc">&nbsp;            switch (dir) {</b>
+&nbsp;            case INCREASING:
+<b class="fc">&nbsp;                comp = previous.compareTo(val[i]);</b>
+<b class="fc">&nbsp;                if (strict) {</b>
+<b class="fc">&nbsp;                    if (comp &gt;= 0) {</b>
+<b class="fc">&nbsp;                        return false;</b>
+&nbsp;                    }
+&nbsp;                } else {
+<b class="fc">&nbsp;                    if (comp &gt; 0) {</b>
+<b class="fc">&nbsp;                        return false;</b>
+&nbsp;                    }
+&nbsp;                }
+&nbsp;                break;
+&nbsp;            case DECREASING:
+<b class="fc">&nbsp;                comp = val[i].compareTo(previous);</b>
+<b class="fc">&nbsp;                if (strict) {</b>
+<b class="fc">&nbsp;                    if (comp &gt;= 0) {</b>
+<b class="fc">&nbsp;                        return false;</b>
+&nbsp;                    }
+&nbsp;                } else {
+<b class="fc">&nbsp;                    if (comp &gt; 0) {</b>
+<b class="fc">&nbsp;                        return false;</b>
+&nbsp;                    }
+&nbsp;                }
+&nbsp;                break;
+&nbsp;            default:
+&nbsp;                // Should never happen.
+<b class="nc">&nbsp;                throw new MathInternalError();</b>
+&nbsp;            }
+&nbsp;
+<b class="fc">&nbsp;            previous = val[i];</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return true;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Check that an array is monotonically increasing or decreasing.
+&nbsp;     *
+&nbsp;     * @param val Values.
+&nbsp;     * @param dir Ordering direction.
+&nbsp;     * @param strict Whether the order should be strict.
+&nbsp;     * @return {@code true} if sorted, {@code false} otherwise.
+&nbsp;     */
+&nbsp;    public static boolean isMonotonic(double[] val, OrderDirection dir, boolean strict) {
+<b class="fc">&nbsp;        return checkOrder(val, dir, strict, false);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Check that both arrays have the same length.
+&nbsp;     *
+&nbsp;     * @param a Array.
+&nbsp;     * @param b Array.
+&nbsp;     * @param abort Whether to throw an exception if the check fails.
+&nbsp;     * @return {@code true} if the arrays have the same length.
+&nbsp;     * @throws DimensionMismatchException if the lengths differ and
+&nbsp;     * {@code abort} is {@code true}.
+&nbsp;     * @since 3.6
+&nbsp;     */
+&nbsp;    public static boolean checkEqualLength(double[] a,
+&nbsp;                                           double[] b,
+&nbsp;                                           boolean abort) {
+<b class="fc">&nbsp;        if (a.length == b.length) {</b>
+<b class="fc">&nbsp;            return true;</b>
+&nbsp;        } else {
+<b class="fc">&nbsp;            if (abort) {</b>
+<b class="fc">&nbsp;                throw new DimensionMismatchException(a.length, b.length);</b>
+&nbsp;            }
+<b class="fc">&nbsp;            return false;</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Check that both arrays have the same length.
+&nbsp;     *
+&nbsp;     * @param a Array.
+&nbsp;     * @param b Array.
+&nbsp;     * @throws DimensionMismatchException if the lengths differ.
+&nbsp;     * @since 3.6
+&nbsp;     */
+&nbsp;    public static void checkEqualLength(double[] a,
+&nbsp;                                        double[] b) {
+<b class="fc">&nbsp;        checkEqualLength(a, b, true);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Check that both arrays have the same length.
+&nbsp;     *
+&nbsp;     * @param a Array.
+&nbsp;     * @param b Array.
+&nbsp;     * @param abort Whether to throw an exception if the check fails.
+&nbsp;     * @return {@code true} if the arrays have the same length.
+&nbsp;     * @throws DimensionMismatchException if the lengths differ and
+&nbsp;     * {@code abort} is {@code true}.
+&nbsp;     * @since 3.6
+&nbsp;     */
+&nbsp;    public static boolean checkEqualLength(int[] a,
+&nbsp;                                           int[] b,
+&nbsp;                                           boolean abort) {
+<b class="fc">&nbsp;        if (a.length == b.length) {</b>
+<b class="fc">&nbsp;            return true;</b>
+&nbsp;        } else {
+<b class="fc">&nbsp;            if (abort) {</b>
+<b class="fc">&nbsp;                throw new DimensionMismatchException(a.length, b.length);</b>
+&nbsp;            }
+<b class="fc">&nbsp;            return false;</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Check that both arrays have the same length.
+&nbsp;     *
+&nbsp;     * @param a Array.
+&nbsp;     * @param b Array.
+&nbsp;     * @throws DimensionMismatchException if the lengths differ.
+&nbsp;     * @since 3.6
+&nbsp;     */
+&nbsp;    public static void checkEqualLength(int[] a,
+&nbsp;                                        int[] b) {
+<b class="fc">&nbsp;        checkEqualLength(a, b, true);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Check that the given array is sorted.
+&nbsp;     *
+&nbsp;     * @param val Values.
+&nbsp;     * @param dir Ordering direction.
+&nbsp;     * @param strict Whether the order should be strict.
+&nbsp;     * @param abort Whether to throw an exception if the check fails.
+&nbsp;     * @return {@code true} if the array is sorted.
+&nbsp;     * @throws NonMonotonicSequenceException if the array is not sorted
+&nbsp;     * and {@code abort} is {@code true}.
+&nbsp;     */
+&nbsp;    public static boolean checkOrder(double[] val, OrderDirection dir,
+&nbsp;                                     boolean strict, boolean abort) {
+<b class="fc">&nbsp;        double previous = val[0];</b>
+<b class="fc">&nbsp;        final int max = val.length;</b>
+&nbsp;
+&nbsp;        int index;
+&nbsp;        ITEM:
+<b class="fc">&nbsp;        for (index = 1; index &lt; max; index++) {</b>
+<b class="fc">&nbsp;            switch (dir) {</b>
+&nbsp;            case INCREASING:
+<b class="fc">&nbsp;                if (strict) {</b>
+<b class="fc">&nbsp;                    if (val[index] &lt;= previous) {</b>
+<b class="fc">&nbsp;                        break ITEM;</b>
+&nbsp;                    }
+&nbsp;                } else {
+<b class="fc">&nbsp;                    if (val[index] &lt; previous) {</b>
+<b class="fc">&nbsp;                        break ITEM;</b>
+&nbsp;                    }
+&nbsp;                }
+&nbsp;                break;
+&nbsp;            case DECREASING:
+<b class="fc">&nbsp;                if (strict) {</b>
+<b class="fc">&nbsp;                    if (val[index] &gt;= previous) {</b>
+<b class="fc">&nbsp;                        break ITEM;</b>
+&nbsp;                    }
+&nbsp;                } else {
+<b class="fc">&nbsp;                    if (val[index] &gt; previous) {</b>
+<b class="fc">&nbsp;                        break ITEM;</b>
+&nbsp;                    }
+&nbsp;                }
+&nbsp;                break;
+&nbsp;            default:
+&nbsp;                // Should never happen.
+<b class="nc">&nbsp;                throw new MathInternalError();</b>
+&nbsp;            }
+&nbsp;
+<b class="fc">&nbsp;            previous = val[index];</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        if (index == max) {</b>
+&nbsp;            // Loop completed.
+<b class="fc">&nbsp;            return true;</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        // Loop early exit means wrong ordering.
+<b class="fc">&nbsp;        if (abort) {</b>
+<b class="fc">&nbsp;            throw new NonMonotonicSequenceException(val[index],</b>
+<b class="fc">&nbsp;                                                    previous,</b>
+&nbsp;                                                    index,
+&nbsp;                                                    dir == OrderDirection.INCREASING,
+&nbsp;                                                    strict);
+&nbsp;        } else {
+<b class="fc">&nbsp;            return false;</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Check that the given array is sorted.
+&nbsp;     *
+&nbsp;     * @param val Values.
+&nbsp;     * @param dir Ordering direction.
+&nbsp;     * @param strict Whether the order should be strict.
+&nbsp;     * @throws NonMonotonicSequenceException if the array is not sorted.
+&nbsp;     * @since 2.2
+&nbsp;     */
+&nbsp;    public static void checkOrder(double[] val, OrderDirection dir, boolean strict) {
+<b class="fc">&nbsp;        checkOrder(val, dir, strict, true);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Check that the given array is sorted in strictly increasing order.
+&nbsp;     *
+&nbsp;     * @param val Values.
+&nbsp;     * @throws NonMonotonicSequenceException if the array is not sorted.
+&nbsp;     * @since 2.2
+&nbsp;     */
+&nbsp;    public static void checkOrder(double[] val) {
+<b class="fc">&nbsp;        checkOrder(val, OrderDirection.INCREASING, true);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Throws DimensionMismatchException if the input array is not rectangular.
+&nbsp;     *
+&nbsp;     * @param in array to be tested
+&nbsp;     * @throws NullArgumentException if input array is null
+&nbsp;     * @throws DimensionMismatchException if input array is not rectangular
+&nbsp;     * @since 3.1
+&nbsp;     */
+&nbsp;    public static void checkRectangular(final long[][] in) {
+<b class="fc">&nbsp;        NullArgumentException.check(in);</b>
+<b class="fc">&nbsp;        for (int i = 1; i &lt; in.length; i++) {</b>
+<b class="fc">&nbsp;            if (in[i].length != in[0].length) {</b>
+<b class="fc">&nbsp;                throw new DimensionMismatchException(</b>
+&nbsp;                        LocalizedFormats.DIFFERENT_ROWS_LENGTHS,
+&nbsp;                        in[i].length, in[0].length);
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Check that all entries of the input array are strictly positive.
+&nbsp;     *
+&nbsp;     * @param in Array to be tested
+&nbsp;     * @throws NotStrictlyPositiveException if any entries of the array are not
+&nbsp;     * strictly positive.
+&nbsp;     * @since 3.1
+&nbsp;     */
+&nbsp;    public static void checkPositive(final double[] in) {
+<b class="fc">&nbsp;        for (int i = 0; i &lt; in.length; i++) {</b>
+<b class="fc">&nbsp;            if (in[i] &lt;= 0) {</b>
+<b class="fc">&nbsp;                throw new NotStrictlyPositiveException(in[i]);</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Check that no entry of the input array is {@code NaN}.
+&nbsp;     *
+&nbsp;     * @param in Array to be tested.
+&nbsp;     * @throws NotANumberException if an entry is {@code NaN}.
+&nbsp;     * @since 3.4
+&nbsp;     */
+&nbsp;    public static void checkNotNaN(final double[] in) {
+<b class="fc">&nbsp;        for (int i = 0; i &lt; in.length; i++) {</b>
+<b class="fc">&nbsp;            if (Double.isNaN(in[i])) {</b>
+<b class="fc">&nbsp;                throw new NotANumberException();</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Check that all entries of the input array are &amp;gt;= 0.
+&nbsp;     *
+&nbsp;     * @param in Array to be tested
+&nbsp;     * @throws NotPositiveException if any array entries are less than 0.
+&nbsp;     * @since 3.1
+&nbsp;     */
+&nbsp;    public static void checkNonNegative(final long[] in) {
+<b class="fc">&nbsp;        for (int i = 0; i &lt; in.length; i++) {</b>
+<b class="fc">&nbsp;            if (in[i] &lt; 0) {</b>
+<b class="fc">&nbsp;                throw new NotPositiveException(in[i]);</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Check all entries of the input array are &amp;gt;= 0.
+&nbsp;     *
+&nbsp;     * @param in Array to be tested
+&nbsp;     * @throws NotPositiveException if any array entries are less than 0.
+&nbsp;     * @since 3.1
+&nbsp;     */
+&nbsp;    public static void checkNonNegative(final long[][] in) {
+<b class="fc">&nbsp;        for (int i = 0; i &lt; in.length; i++) {</b>
+<b class="fc">&nbsp;            for (int j = 0; j &lt; in[i].length; j++) {</b>
+<b class="fc">&nbsp;                if (in[i][j] &lt; 0) {</b>
+<b class="fc">&nbsp;                    throw new NotPositiveException(in[i][j]);</b>
+&nbsp;                }
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Returns true iff both arguments are null or have same dimensions and all
+&nbsp;     * their elements are equal as defined by
+&nbsp;     * {@link Precision#equals(float,float)}.
+&nbsp;     *
+&nbsp;     * @param x first array
+&nbsp;     * @param y second array
+&nbsp;     * @return true if the values are both null or have same dimension
+&nbsp;     * and equal elements.
+&nbsp;     */
+&nbsp;    public static boolean equals(float[] x, float[] y) {
+<b class="fc">&nbsp;        if (x == null || y == null) {</b>
+<b class="fc">&nbsp;            return (x == null) == (y == null);</b>
+&nbsp;        }
+<b class="fc">&nbsp;        if (x.length != y.length) {</b>
+<b class="fc">&nbsp;            return false;</b>
+&nbsp;        }
+<b class="fc">&nbsp;        for (int i = 0; i &lt; x.length; ++i) {</b>
+<b class="fc">&nbsp;            if (!Precision.equals(x[i], y[i])) {</b>
+<b class="fc">&nbsp;                return false;</b>
+&nbsp;            }
+&nbsp;        }
+<b class="fc">&nbsp;        return true;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Returns true iff both arguments are null or have same dimensions and all
+&nbsp;     * their elements are equal as defined by
+&nbsp;     * {@link Precision#equalsIncludingNaN(double,double) this method}.
+&nbsp;     *
+&nbsp;     * @param x first array
+&nbsp;     * @param y second array
+&nbsp;     * @return true if the values are both null or have same dimension and
+&nbsp;     * equal elements
+&nbsp;     * @since 2.2
+&nbsp;     */
+&nbsp;    public static boolean equalsIncludingNaN(float[] x, float[] y) {
+<b class="fc">&nbsp;        if (x == null || y == null) {</b>
+<b class="fc">&nbsp;            return (x == null) == (y == null);</b>
+&nbsp;        }
+<b class="fc">&nbsp;        if (x.length != y.length) {</b>
+<b class="fc">&nbsp;            return false;</b>
+&nbsp;        }
+<b class="fc">&nbsp;        for (int i = 0; i &lt; x.length; ++i) {</b>
+<b class="fc">&nbsp;            if (!Precision.equalsIncludingNaN(x[i], y[i])) {</b>
+<b class="fc">&nbsp;                return false;</b>
+&nbsp;            }
+&nbsp;        }
+<b class="fc">&nbsp;        return true;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Returns {@code true} iff both arguments are {@code null} or have same
+&nbsp;     * dimensions and all their elements are equal as defined by
+&nbsp;     * {@link Precision#equals(double,double)}.
+&nbsp;     *
+&nbsp;     * @param x First array.
+&nbsp;     * @param y Second array.
+&nbsp;     * @return {@code true} if the values are both {@code null} or have same
+&nbsp;     * dimension and equal elements.
+&nbsp;     */
+&nbsp;    public static boolean equals(double[] x, double[] y) {
+<b class="fc">&nbsp;        if (x == null || y == null) {</b>
+<b class="fc">&nbsp;            return (x == null) == (y == null);</b>
+&nbsp;        }
+<b class="fc">&nbsp;        if (x.length != y.length) {</b>
+<b class="fc">&nbsp;            return false;</b>
+&nbsp;        }
+<b class="fc">&nbsp;        for (int i = 0; i &lt; x.length; ++i) {</b>
+<b class="fc">&nbsp;            if (!Precision.equals(x[i], y[i])) {</b>
+<b class="fc">&nbsp;                return false;</b>
+&nbsp;            }
+&nbsp;        }
+<b class="fc">&nbsp;        return true;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Returns {@code true} iff both arguments are {@code null} or have same
+&nbsp;     * dimensions and all their elements are equal as defined by
+&nbsp;     * {@link Precision#equalsIncludingNaN(double,double) this method}.
+&nbsp;     *
+&nbsp;     * @param x First array.
+&nbsp;     * @param y Second array.
+&nbsp;     * @return {@code true} if the values are both {@code null} or have same
+&nbsp;     * dimension and equal elements.
+&nbsp;     * @since 2.2
+&nbsp;     */
+&nbsp;    public static boolean equalsIncludingNaN(double[] x, double[] y) {
+<b class="fc">&nbsp;        if (x == null || y == null) {</b>
+<b class="fc">&nbsp;            return (x == null) == (y == null);</b>
+&nbsp;        }
+<b class="fc">&nbsp;        if (x.length != y.length) {</b>
+<b class="fc">&nbsp;            return false;</b>
+&nbsp;        }
+<b class="fc">&nbsp;        for (int i = 0; i &lt; x.length; ++i) {</b>
+<b class="fc">&nbsp;            if (!Precision.equalsIncludingNaN(x[i], y[i])) {</b>
+<b class="fc">&nbsp;                return false;</b>
+&nbsp;            }
+&nbsp;        }
+<b class="fc">&nbsp;        return true;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Normalizes an array to make it sum to a specified value.
+&nbsp;     * Returns the result of the transformation
+&nbsp;     * &lt;pre&gt;
+&nbsp;     *    x |-&amp;gt; x * normalizedSum / sum
+&nbsp;     * &lt;/pre&gt;
+&nbsp;     * applied to each non-NaN element x of the input array, where sum is the
+&nbsp;     * sum of the non-NaN entries in the input array.
+&nbsp;     * &lt;p&gt;
+&nbsp;     * Throws IllegalArgumentException if {@code normalizedSum} is infinite
+&nbsp;     * or NaN and ArithmeticException if the input array contains any infinite elements
+&nbsp;     * or sums to 0.
+&nbsp;     * &lt;p&gt;
+&nbsp;     * Ignores (i.e., copies unchanged to the output array) NaNs in the input array.
+&nbsp;     *
+&nbsp;     * @param values Input array to be normalized
+&nbsp;     * @param normalizedSum Target sum for the normalized array
+&nbsp;     * @return the normalized array.
+&nbsp;     * @throws MathArithmeticException if the input array contains infinite
+&nbsp;     * elements or sums to zero.
+&nbsp;     * @throws MathIllegalArgumentException if the target sum is infinite or {@code NaN}.
+&nbsp;     * @since 2.1
+&nbsp;     */
+&nbsp;    public static double[] normalizeArray(double[] values, double normalizedSum) {
+<b class="fc">&nbsp;        if (Double.isInfinite(normalizedSum)) {</b>
+<b class="fc">&nbsp;            throw new MathIllegalArgumentException(LocalizedFormats.NORMALIZE_INFINITE);</b>
+&nbsp;        }
+<b class="fc">&nbsp;        if (Double.isNaN(normalizedSum)) {</b>
+<b class="fc">&nbsp;            throw new MathIllegalArgumentException(LocalizedFormats.NORMALIZE_NAN);</b>
+&nbsp;        }
+<b class="fc">&nbsp;        double sum = 0d;</b>
+<b class="fc">&nbsp;        final int len = values.length;</b>
+<b class="fc">&nbsp;        double[] out = new double[len];</b>
+<b class="fc">&nbsp;        for (int i = 0; i &lt; len; i++) {</b>
+<b class="fc">&nbsp;            if (Double.isInfinite(values[i])) {</b>
+<b class="fc">&nbsp;                throw new MathIllegalArgumentException(LocalizedFormats.INFINITE_ARRAY_ELEMENT, values[i], i);</b>
+&nbsp;            }
+<b class="fc">&nbsp;            if (!Double.isNaN(values[i])) {</b>
+<b class="fc">&nbsp;                sum += values[i];</b>
+&nbsp;            }
+&nbsp;        }
+<b class="fc">&nbsp;        if (sum == 0) {</b>
+<b class="fc">&nbsp;            throw new MathArithmeticException(LocalizedFormats.ARRAY_SUMS_TO_ZERO);</b>
+&nbsp;        }
+<b class="fc">&nbsp;        final double scale = normalizedSum / sum;</b>
+<b class="fc">&nbsp;        for (int i = 0; i &lt; len; i++) {</b>
+<b class="fc">&nbsp;            if (Double.isNaN(values[i])) {</b>
+<b class="fc">&nbsp;                out[i] = Double.NaN;</b>
+&nbsp;            } else {
+<b class="fc">&nbsp;                out[i] = values[i] * scale;</b>
+&nbsp;            }
+&nbsp;        }
+<b class="fc">&nbsp;        return out;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Build an array of elements.
+&nbsp;     * &lt;p&gt;
+&nbsp;     * Arrays are filled with field.getZero()
+&nbsp;     *
+&nbsp;     * @param &lt;T&gt; the type of the field elements
+&nbsp;     * @param field field to which array elements belong
+&nbsp;     * @param length of the array
+&nbsp;     * @return a new array
+&nbsp;     * @since 3.2
+&nbsp;     */
+&nbsp;    public static &lt;T&gt; T[] buildArray(final Field&lt;T&gt; field, final int length) {
+&nbsp;        @SuppressWarnings(&quot;unchecked&quot;) // OK because field must be correct class
+<b class="fc">&nbsp;        T[] array = (T[]) Array.newInstance(field.getRuntimeClass(), length);</b>
+<b class="fc">&nbsp;        Arrays.fill(array, field.getZero());</b>
+<b class="fc">&nbsp;        return array;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Build a double dimension  array of elements.
+&nbsp;     * &lt;p&gt;
+&nbsp;     * Arrays are filled with field.getZero()
+&nbsp;     *
+&nbsp;     * @param &lt;T&gt; the type of the field elements
+&nbsp;     * @param field field to which array elements belong
+&nbsp;     * @param rows number of rows in the array
+&nbsp;     * @param columns number of columns (may be negative to build partial
+&nbsp;     * arrays in the same way &lt;code&gt;new Field[rows][]&lt;/code&gt; works)
+&nbsp;     * @return a new array
+&nbsp;     * @since 3.2
+&nbsp;     */
+&nbsp;    @SuppressWarnings(&quot;unchecked&quot;)
+&nbsp;    public static &lt;T&gt; T[][] buildArray(final Field&lt;T&gt; field, final int rows, final int columns) {
+&nbsp;        final T[][] array;
+<b class="fc">&nbsp;        if (columns &lt; 0) {</b>
+<b class="fc">&nbsp;            T[] dummyRow = buildArray(field, 0);</b>
+<b class="fc">&nbsp;            array = (T[][]) Array.newInstance(dummyRow.getClass(), rows);</b>
+<b class="fc">&nbsp;        } else {</b>
+<b class="fc">&nbsp;            array = (T[][]) Array.newInstance(field.getRuntimeClass(),</b>
+&nbsp;                                              rows, columns);
+<b class="fc">&nbsp;            for (int i = 0; i &lt; rows; ++i) {</b>
+<b class="fc">&nbsp;                Arrays.fill(array[i], field.getZero());</b>
+&nbsp;            }
+&nbsp;        }
+<b class="fc">&nbsp;        return array;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Calculates the &lt;a href=&quot;http://en.wikipedia.org/wiki/Convolution&quot;&gt;
+&nbsp;     * convolution&lt;/a&gt; between two sequences.
+&nbsp;     * &lt;p&gt;
+&nbsp;     * The solution is obtained via straightforward computation of the
+&nbsp;     * convolution sum (and not via FFT). Whenever the computation needs
+&nbsp;     * an element that would be located at an index outside the input arrays,
+&nbsp;     * the value is assumed to be zero.
+&nbsp;     *
+&nbsp;     * @param x First sequence.
+&nbsp;     * Typically, this sequence will represent an input signal to a system.
+&nbsp;     * @param h Second sequence.
+&nbsp;     * Typically, this sequence will represent the impulse response of the system.
+&nbsp;     * @return the convolution of {@code x} and {@code h}.
+&nbsp;     * This array&#39;s length will be {@code x.length + h.length - 1}.
+&nbsp;     * @throws NullArgumentException if either {@code x} or {@code h} is {@code null}.
+&nbsp;     * @throws NoDataException if either {@code x} or {@code h} is empty.
+&nbsp;     *
+&nbsp;     * @since 3.3
+&nbsp;     */
+&nbsp;    public static double[] convolve(double[] x, double[] h) {
+<b class="fc">&nbsp;        NullArgumentException.check(x);</b>
+<b class="fc">&nbsp;        NullArgumentException.check(h);</b>
+&nbsp;
+<b class="fc">&nbsp;        final int xLen = x.length;</b>
+<b class="fc">&nbsp;        final int hLen = h.length;</b>
+&nbsp;
+<b class="fc">&nbsp;        if (xLen == 0 || hLen == 0) {</b>
+<b class="fc">&nbsp;            throw new NoDataException();</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        // initialize the output array
+<b class="fc">&nbsp;        final int totalLength = xLen + hLen - 1;</b>
+<b class="fc">&nbsp;        final double[] y = new double[totalLength];</b>
+&nbsp;
+&nbsp;        // straightforward implementation of the convolution sum
+<b class="fc">&nbsp;        for (int n = 0; n &lt; totalLength; n++) {</b>
+<b class="fc">&nbsp;            double yn = 0;</b>
+<b class="fc">&nbsp;            int k = AccurateMath.max(0, n + 1 - xLen);</b>
+<b class="fc">&nbsp;            int j = n - k;</b>
+<b class="fc">&nbsp;            while (k &lt; hLen &amp;&amp; j &gt;= 0) {</b>
+<b class="fc">&nbsp;                yn += x[j--] * h[k++];</b>
+&nbsp;            }
+<b class="fc">&nbsp;            y[n] = yn;</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        return y;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Returns an array representing the natural number {@code n}.
+&nbsp;     *
+&nbsp;     * @param n Natural number.
+&nbsp;     * @return an array whose entries are the numbers 0, 1, ..., {@code n}-1.
+&nbsp;     * If {@code n == 0}, the returned array is empty.
+&nbsp;     */
+&nbsp;    public static int[] natural(int n) {
+<b class="fc">&nbsp;        return sequence(n, 0, 1);</b>
+&nbsp;    }
+&nbsp;    /**
+&nbsp;     * Returns an array of {@code size} integers starting at {@code start},
+&nbsp;     * skipping {@code stride} numbers.
+&nbsp;     *
+&nbsp;     * @param size Natural number.
+&nbsp;     * @param start Natural number.
+&nbsp;     * @param stride Natural number.
+&nbsp;     * @return an array whose entries are the numbers
+&nbsp;     * {@code start, start + stride, ..., start + (size - 1) * stride}.
+&nbsp;     * If {@code size == 0}, the returned array is empty.
+&nbsp;     *
+&nbsp;     * @since 3.4
+&nbsp;     */
+&nbsp;    public static int[] sequence(int size,
+&nbsp;                                 int start,
+&nbsp;                                 int stride) {
+<b class="fc">&nbsp;        final int[] a = new int[size];</b>
+<b class="fc">&nbsp;        for (int i = 0; i &lt; size; i++) {</b>
+<b class="fc">&nbsp;            a[i] = start + i * stride;</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return a;</b>
+&nbsp;    }
+&nbsp;    /**
+&nbsp;     * This method is used
+&nbsp;     * to verify that the input parameters designate a subarray of positive length.
+&nbsp;     * &lt;ul&gt;
+&nbsp;     * &lt;li&gt;returns &lt;code&gt;true&lt;/code&gt; iff the parameters designate a subarray of
+&nbsp;     * positive length&lt;/li&gt;
+&nbsp;     * &lt;li&gt;throws &lt;code&gt;MathIllegalArgumentException&lt;/code&gt; if the array is null or
+&nbsp;     * or the indices are invalid&lt;/li&gt;
+&nbsp;     * &lt;li&gt;returns &lt;code&gt;false&lt;/code&gt; if the array is non-null, but
+&nbsp;     * &lt;code&gt;length&lt;/code&gt; is 0.&lt;/li&gt;
+&nbsp;     * &lt;/ul&gt;
+&nbsp;     *
+&nbsp;     * @param values the input array
+&nbsp;     * @param begin index of the first array element to include
+&nbsp;     * @param length the number of elements to include
+&nbsp;     * @return true if the parameters are valid and designate a subarray of positive length
+&nbsp;     * @throws MathIllegalArgumentException if the indices are invalid or the array is null
+&nbsp;     * @since 3.3
+&nbsp;     */
+&nbsp;    public static boolean verifyValues(final double[] values, final int begin, final int length) {
+<b class="fc">&nbsp;        return verifyValues(values, begin, length, false);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * This method is used
+&nbsp;     * to verify that the input parameters designate a subarray of positive length.
+&nbsp;     * &lt;ul&gt;
+&nbsp;     * &lt;li&gt;returns &lt;code&gt;true&lt;/code&gt; iff the parameters designate a subarray of
+&nbsp;     * non-negative length&lt;/li&gt;
+&nbsp;     * &lt;li&gt;throws &lt;code&gt;IllegalArgumentException&lt;/code&gt; if the array is null or
+&nbsp;     * or the indices are invalid&lt;/li&gt;
+&nbsp;     * &lt;li&gt;returns &lt;code&gt;false&lt;/code&gt; if the array is non-null, but
+&nbsp;     * &lt;code&gt;length&lt;/code&gt; is 0 unless &lt;code&gt;allowEmpty&lt;/code&gt; is &lt;code&gt;true&lt;/code&gt;&lt;/li&gt;
+&nbsp;     * &lt;/ul&gt;
+&nbsp;     *
+&nbsp;     * @param values the input array
+&nbsp;     * @param begin index of the first array element to include
+&nbsp;     * @param length the number of elements to include
+&nbsp;     * @param allowEmpty if &lt;code&gt;true&lt;/code&gt; then zero length arrays are allowed
+&nbsp;     * @return true if the parameters are valid
+&nbsp;     * @throws MathIllegalArgumentException if the indices are invalid or the array is null
+&nbsp;     * @since 3.3
+&nbsp;     */
+&nbsp;    public static boolean verifyValues(final double[] values, final int begin,
+&nbsp;                                       final int length, final boolean allowEmpty) {
+&nbsp;
+<b class="fc">&nbsp;        if (values == null) {</b>
+<b class="fc">&nbsp;            throw new NullArgumentException(LocalizedFormats.INPUT_ARRAY);</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        if (begin &lt; 0) {</b>
+<b class="fc">&nbsp;            throw new NotPositiveException(LocalizedFormats.START_POSITION, Integer.valueOf(begin));</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        if (length &lt; 0) {</b>
+<b class="fc">&nbsp;            throw new NotPositiveException(LocalizedFormats.LENGTH, Integer.valueOf(length));</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        if (begin + length &gt; values.length) {</b>
+<b class="fc">&nbsp;            throw new NumberIsTooLargeException(LocalizedFormats.SUBARRAY_ENDS_AFTER_ARRAY_END,</b>
+<b class="fc">&nbsp;                    Integer.valueOf(begin + length), Integer.valueOf(values.length), true);</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        return !(length == 0 &amp;&amp; !allowEmpty);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * This method is used
+&nbsp;     * to verify that the begin and length parameters designate a subarray of positive length
+&nbsp;     * and the weights are all non-negative, non-NaN, finite, and not all zero.
+&nbsp;     * &lt;ul&gt;
+&nbsp;     * &lt;li&gt;returns &lt;code&gt;true&lt;/code&gt; iff the parameters designate a subarray of
+&nbsp;     * positive length and the weights array contains legitimate values.&lt;/li&gt;
+&nbsp;     * &lt;li&gt;throws &lt;code&gt;IllegalArgumentException&lt;/code&gt; if any of the following are true:
+&nbsp;     * &lt;ul&gt;&lt;li&gt;the values array is null&lt;/li&gt;
+&nbsp;     *     &lt;li&gt;the weights array is null&lt;/li&gt;
+&nbsp;     *     &lt;li&gt;the weights array does not have the same length as the values array&lt;/li&gt;
+&nbsp;     *     &lt;li&gt;the weights array contains one or more infinite values&lt;/li&gt;
+&nbsp;     *     &lt;li&gt;the weights array contains one or more NaN values&lt;/li&gt;
+&nbsp;     *     &lt;li&gt;the weights array contains negative values&lt;/li&gt;
+&nbsp;     *     &lt;li&gt;the weights array does not contain at least one non-zero value (applies when length is non zero)&lt;/li&gt;
+&nbsp;     *     &lt;li&gt;the start and length arguments do not determine a valid array&lt;/li&gt;&lt;/ul&gt;
+&nbsp;     * &lt;/li&gt;
+&nbsp;     * &lt;li&gt;returns &lt;code&gt;false&lt;/code&gt; if the array is non-null, but
+&nbsp;     * &lt;code&gt;length&lt;/code&gt; is 0.&lt;/li&gt;
+&nbsp;     * &lt;/ul&gt;
+&nbsp;     *
+&nbsp;     * @param values the input array
+&nbsp;     * @param weights the weights array
+&nbsp;     * @param begin index of the first array element to include
+&nbsp;     * @param length the number of elements to include
+&nbsp;     * @return true if the parameters are valid and designate a subarray of positive length
+&nbsp;     * @throws MathIllegalArgumentException if the indices are invalid or the array is null
+&nbsp;     * @since 3.3
+&nbsp;     */
+&nbsp;    public static boolean verifyValues(
+&nbsp;        final double[] values,
+&nbsp;        final double[] weights,
+&nbsp;        final int begin,
+&nbsp;        final int length) {
+<b class="fc">&nbsp;        return verifyValues(values, weights, begin, length, false);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * This method is used
+&nbsp;     * to verify that the begin and length parameters designate a subarray of positive length
+&nbsp;     * and the weights are all non-negative, non-NaN, finite, and not all zero.
+&nbsp;     * &lt;ul&gt;
+&nbsp;     * &lt;li&gt;returns &lt;code&gt;true&lt;/code&gt; iff the parameters designate a subarray of
+&nbsp;     * non-negative length and the weights array contains legitimate values.&lt;/li&gt;
+&nbsp;     * &lt;li&gt;throws &lt;code&gt;MathIllegalArgumentException&lt;/code&gt; if any of the following are true:
+&nbsp;     * &lt;ul&gt;&lt;li&gt;the values array is null&lt;/li&gt;
+&nbsp;     *     &lt;li&gt;the weights array is null&lt;/li&gt;
+&nbsp;     *     &lt;li&gt;the weights array does not have the same length as the values array&lt;/li&gt;
+&nbsp;     *     &lt;li&gt;the weights array contains one or more infinite values&lt;/li&gt;
+&nbsp;     *     &lt;li&gt;the weights array contains one or more NaN values&lt;/li&gt;
+&nbsp;     *     &lt;li&gt;the weights array contains negative values&lt;/li&gt;
+&nbsp;     *     &lt;li&gt;the weights array does not contain at least one non-zero value (applies when length is non zero)&lt;/li&gt;
+&nbsp;     *     &lt;li&gt;the start and length arguments do not determine a valid array&lt;/li&gt;&lt;/ul&gt;
+&nbsp;     * &lt;/li&gt;
+&nbsp;     * &lt;li&gt;returns &lt;code&gt;false&lt;/code&gt; if the array is non-null, but
+&nbsp;     * &lt;code&gt;length&lt;/code&gt; is 0 unless &lt;code&gt;allowEmpty&lt;/code&gt; is &lt;code&gt;true&lt;/code&gt;.&lt;/li&gt;
+&nbsp;     * &lt;/ul&gt;
+&nbsp;     *
+&nbsp;     * @param values the input array.
+&nbsp;     * @param weights the weights array.
+&nbsp;     * @param begin index of the first array element to include.
+&nbsp;     * @param length the number of elements to include.
+&nbsp;     * @param allowEmpty if {@code true} than allow zero length arrays to pass.
+&nbsp;     * @return {@code true} if the parameters are valid.
+&nbsp;     * @throws NullArgumentException if either of the arrays are null
+&nbsp;     * @throws MathIllegalArgumentException if the array indices are not valid,
+&nbsp;     * the weights array contains NaN, infinite or negative elements, or there
+&nbsp;     * are no positive weights.
+&nbsp;     * @since 3.3
+&nbsp;     */
+&nbsp;    public static boolean verifyValues(final double[] values, final double[] weights,
+&nbsp;                                       final int begin, final int length, final boolean allowEmpty) {
+&nbsp;
+<b class="fc">&nbsp;        if (weights == null || values == null) {</b>
+<b class="fc">&nbsp;            throw new NullArgumentException(LocalizedFormats.INPUT_ARRAY);</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        checkEqualLength(weights, values);</b>
+&nbsp;
+<b class="fc">&nbsp;        if (length != 0) {</b>
+<b class="fc">&nbsp;            boolean containsPositiveWeight = false;</b>
+<b class="fc">&nbsp;            for (int i = begin; i &lt; begin + length; i++) {</b>
+<b class="fc">&nbsp;                final double weight = weights[i];</b>
+<b class="fc">&nbsp;                if (Double.isNaN(weight)) {</b>
+<b class="fc">&nbsp;                    throw new MathIllegalArgumentException(LocalizedFormats.NAN_ELEMENT_AT_INDEX, Integer.valueOf(i));</b>
+&nbsp;                }
+<b class="fc">&nbsp;                if (Double.isInfinite(weight)) {</b>
+<b class="fc">&nbsp;                    throw new MathIllegalArgumentException(LocalizedFormats.INFINITE_ARRAY_ELEMENT,</b>
+<b class="fc">&nbsp;                        Double.valueOf(weight), Integer.valueOf(i));</b>
+&nbsp;                }
+<b class="fc">&nbsp;                if (weight &lt; 0) {</b>
+<b class="fc">&nbsp;                    throw new MathIllegalArgumentException(LocalizedFormats.NEGATIVE_ELEMENT_AT_INDEX,</b>
+<b class="fc">&nbsp;                        Integer.valueOf(i), Double.valueOf(weight));</b>
+&nbsp;                }
+<b class="fc">&nbsp;                if (!containsPositiveWeight &amp;&amp; weight &gt; 0.0) {</b>
+<b class="fc">&nbsp;                    containsPositiveWeight = true;</b>
+&nbsp;                }
+&nbsp;            }
+&nbsp;
+<b class="fc">&nbsp;            if (!containsPositiveWeight) {</b>
+<b class="fc">&nbsp;                throw new MathIllegalArgumentException(LocalizedFormats.WEIGHT_AT_LEAST_ONE_NON_ZERO);</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        return verifyValues(values, begin, length, allowEmpty);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Concatenates a sequence of arrays. The return array consists of the
+&nbsp;     * entries of the input arrays concatenated in the order they appear in
+&nbsp;     * the argument list.  Null arrays cause NullPointerExceptions; zero
+&nbsp;     * length arrays are allowed (contributing nothing to the output array).
+&nbsp;     *
+&nbsp;     * @param x list of double[] arrays to concatenate
+&nbsp;     * @return a new array consisting of the entries of the argument arrays
+&nbsp;     * @throws NullPointerException if any of the arrays are null
+&nbsp;     * @since 3.6
+&nbsp;     */
+&nbsp;    public static double[] concatenate(double[]... x) {
+<b class="fc">&nbsp;        int combinedLength = 0;</b>
+<b class="fc">&nbsp;        for (double[] a : x) {</b>
+<b class="fc">&nbsp;            combinedLength += a.length;</b>
+&nbsp;        }
+<b class="fc">&nbsp;        int offset = 0;</b>
+<b class="fc">&nbsp;        int curLength = 0;</b>
+<b class="fc">&nbsp;        final double[] combined = new double[combinedLength];</b>
+<b class="fc">&nbsp;        for (int i = 0; i &lt; x.length; i++) {</b>
+<b class="fc">&nbsp;            curLength = x[i].length;</b>
+<b class="fc">&nbsp;            System.arraycopy(x[i], 0, combined, offset, curLength);</b>
+<b class="fc">&nbsp;            offset += curLength;</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return combined;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Returns an array consisting of the unique values in {@code data}.
+&nbsp;     * The return array is sorted in descending order.  Empty arrays
+&nbsp;     * are allowed, but null arrays result in NullPointerException.
+&nbsp;     * Infinities are allowed.  NaN values are allowed with maximum
+&nbsp;     * sort order - i.e., if there are NaN values in {@code data},
+&nbsp;     * {@code Double.NaN} will be the first element of the output array,
+&nbsp;     * even if the array also contains {@code Double.POSITIVE_INFINITY}.
+&nbsp;     *
+&nbsp;     * @param data array to scan
+&nbsp;     * @return descending list of values included in the input array
+&nbsp;     * @throws NullPointerException if data is null
+&nbsp;     * @since 3.6
+&nbsp;     */
+&nbsp;    public static double[] unique(double[] data) {
+<b class="fc">&nbsp;        TreeSet&lt;Double&gt; values = new TreeSet&lt;&gt;();</b>
+<b class="fc">&nbsp;        for (int i = 0; i &lt; data.length; i++) {</b>
+<b class="fc">&nbsp;            values.add(data[i]);</b>
+&nbsp;        }
+<b class="fc">&nbsp;        final int count = values.size();</b>
+<b class="fc">&nbsp;        final double[] out = new double[count];</b>
+<b class="fc">&nbsp;        Iterator&lt;Double&gt; iterator = values.descendingIterator();</b>
+<b class="fc">&nbsp;        int i = 0;</b>
+<b class="fc">&nbsp;        while (iterator.hasNext()) {</b>
+<b class="fc">&nbsp;            out[i++] = iterator.next();</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return out;</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2023-08-14 14:22</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,437 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=windows-1252"> 
+  <title>Coverage Report > GTest</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope:     <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">org.apache.commons.statistics.inference</a>
+</div>
+
+<h1>Coverage Summary for Class: GTest (org.apache.commons.statistics.inference)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">GTest</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/12)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/72)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/*
+&nbsp; * Licensed to the Apache Software Foundation (ASF) under one or more
+&nbsp; * contributor license agreements.  See the NOTICE file distributed with
+&nbsp; * this work for additional information regarding copyright ownership.
+&nbsp; * The ASF licenses this file to You under the Apache License, Version 2.0
+&nbsp; * (the &quot;License&quot;); you may not use this file except in compliance with
+&nbsp; * the License.  You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *      http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;package org.apache.commons.statistics.inference;
+&nbsp;
+&nbsp;import org.apache.commons.numbers.core.Sum;
+&nbsp;import org.apache.commons.statistics.distribution.ChiSquaredDistribution;
+&nbsp;
+&nbsp;/**
+&nbsp; * Implements G-test (Generalized Log-Likelihood Ratio Test) statistics.
+&nbsp; *
+&nbsp; * &lt;p&gt;This is known in statistical genetics as the McDonald-Kreitman test.
+&nbsp; * The implementation handles both known and unknown distributions.
+&nbsp; *
+&nbsp; * &lt;p&gt;Two samples tests can be used when the distribution is unknown &lt;i&gt;a priori&lt;/i&gt;
+&nbsp; * but provided by one sample, or when the hypothesis under test is that the two
+&nbsp; * samples come from the same underlying distribution.
+&nbsp; *
+&nbsp; * @see &lt;a href=&quot;https://en.wikipedia.org/wiki/G-test&quot;&gt;G-test (Wikipedia)&lt;/a&gt;
+&nbsp; * @since 1.1
+&nbsp; */
+&nbsp;public final class GTest {
+&nbsp;    // Note:
+&nbsp;    // The g-test statistic is a summation of terms with positive and negative sign
+&nbsp;    // and thus the sum may exhibit cancellation. This class uses separate high precision
+&nbsp;    // sums of the positive and negative terms which are then combined.
+&nbsp;    // Total cancellation for a large number of terms will not impact
+&nbsp;    // p-values of interest around critical alpha values as the Chi^2
+&nbsp;    // distribution exhibits strong concentration around its mean (degrees of freedom, k).
+&nbsp;    // The summation only need maintain enough bits in the final sum to distinguish
+&nbsp;    // g values around critical alpha values where 0 &lt;&lt; chisq.sf(g, k) &lt;&lt; 0.5: g &gt; k,
+&nbsp;    // with k = number of terms - 1.
+&nbsp;
+&nbsp;    /** Default instance. */
+<b class="nc">&nbsp;    private static final GTest DEFAULT = new GTest(0);</b>
+&nbsp;
+&nbsp;    /** Degrees of freedom adjustment. */
+&nbsp;    private final int degreesOfFreedomAdjustment;
+&nbsp;
+&nbsp;    /**
+&nbsp;     * @param degreesOfFreedomAdjustment Degrees of freedom adjustment.
+&nbsp;     */
+<b class="nc">&nbsp;    private GTest(int degreesOfFreedomAdjustment) {</b>
+<b class="nc">&nbsp;        this.degreesOfFreedomAdjustment = degreesOfFreedomAdjustment;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Return an instance using the default options.
+&nbsp;     *
+&nbsp;     * &lt;ul&gt;
+&nbsp;     * &lt;li&gt;{@linkplain #withDegreesOfFreedomAdjustment(int) Degrees of freedom adjustment = 0}
+&nbsp;     * &lt;/ul&gt;
+&nbsp;     *
+&nbsp;     * @return default instance
+&nbsp;     */
+&nbsp;    public static GTest withDefaults() {
+<b class="nc">&nbsp;        return DEFAULT;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Return an instance with the configured degrees of freedom adjustment.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;The default degrees of freedom for a sample of length {@code n} are
+&nbsp;     * {@code n - 1}. An intrinsic null hypothesis is one where you estimate one or
+&nbsp;     * more parameters from the data in order to get the numbers for your null
+&nbsp;     * hypothesis. For a distribution with {@code p} parameters where up to
+&nbsp;     * {@code p} parameters have been estimated from the data the degrees of freedom
+&nbsp;     * is in the range {@code [n - 1 - p, n - 1]}.
+&nbsp;     *
+&nbsp;     * @param v Value.
+&nbsp;     * @return an instance
+&nbsp;     * @throws IllegalArgumentException if the value is negative
+&nbsp;     */
+&nbsp;    public GTest withDegreesOfFreedomAdjustment(int v) {
+<b class="nc">&nbsp;        return new GTest(Arguments.checkNonNegative(v));</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Computes the G-test goodness-of-fit statistic comparing the {@code observed} counts to
+&nbsp;     * a uniform expected value (each category is equally likely).
+&nbsp;     *
+&nbsp;     * &lt;p&gt;Note: This is a specialized version of a comparison of {@code observed}
+&nbsp;     * with an {@code expected} array of uniform values. The result is faster than
+&nbsp;     * calling {@link #statistic(double[], long[])} and the statistic is the same,
+&nbsp;     * with an allowance for accumulated floating-point error due to the optimized
+&nbsp;     * routine.
+&nbsp;     *
+&nbsp;     * @param observed Observed frequency counts.
+&nbsp;     * @return G-test statistic
+&nbsp;     * @throws IllegalArgumentException if the sample size is less than 2;
+&nbsp;     * {@code observed} has negative entries; or all the observations are zero.
+&nbsp;     * @see #test(long[])
+&nbsp;     */
+&nbsp;    public double statistic(long[] observed) {
+<b class="nc">&nbsp;        Arguments.checkValuesRequiredSize(observed.length, 2);</b>
+<b class="nc">&nbsp;        Arguments.checkNonNegative(observed);</b>
+<b class="nc">&nbsp;        final double e = StatisticUtils.mean(observed);</b>
+<b class="nc">&nbsp;        if (e == 0) {</b>
+<b class="nc">&nbsp;            throw new InferenceException(InferenceException.NO_DATA);</b>
+&nbsp;        }
+&nbsp;        // g = 2 * sum{o * ln(o/e)}
+&nbsp;        //   = 2 * [ sum{o * ln(o)} - sum(o) * ln(e) ]
+&nbsp;        // The second form has more cancellation as the sums are larger.
+&nbsp;        // Separate sum for positive and negative terms.
+<b class="nc">&nbsp;        final Sum sum = Sum.create();</b>
+<b class="nc">&nbsp;        final Sum sum2 = Sum.create();</b>
+<b class="nc">&nbsp;        for (final double o : observed) {</b>
+<b class="nc">&nbsp;            if (o &gt; e) {</b>
+&nbsp;                // Positive term
+<b class="nc">&nbsp;                sum.add(o * Math.log(o / e));</b>
+<b class="nc">&nbsp;            } else if (o &gt; 0) {</b>
+&nbsp;                // Negative term
+&nbsp;                // Process non-zero counts to avoid 0 * -inf = NaN
+<b class="nc">&nbsp;                sum2.add(o * Math.log(o / e));</b>
+&nbsp;            }
+&nbsp;        }
+<b class="nc">&nbsp;        return sum.add(sum2).getAsDouble() * 2;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Computes the G-test goodness-of-fit statistic comparing {@code observed} and {@code expected}
+&nbsp;     * frequency counts.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;&lt;strong&gt;Note:&lt;/strong&gt;This implementation rescales the values
+&nbsp;     * if necessary to ensure that the sum of the expected and observed counts
+&nbsp;     * are equal.
+&nbsp;     *
+&nbsp;     * @param expected Expected frequency counts.
+&nbsp;     * @param observed Observed frequency counts.
+&nbsp;     * @return G-test statistic
+&nbsp;     * @throws IllegalArgumentException if the sample size is less than 2; the array
+&nbsp;     * sizes do not match; {@code expected} has entries that are not strictly
+&nbsp;     * positive; {@code observed} has negative entries; or all the observations are zero.
+&nbsp;     * @see #test(double[], long[])
+&nbsp;     */
+&nbsp;    public double statistic(double[] expected, long[] observed) {
+&nbsp;        // g = 2 * sum{o * ln(o/e)}
+&nbsp;        // The sum of o and e must be the same.
+<b class="nc">&nbsp;        final double ratio = StatisticUtils.computeRatio(expected, observed);</b>
+&nbsp;        // High precision sum to reduce cancellation.
+&nbsp;        // Separate sum for positive and negative terms.
+<b class="nc">&nbsp;        final Sum sum = Sum.create();</b>
+<b class="nc">&nbsp;        final Sum sum2 = Sum.create();</b>
+<b class="nc">&nbsp;        for (int i = 0; i &lt; observed.length; i++) {</b>
+<b class="nc">&nbsp;            final long o = observed[i];</b>
+&nbsp;            // Process non-zero counts to avoid 0 * -inf = NaN
+<b class="nc">&nbsp;            if (o != 0) {</b>
+<b class="nc">&nbsp;                final double term = o * Math.log(o / (ratio * expected[i]));</b>
+<b class="nc">&nbsp;                if (term &lt; 0) {</b>
+<b class="nc">&nbsp;                    sum2.add(term);</b>
+&nbsp;                } else {
+<b class="nc">&nbsp;                    sum.add(term);</b>
+&nbsp;                }
+&nbsp;            }
+&nbsp;        }
+<b class="nc">&nbsp;        return sum.add(sum2).getAsDouble() * 2;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Computes a G-test statistic associated with a G-test of
+&nbsp;     * independence based on the input {@code counts} array, viewed as a two-way
+&nbsp;     * table. The formula used to compute the test statistic is:
+&nbsp;     *
+&nbsp;     * &lt;p&gt;\[ G = 2 \cdot \sum_{ij}{O_{ij}} \cdot \left[ H(r) + H(c) - H(r,c) \right] \]
+&nbsp;     *
+&nbsp;     * &lt;p&gt;and \( H \) is the &lt;a
+&nbsp;     * href=&quot;https://en.wikipedia.org/wiki/Entropy_%28information_theory%29&quot;&gt;
+&nbsp;     * Shannon Entropy&lt;/a&gt; of the random variable formed by viewing the elements of
+&nbsp;     * the argument array as incidence counts:
+&nbsp;     *
+&nbsp;     * &lt;p&gt;\[ H(X) = - {\sum_{x \in \text{Supp}(X)} p(x) \ln p(x)} \]
+&nbsp;     *
+&nbsp;     * @param counts 2-way table.
+&nbsp;     * @return G-test statistic
+&nbsp;     * @throws IllegalArgumentException if the number of rows or columns is less
+&nbsp;     * than 2; the array is non-rectangular; the array has negative entries; or the
+&nbsp;     * sum of a row or column is zero.
+&nbsp;     * @see ChiSquareTest#test(long[][])
+&nbsp;     */
+&nbsp;    public double statistic(long[][] counts) {
+<b class="nc">&nbsp;        Arguments.checkCategoriesRequiredSize(counts.length, 2);</b>
+<b class="nc">&nbsp;        Arguments.checkValuesRequiredSize(counts[0].length, 2);</b>
+<b class="nc">&nbsp;        Arguments.checkRectangular(counts);</b>
+<b class="nc">&nbsp;        Arguments.checkNonNegative(counts);</b>
+&nbsp;
+<b class="nc">&nbsp;        final int ni = counts.length;</b>
+<b class="nc">&nbsp;        final int nj = counts[0].length;</b>
+&nbsp;
+&nbsp;        // Compute row, column and total sums
+<b class="nc">&nbsp;        final double[] sumi = new double[ni];</b>
+<b class="nc">&nbsp;        final double[] sumj = new double[nj];</b>
+<b class="nc">&nbsp;        double n = 0;</b>
+&nbsp;        // We can sum data on the first pass. See below for computation details.
+<b class="nc">&nbsp;        final Sum sum = Sum.create();</b>
+<b class="nc">&nbsp;        for (int i = 0; i &lt; ni; i++) {</b>
+<b class="nc">&nbsp;            for (int j = 0; j &lt; nj; j++) {</b>
+<b class="nc">&nbsp;                final long c = counts[i][j];</b>
+<b class="nc">&nbsp;                sumi[i] += c;</b>
+<b class="nc">&nbsp;                sumj[j] += c;</b>
+<b class="nc">&nbsp;                if (c &gt; 1) {</b>
+<b class="nc">&nbsp;                    sum.add(c * Math.log(c));</b>
+&nbsp;                }
+&nbsp;            }
+<b class="nc">&nbsp;            checkNonZero(sumi[i], &quot;Row&quot;, i);</b>
+<b class="nc">&nbsp;            n += sumi[i];</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        for (int j = 0; j &lt; nj; j++) {</b>
+<b class="nc">&nbsp;            checkNonZero(sumj[j], &quot;Column&quot;, j);</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        // This computes a modified form of the Shannon entropy H without requiring
+&nbsp;        // normalisation of observations to probabilities and without negation,
+&nbsp;        // i.e. we compute n * [ H(r) + H(c) - H(r,c) ] as [ H&#39;(r,c) - H&#39;(r) - H&#39;(c) ].
+&nbsp;
+&nbsp;        // H  = -sum (p * log(p))
+&nbsp;        // H&#39; = n * sum (p * log(p))
+&nbsp;        //    = n * sum (o/n * log(o/n))
+&nbsp;        //    = n * [ sum(o/n * log(o)) - sum(o/n * log(n)) ]
+&nbsp;        //    = sum(o * log(o)) - n log(n)
+&nbsp;
+&nbsp;        // After 3 modified entropy sums H&#39;(r,c) - H&#39;(r) - H&#39;(c) compensation is (-1 + 2) * n log(n)
+<b class="nc">&nbsp;        sum.addProduct(n, Math.log(n));</b>
+&nbsp;        // Negative terms
+<b class="nc">&nbsp;        final Sum sum2 = Sum.create();</b>
+&nbsp;        // All these counts are above zero so no check for zeros
+<b class="nc">&nbsp;        for (final double c : sumi) {</b>
+<b class="nc">&nbsp;            sum2.add(c * -Math.log(c));</b>
+&nbsp;        }
+<b class="nc">&nbsp;        for (final double c : sumj) {</b>
+<b class="nc">&nbsp;            sum2.add(c * -Math.log(c));</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        return sum.add(sum2).getAsDouble() * 2;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Perform a G-test for goodness-of-fit evaluating the null hypothesis that the {@code observed}
+&nbsp;     * counts conform to a uniform distribution (each category is equally likely).
+&nbsp;     *
+&nbsp;     * @param observed Observed frequency counts.
+&nbsp;     * @return test result
+&nbsp;     * @throws IllegalArgumentException if the sample size is less than 2;
+&nbsp;     * {@code observed} has negative entries; or all the observations are zero
+&nbsp;     * @see #statistic(long[])
+&nbsp;     */
+&nbsp;    public SignificanceResult test(long[] observed) {
+<b class="nc">&nbsp;        final int df = observed.length - 1;</b>
+<b class="nc">&nbsp;        final double g = statistic(observed);</b>
+<b class="nc">&nbsp;        final double p = computeP(g, df);</b>
+<b class="nc">&nbsp;        return new BaseSignificanceResult(g, p);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Perform a G-test for goodness-of-fit evaluating the null hypothesis that the {@code observed}
+&nbsp;     * counts conform to the {@code expected} counts.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;The test can be configured to apply an adjustment to the degrees of freedom
+&nbsp;     * if the observed data has been used to create the expected counts.
+&nbsp;     *
+&nbsp;     * @param expected Expected frequency counts.
+&nbsp;     * @param observed Observed frequency counts.
+&nbsp;     * @return test result
+&nbsp;     * @throws IllegalArgumentException if the sample size is less than 2; the array
+&nbsp;     * sizes do not match; {@code expected} has entries that are not strictly
+&nbsp;     * positive; {@code observed} has negative entries; all the observations are zero; or
+&nbsp;     * the adjusted degrees of freedom are not strictly positive
+&nbsp;     * @see #withDegreesOfFreedomAdjustment(int)
+&nbsp;     * @see #statistic(double[], long[])
+&nbsp;     */
+&nbsp;    public SignificanceResult test(double[] expected, long[] observed) {
+<b class="nc">&nbsp;        final int df = StatisticUtils.computeDegreesOfFreedom(observed.length, degreesOfFreedomAdjustment);</b>
+<b class="nc">&nbsp;        final double g = statistic(expected, observed);</b>
+<b class="nc">&nbsp;        final double p = computeP(g, df);</b>
+<b class="nc">&nbsp;        return new BaseSignificanceResult(g, p);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Perform a G-test of independence based on the input
+&nbsp;     * {@code counts} array, viewed as a two-way table.
+&nbsp;     *
+&nbsp;     * @param counts 2-way table.
+&nbsp;     * @return test result
+&nbsp;     * @throws IllegalArgumentException if the number of rows or columns is less
+&nbsp;     * than 2; the array is non-rectangular; the array has negative entries; or the
+&nbsp;     * sum of a row or column is zero.
+&nbsp;     * @see #statistic(long[][])
+&nbsp;     */
+&nbsp;    public SignificanceResult test(long[][] counts) {
+<b class="nc">&nbsp;        final double g = statistic(counts);</b>
+<b class="nc">&nbsp;        final double df = (counts.length - 1.0) * (counts[0].length - 1.0);</b>
+<b class="nc">&nbsp;        final double p = computeP(g, df);</b>
+<b class="nc">&nbsp;        return new BaseSignificanceResult(g, p);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Compute the G-test p-value.
+&nbsp;     *
+&nbsp;     * @param g G-test statistic.
+&nbsp;     * @param degreesOfFreedom Degrees of freedom.
+&nbsp;     * @return p-value
+&nbsp;     */
+&nbsp;    private static double computeP(double g, double degreesOfFreedom) {
+<b class="nc">&nbsp;        return ChiSquaredDistribution.of(degreesOfFreedom).survivalProbability(g);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Check the array value is non-zero.
+&nbsp;     *
+&nbsp;     * @param value Value
+&nbsp;     * @param name Name of the array
+&nbsp;     * @param index Index in the array
+&nbsp;     * @throws IllegalArgumentException if the value is zero
+&nbsp;     */
+&nbsp;    private static void checkNonZero(double value, String name, int index) {
+<b class="nc">&nbsp;        if (value == 0) {</b>
+<b class="nc">&nbsp;            throw new InferenceException(InferenceException.ZERO_AT, name, index);</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2023-09-04 19:44</div>
+</div>
+</body>
+</html>

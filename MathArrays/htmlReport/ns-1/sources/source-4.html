@@ -1,0 +1,526 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=windows-1252"> 
+  <title>Coverage Report > RealFieldElement</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope:     <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">org.apache.commons.math4.legacy.core</a>
+</div>
+
+<h1>Coverage Summary for Class: RealFieldElement (org.apache.commons.math4.legacy.core)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">RealFieldElement</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/2)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/*
+&nbsp; * Licensed to the Apache Software Foundation (ASF) under one or more
+&nbsp; * contributor license agreements.  See the NOTICE file distributed with
+&nbsp; * this work for additional information regarding copyright ownership.
+&nbsp; * The ASF licenses this file to You under the Apache License, Version 2.0
+&nbsp; * (the &quot;License&quot;); you may not use this file except in compliance with
+&nbsp; * the License.  You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *      http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;package org.apache.commons.math4.legacy.core;
+&nbsp;
+&nbsp;import org.apache.commons.math4.legacy.exception.DimensionMismatchException;
+&nbsp;
+&nbsp;/**
+&nbsp; * Interface representing a &lt;a href=&quot;http://mathworld.wolfram.com/RealNumber.html&quot;&gt;real&lt;/a&gt;
+&nbsp; * &lt;a href=&quot;http://mathworld.wolfram.com/Field.html&quot;&gt;field&lt;/a&gt;.
+&nbsp; * @param &lt;T&gt; the type of the field elements
+&nbsp; * @see FieldElement
+&nbsp; * @since 3.2
+&nbsp; */
+&nbsp;public interface RealFieldElement&lt;T&gt; extends FieldElement&lt;T&gt; {
+&nbsp;
+&nbsp;    /** Get the real value of the number.
+&nbsp;     * @return real value
+&nbsp;     */
+&nbsp;    double getReal();
+&nbsp;
+&nbsp;    /** &#39;+&#39; operator.
+&nbsp;     * @param a right hand side parameter of the operator
+&nbsp;     * @return this+a
+&nbsp;     */
+&nbsp;    T add(double a);
+&nbsp;
+&nbsp;    /** &#39;-&#39; operator.
+&nbsp;     * @param a right hand side parameter of the operator
+&nbsp;     * @return this-a
+&nbsp;     */
+&nbsp;    T subtract(double a);
+&nbsp;
+&nbsp;    /** &#39;&amp;times;&#39; operator.
+&nbsp;     * @param a right hand side parameter of the operator
+&nbsp;     * @return this&amp;times;a
+&nbsp;     */
+&nbsp;    T multiply(double a);
+&nbsp;
+&nbsp;    /** &#39;&amp;divide;&#39; operator.
+&nbsp;     * @param a right hand side parameter of the operator
+&nbsp;     * @return this&amp;divide;a
+&nbsp;     */
+&nbsp;    T divide(double a);
+&nbsp;
+&nbsp;    /** IEEE remainder operator.
+&nbsp;     * @param a right hand side parameter of the operator
+&nbsp;     * @return this - n &amp;times; a where n is the closest integer to this/a
+&nbsp;     * (the even integer is chosen for n if this/a is halfway between two integers)
+&nbsp;     */
+&nbsp;    T remainder(double a);
+&nbsp;
+&nbsp;    /** IEEE remainder operator.
+&nbsp;     * @param a right hand side parameter of the operator
+&nbsp;     * @return this - n &amp;times; a where n is the closest integer to this/a
+&nbsp;     * (the even integer is chosen for n if this/a is halfway between two integers)
+&nbsp;     * @exception DimensionMismatchException if number of free parameters or orders are inconsistent
+&nbsp;     */
+&nbsp;    T remainder(T a)
+&nbsp;        throws DimensionMismatchException;
+&nbsp;
+&nbsp;    /** absolute value.
+&nbsp;     * @return abs(this)
+&nbsp;     */
+&nbsp;    T abs();
+&nbsp;
+&nbsp;    /** Get the smallest whole number larger than instance.
+&nbsp;     * @return ceil(this)
+&nbsp;     */
+&nbsp;    T ceil();
+&nbsp;
+&nbsp;    /** Get the largest whole number smaller than instance.
+&nbsp;     * @return floor(this)
+&nbsp;     */
+&nbsp;    T floor();
+&nbsp;
+&nbsp;    /** Get the whole number that is the nearest to the instance, or the even one if x is exactly
+&nbsp;     * half way between two integers.
+&nbsp;     * @return a double number r such that r is an integer r - 0.5 &amp;le; this &amp;le; r + 0.5
+&nbsp;     */
+&nbsp;    T rint();
+&nbsp;
+&nbsp;    /** Get the closest long to instance value.
+&nbsp;     * @return closest long to {@link #getReal()}
+&nbsp;     */
+&nbsp;    long round();
+&nbsp;
+&nbsp;    /** Compute the signum of the instance.
+&nbsp;     * The signum is -1 for negative numbers, +1 for positive numbers and 0 otherwise
+&nbsp;     * @return -1.0, -0.0, +0.0, +1.0 or NaN depending on sign of a
+&nbsp;     */
+&nbsp;    T signum();
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Returns the instance with the sign of the argument.
+&nbsp;     * A NaN {@code sign} argument is treated as positive.
+&nbsp;     *
+&nbsp;     * @param sign the sign for the returned value
+&nbsp;     * @return the instance with the same sign as the {@code sign} argument
+&nbsp;     */
+&nbsp;    T copySign(T sign);
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Returns the instance with the sign of the argument.
+&nbsp;     * A NaN {@code sign} argument is treated as positive.
+&nbsp;     *
+&nbsp;     * @param sign the sign for the returned value
+&nbsp;     * @return the instance with the same sign as the {@code sign} argument
+&nbsp;     */
+&nbsp;    T copySign(double sign);
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Multiply the instance by a power of 2.
+&nbsp;     * @param n power of 2
+&nbsp;     * @return this &amp;times; 2&lt;sup&gt;n&lt;/sup&gt;
+&nbsp;     */
+&nbsp;    T scalb(int n);
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Returns the hypotenuse of a triangle with sides {@code this} and {@code y}
+&nbsp;     * - sqrt(&lt;i&gt;this&lt;/i&gt;&lt;sup&gt;2&lt;/sup&gt;&amp;nbsp;+&lt;i&gt;y&lt;/i&gt;&lt;sup&gt;2&lt;/sup&gt;)
+&nbsp;     * avoiding intermediate overflow or underflow.
+&nbsp;     *
+&nbsp;     * &lt;ul&gt;
+&nbsp;     * &lt;li&gt; If either argument is infinite, then the result is positive infinity.&lt;/li&gt;
+&nbsp;     * &lt;li&gt; else, if either argument is NaN then the result is NaN.&lt;/li&gt;
+&nbsp;     * &lt;/ul&gt;
+&nbsp;     *
+&nbsp;     * @param y a value
+&nbsp;     * @return sqrt(&lt;i&gt;this&lt;/i&gt;&lt;sup&gt;2&lt;/sup&gt;&amp;nbsp;+&lt;i&gt;y&lt;/i&gt;&lt;sup&gt;2&lt;/sup&gt;)
+&nbsp;     * @exception DimensionMismatchException if number of free parameters or orders are inconsistent
+&nbsp;     */
+&nbsp;    T hypot(T y)
+&nbsp;        throws DimensionMismatchException;
+&nbsp;
+&nbsp;    /** {@inheritDoc} */
+&nbsp;    @Override
+&nbsp;    T reciprocal();
+&nbsp;
+&nbsp;    /** Square root.
+&nbsp;     * @return square root of the instance
+&nbsp;     */
+&nbsp;    T sqrt();
+&nbsp;
+&nbsp;    /** Cubic root.
+&nbsp;     * @return cubic root of the instance
+&nbsp;     */
+&nbsp;    T cbrt();
+&nbsp;
+&nbsp;    /** N&lt;sup&gt;th&lt;/sup&gt; root.
+&nbsp;     * @param n order of the root
+&nbsp;     * @return n&lt;sup&gt;th&lt;/sup&gt; root of the instance
+&nbsp;     */
+&nbsp;    T rootN(int n);
+&nbsp;
+&nbsp;    /** Power operation.
+&nbsp;     * @param p power to apply
+&nbsp;     * @return this&lt;sup&gt;p&lt;/sup&gt;
+&nbsp;     */
+&nbsp;    T pow(double p);
+&nbsp;
+&nbsp;    /** Integer power operation.
+&nbsp;     * @param n power to apply
+&nbsp;     * @return this&lt;sup&gt;n&lt;/sup&gt;
+&nbsp;     */
+&nbsp;    T pow(int n);
+&nbsp;
+&nbsp;    /** Power operation.
+&nbsp;     * @param e exponent
+&nbsp;     * @return this&lt;sup&gt;e&lt;/sup&gt;
+&nbsp;     * @exception DimensionMismatchException if number of free parameters or orders are inconsistent
+&nbsp;     */
+&nbsp;    T pow(T e)
+&nbsp;        throws DimensionMismatchException;
+&nbsp;
+&nbsp;    /** Exponential.
+&nbsp;     * @return exponential of the instance
+&nbsp;     */
+&nbsp;    T exp();
+&nbsp;
+&nbsp;    /** Exponential minus 1.
+&nbsp;     * @return exponential minus one of the instance
+&nbsp;     */
+&nbsp;    T expm1();
+&nbsp;
+&nbsp;    /** Natural logarithm.
+&nbsp;     * @return logarithm of the instance
+&nbsp;     */
+&nbsp;    T log();
+&nbsp;
+&nbsp;    /** Shifted natural logarithm.
+&nbsp;     * @return logarithm of one plus the instance
+&nbsp;     */
+&nbsp;    T log1p();
+&nbsp;
+&nbsp;    /** Base 10 logarithm.
+&nbsp;     * @return base 10 logarithm of the instance
+&nbsp;     * @since 4.0
+&nbsp;     */
+&nbsp;    T log10();
+&nbsp;
+&nbsp;    /** Cosine operation.
+&nbsp;     * @return cos(this)
+&nbsp;     */
+&nbsp;    T cos();
+&nbsp;
+&nbsp;    /** Sine operation.
+&nbsp;     * @return sin(this)
+&nbsp;     */
+&nbsp;    T sin();
+&nbsp;
+&nbsp;    /** Tangent operation.
+&nbsp;     * @return tan(this)
+&nbsp;     */
+&nbsp;    T tan();
+&nbsp;
+&nbsp;    /** Arc cosine operation.
+&nbsp;     * @return acos(this)
+&nbsp;     */
+&nbsp;    T acos();
+&nbsp;
+&nbsp;    /** Arc sine operation.
+&nbsp;     * @return asin(this)
+&nbsp;     */
+&nbsp;    T asin();
+&nbsp;
+&nbsp;    /** Arc tangent operation.
+&nbsp;     * @return atan(this)
+&nbsp;     */
+&nbsp;    T atan();
+&nbsp;
+&nbsp;    /** Two arguments arc tangent operation.
+&nbsp;     * @param x second argument of the arc tangent
+&nbsp;     * @return atan2(this, x)
+&nbsp;     * @exception DimensionMismatchException if number of free parameters or orders are inconsistent
+&nbsp;     */
+&nbsp;    T atan2(T x)
+&nbsp;        throws DimensionMismatchException;
+&nbsp;
+&nbsp;    /** Hyperbolic cosine operation.
+&nbsp;     * @return cosh(this)
+&nbsp;     */
+&nbsp;    T cosh();
+&nbsp;
+&nbsp;    /** Hyperbolic sine operation.
+&nbsp;     * @return sinh(this)
+&nbsp;     */
+&nbsp;    T sinh();
+&nbsp;
+&nbsp;    /** Hyperbolic tangent operation.
+&nbsp;     * @return tanh(this)
+&nbsp;     */
+&nbsp;    T tanh();
+&nbsp;
+&nbsp;    /** Inverse hyperbolic cosine operation.
+&nbsp;     * @return acosh(this)
+&nbsp;     */
+&nbsp;    T acosh();
+&nbsp;
+&nbsp;    /** Inverse hyperbolic sine operation.
+&nbsp;     * @return asin(this)
+&nbsp;     */
+&nbsp;    T asinh();
+&nbsp;
+&nbsp;    /** Inverse hyperbolic  tangent operation.
+&nbsp;     * @return atanh(this)
+&nbsp;     */
+&nbsp;    T atanh();
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Compute a linear combination.
+&nbsp;     * @param a Factors.
+&nbsp;     * @param b Factors.
+&nbsp;     * @return &lt;code&gt;&amp;Sigma;&lt;sub&gt;i&lt;/sub&gt; a&lt;sub&gt;i&lt;/sub&gt; b&lt;sub&gt;i&lt;/sub&gt;&lt;/code&gt;.
+&nbsp;     * @throws DimensionMismatchException if arrays dimensions don&#39;t match
+&nbsp;     * @since 3.2
+&nbsp;     */
+&nbsp;    T linearCombination(T[] a, T[] b)
+&nbsp;        throws DimensionMismatchException;
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Compute a linear combination.
+&nbsp;     * @param a Factors.
+&nbsp;     * @param b Factors.
+&nbsp;     * @return &lt;code&gt;&amp;Sigma;&lt;sub&gt;i&lt;/sub&gt; a&lt;sub&gt;i&lt;/sub&gt; b&lt;sub&gt;i&lt;/sub&gt;&lt;/code&gt;.
+&nbsp;     * @throws DimensionMismatchException if arrays dimensions don&#39;t match
+&nbsp;     * @since 3.2
+&nbsp;     */
+&nbsp;    T linearCombination(double[] a, T[] b)
+&nbsp;        throws DimensionMismatchException;
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Compute a linear combination.
+&nbsp;     * @param a1 first factor of the first term
+&nbsp;     * @param b1 second factor of the first term
+&nbsp;     * @param a2 first factor of the second term
+&nbsp;     * @param b2 second factor of the second term
+&nbsp;     * @return a&lt;sub&gt;1&lt;/sub&gt;&amp;times;b&lt;sub&gt;1&lt;/sub&gt; +
+&nbsp;     * a&lt;sub&gt;2&lt;/sub&gt;&amp;times;b&lt;sub&gt;2&lt;/sub&gt;
+&nbsp;     * @see #linearCombination(Object, Object, Object, Object, Object, Object)
+&nbsp;     * @see #linearCombination(Object, Object, Object, Object, Object, Object, Object, Object)
+&nbsp;     * @since 3.2
+&nbsp;     */
+&nbsp;    T linearCombination(T a1, T b1, T a2, T b2);
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Compute a linear combination.
+&nbsp;     * @param a1 first factor of the first term
+&nbsp;     * @param b1 second factor of the first term
+&nbsp;     * @param a2 first factor of the second term
+&nbsp;     * @param b2 second factor of the second term
+&nbsp;     * @return a&lt;sub&gt;1&lt;/sub&gt;&amp;times;b&lt;sub&gt;1&lt;/sub&gt; +
+&nbsp;     * a&lt;sub&gt;2&lt;/sub&gt;&amp;times;b&lt;sub&gt;2&lt;/sub&gt;
+&nbsp;     * @see #linearCombination(double, Object, double, Object, double, Object)
+&nbsp;     * @see #linearCombination(double, Object, double, Object, double, Object, double, Object)
+&nbsp;     * @since 3.2
+&nbsp;     */
+&nbsp;    T linearCombination(double a1, T b1, double a2, T b2);
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Compute a linear combination.
+&nbsp;     * @param a1 first factor of the first term
+&nbsp;     * @param b1 second factor of the first term
+&nbsp;     * @param a2 first factor of the second term
+&nbsp;     * @param b2 second factor of the second term
+&nbsp;     * @param a3 first factor of the third term
+&nbsp;     * @param b3 second factor of the third term
+&nbsp;     * @return a&lt;sub&gt;1&lt;/sub&gt;&amp;times;b&lt;sub&gt;1&lt;/sub&gt; +
+&nbsp;     * a&lt;sub&gt;2&lt;/sub&gt;&amp;times;b&lt;sub&gt;2&lt;/sub&gt; + a&lt;sub&gt;3&lt;/sub&gt;&amp;times;b&lt;sub&gt;3&lt;/sub&gt;
+&nbsp;     * @see #linearCombination(Object, Object, Object, Object)
+&nbsp;     * @see #linearCombination(Object, Object, Object, Object, Object, Object, Object, Object)
+&nbsp;     * @since 3.2
+&nbsp;     */
+&nbsp;    T linearCombination(T a1, T b1, T a2, T b2, T a3, T b3);
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Compute a linear combination.
+&nbsp;     * @param a1 first factor of the first term
+&nbsp;     * @param b1 second factor of the first term
+&nbsp;     * @param a2 first factor of the second term
+&nbsp;     * @param b2 second factor of the second term
+&nbsp;     * @param a3 first factor of the third term
+&nbsp;     * @param b3 second factor of the third term
+&nbsp;     * @return a&lt;sub&gt;1&lt;/sub&gt;&amp;times;b&lt;sub&gt;1&lt;/sub&gt; +
+&nbsp;     * a&lt;sub&gt;2&lt;/sub&gt;&amp;times;b&lt;sub&gt;2&lt;/sub&gt; + a&lt;sub&gt;3&lt;/sub&gt;&amp;times;b&lt;sub&gt;3&lt;/sub&gt;
+&nbsp;     * @see #linearCombination(double, Object, double, Object)
+&nbsp;     * @see #linearCombination(double, Object, double, Object, double, Object, double, Object)
+&nbsp;     * @since 3.2
+&nbsp;     */
+&nbsp;    T linearCombination(double a1, T b1,  double a2, T b2, double a3, T b3);
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Compute a linear combination.
+&nbsp;     * @param a1 first factor of the first term
+&nbsp;     * @param b1 second factor of the first term
+&nbsp;     * @param a2 first factor of the second term
+&nbsp;     * @param b2 second factor of the second term
+&nbsp;     * @param a3 first factor of the third term
+&nbsp;     * @param b3 second factor of the third term
+&nbsp;     * @param a4 first factor of the third term
+&nbsp;     * @param b4 second factor of the third term
+&nbsp;     * @return a&lt;sub&gt;1&lt;/sub&gt;&amp;times;b&lt;sub&gt;1&lt;/sub&gt; +
+&nbsp;     * a&lt;sub&gt;2&lt;/sub&gt;&amp;times;b&lt;sub&gt;2&lt;/sub&gt; + a&lt;sub&gt;3&lt;/sub&gt;&amp;times;b&lt;sub&gt;3&lt;/sub&gt; +
+&nbsp;     * a&lt;sub&gt;4&lt;/sub&gt;&amp;times;b&lt;sub&gt;4&lt;/sub&gt;
+&nbsp;     * @see #linearCombination(Object, Object, Object, Object)
+&nbsp;     * @see #linearCombination(Object, Object, Object, Object, Object, Object)
+&nbsp;     * @since 3.2
+&nbsp;     */
+&nbsp;    T linearCombination(T a1, T b1, T a2, T b2, T a3, T b3, T a4, T b4);
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Compute a linear combination.
+&nbsp;     * @param a1 first factor of the first term
+&nbsp;     * @param b1 second factor of the first term
+&nbsp;     * @param a2 first factor of the second term
+&nbsp;     * @param b2 second factor of the second term
+&nbsp;     * @param a3 first factor of the third term
+&nbsp;     * @param b3 second factor of the third term
+&nbsp;     * @param a4 first factor of the third term
+&nbsp;     * @param b4 second factor of the third term
+&nbsp;     * @return a&lt;sub&gt;1&lt;/sub&gt;&amp;times;b&lt;sub&gt;1&lt;/sub&gt; +
+&nbsp;     * a&lt;sub&gt;2&lt;/sub&gt;&amp;times;b&lt;sub&gt;2&lt;/sub&gt; + a&lt;sub&gt;3&lt;/sub&gt;&amp;times;b&lt;sub&gt;3&lt;/sub&gt; +
+&nbsp;     * a&lt;sub&gt;4&lt;/sub&gt;&amp;times;b&lt;sub&gt;4&lt;/sub&gt;
+&nbsp;     * @see #linearCombination(double, Object, double, Object)
+&nbsp;     * @see #linearCombination(double, Object, double, Object, double, Object)
+&nbsp;     * @since 3.2
+&nbsp;     */
+&nbsp;    T linearCombination(double a1, T b1, double a2, T b2, double a3, T b3, double a4, T b4);
+&nbsp;
+&nbsp;    /** Find the maximum of two field elements.
+&nbsp;     * @param &lt;T&gt; the type of the field elements
+&nbsp;     * @param e1 first element
+&nbsp;     * @param e2 second element
+&nbsp;     * @return max(a1, e2)
+&nbsp;     */
+&nbsp;    static &lt;T extends RealFieldElement&lt;T&gt;&gt; T max(final T e1, final T e2) {
+<b class="nc">&nbsp;        return e1.subtract(e2).getReal() &gt;= 0 ? e1 : e2;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Find the minimum of two field elements.
+&nbsp;     * @param &lt;T&gt; the type of the field elements
+&nbsp;     * @param e1 first element
+&nbsp;     * @param e2 second element
+&nbsp;     * @return min(a1, e2)
+&nbsp;     */
+&nbsp;    static &lt;T extends RealFieldElement&lt;T&gt;&gt; T min(final T e1, final T e2) {
+<b class="nc">&nbsp;        return e1.subtract(e2).getReal() &gt;= 0 ? e2 : e1;</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2023-08-14 14:22</div>
+</div>
+</body>
+</html>

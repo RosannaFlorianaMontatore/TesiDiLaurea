@@ -1,0 +1,740 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=windows-1252"> 
+  <title>Coverage Report > ArithmeticUtils</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope:     <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">org.apache.commons.numbers.core</a>
+</div>
+
+<h1>Coverage Summary for Class: ArithmeticUtils (org.apache.commons.numbers.core)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">ArithmeticUtils</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (14/14)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (166/166)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">ArithmeticUtils$NumbersArithmeticException</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (15/15)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (167/167)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/*
+&nbsp; * Licensed to the Apache Software Foundation (ASF) under one or more
+&nbsp; * contributor license agreements.  See the NOTICE file distributed with
+&nbsp; * this work for additional information regarding copyright ownership.
+&nbsp; * The ASF licenses this file to You under the Apache License, Version 2.0
+&nbsp; * (the &quot;License&quot;); you may not use this file except in compliance with
+&nbsp; * the License.  You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *      http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;package org.apache.commons.numbers.core;
+&nbsp;
+&nbsp;import java.math.BigInteger;
+&nbsp;import java.text.MessageFormat;
+&nbsp;
+&nbsp;/**
+&nbsp; * Some useful, arithmetics related, additions to the built-in functions in
+&nbsp; * {@link Math}.
+&nbsp; *
+&nbsp; */
+&nbsp;public final class ArithmeticUtils {
+&nbsp;
+&nbsp;    /** Overflow gcd exception message for 2^63. */
+&nbsp;    private static final String OVERFLOW_GCD_MESSAGE_2_POWER_63 = &quot;overflow: gcd({0}, {1}) is 2^63&quot;;
+&nbsp;
+&nbsp;    /** Negative exponent exception message part 1. */
+&nbsp;    private static final String NEGATIVE_EXPONENT_1 = &quot;negative exponent ({&quot;;
+&nbsp;    /** Negative exponent exception message part 2. */
+&nbsp;    private static final String NEGATIVE_EXPONENT_2 = &quot;})&quot;;
+&nbsp;
+&nbsp;    /** Private constructor. */
+&nbsp;    private ArithmeticUtils() {
+&nbsp;        // intentionally empty.
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Computes the greatest common divisor of the absolute value of two
+&nbsp;     * numbers, using a modified version of the &quot;binary gcd&quot; method.
+&nbsp;     * See Knuth 4.5.2 algorithm B.
+&nbsp;     * The algorithm is due to Josef Stein (1961).
+&nbsp;     * &lt;br&gt;
+&nbsp;     * Special cases:
+&nbsp;     * &lt;ul&gt;
+&nbsp;     *  &lt;li&gt;The invocations
+&nbsp;     *   {@code gcd(Integer.MIN_VALUE, Integer.MIN_VALUE)},
+&nbsp;     *   {@code gcd(Integer.MIN_VALUE, 0)} and
+&nbsp;     *   {@code gcd(0, Integer.MIN_VALUE)} throw an
+&nbsp;     *   {@code ArithmeticException}, because the result would be 2^31, which
+&nbsp;     *   is too large for an int value.&lt;/li&gt;
+&nbsp;     *  &lt;li&gt;The result of {@code gcd(x, x)}, {@code gcd(0, x)} and
+&nbsp;     *   {@code gcd(x, 0)} is the absolute value of {@code x}, except
+&nbsp;     *   for the special cases above.&lt;/li&gt;
+&nbsp;     *  &lt;li&gt;The invocation {@code gcd(0, 0)} is the only one which returns
+&nbsp;     *   {@code 0}.&lt;/li&gt;
+&nbsp;     * &lt;/ul&gt;
+&nbsp;     *
+&nbsp;     * &lt;p&gt;Two numbers are relatively prime, or coprime, if their gcd is 1.&lt;/p&gt;
+&nbsp;     *
+&nbsp;     * @param p Number.
+&nbsp;     * @param q Number.
+&nbsp;     * @return the greatest common divisor (never negative).
+&nbsp;     * @throws ArithmeticException if the result cannot be represented as
+&nbsp;     * a non-negative {@code int} value.
+&nbsp;     */
+&nbsp;    public static int gcd(int p, int q) {
+&nbsp;        // Perform the gcd algorithm on negative numbers, so that -2^31 does not
+&nbsp;        // need to be handled separately
+<b class="fc">&nbsp;        int a = p &gt; 0 ? -p : p;</b>
+<b class="fc">&nbsp;        int b = q &gt; 0 ? -q : q;</b>
+&nbsp;
+&nbsp;        int negatedGcd;
+<b class="fc">&nbsp;        if (a == 0) {</b>
+<b class="fc">&nbsp;            negatedGcd = b;</b>
+<b class="fc">&nbsp;        } else if (b == 0) {</b>
+<b class="fc">&nbsp;            negatedGcd = a;</b>
+&nbsp;        } else {
+&nbsp;            // Make &quot;a&quot; and &quot;b&quot; odd, keeping track of common power of 2.
+<b class="fc">&nbsp;            final int aTwos = Integer.numberOfTrailingZeros(a);</b>
+<b class="fc">&nbsp;            final int bTwos = Integer.numberOfTrailingZeros(b);</b>
+<b class="fc">&nbsp;            a &gt;&gt;= aTwos;</b>
+<b class="fc">&nbsp;            b &gt;&gt;= bTwos;</b>
+<b class="fc">&nbsp;            final int shift = Math.min(aTwos, bTwos);</b>
+&nbsp;
+&nbsp;            // &quot;a&quot; and &quot;b&quot; are negative and odd.
+&nbsp;            // If a &lt; b then &quot;gdc(a, b)&quot; is equal to &quot;gcd(a - b, b)&quot;.
+&nbsp;            // If a &gt; b then &quot;gcd(a, b)&quot; is equal to &quot;gcd(b - a, a)&quot;.
+&nbsp;            // Hence, in the successive iterations:
+&nbsp;            //  &quot;a&quot; becomes the negative absolute difference of the current values,
+&nbsp;            //  &quot;b&quot; becomes that value of the two that is closer to zero.
+<b class="fc">&nbsp;            while (a != b) {</b>
+<b class="fc">&nbsp;                final int delta = a - b;</b>
+<b class="fc">&nbsp;                b = Math.max(a, b);</b>
+<b class="fc">&nbsp;                a = delta &gt; 0 ? -delta : delta;</b>
+&nbsp;
+&nbsp;                // Remove any power of 2 in &quot;a&quot; (&quot;b&quot; is guaranteed to be odd).
+<b class="fc">&nbsp;                a &gt;&gt;= Integer.numberOfTrailingZeros(a);</b>
+<b class="fc">&nbsp;            }</b>
+&nbsp;
+&nbsp;            // Recover the common power of 2.
+<b class="fc">&nbsp;            negatedGcd = a &lt;&lt; shift;</b>
+&nbsp;        }
+<b class="fc">&nbsp;        if (negatedGcd == Integer.MIN_VALUE) {</b>
+<b class="fc">&nbsp;            throw new NumbersArithmeticException(&quot;overflow: gcd({0}, {1}) is 2^31&quot;,</b>
+<b class="fc">&nbsp;                                              p, q);</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return -negatedGcd;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * &lt;p&gt;
+&nbsp;     * Gets the greatest common divisor of the absolute value of two numbers,
+&nbsp;     * using the &quot;binary gcd&quot; method which avoids division and modulo
+&nbsp;     * operations. See Knuth 4.5.2 algorithm B. This algorithm is due to Josef
+&nbsp;     * Stein (1961).
+&nbsp;     * &lt;/p&gt;
+&nbsp;     * Special cases:
+&nbsp;     * &lt;ul&gt;
+&nbsp;     * &lt;li&gt;The invocations
+&nbsp;     * {@code gcd(Long.MIN_VALUE, Long.MIN_VALUE)},
+&nbsp;     * {@code gcd(Long.MIN_VALUE, 0L)} and
+&nbsp;     * {@code gcd(0L, Long.MIN_VALUE)} throw an
+&nbsp;     * {@code ArithmeticException}, because the result would be 2^63, which
+&nbsp;     * is too large for a long value.&lt;/li&gt;
+&nbsp;     * &lt;li&gt;The result of {@code gcd(x, x)}, {@code gcd(0L, x)} and
+&nbsp;     * {@code gcd(x, 0L)} is the absolute value of {@code x}, except
+&nbsp;     * for the special cases above.
+&nbsp;     * &lt;li&gt;The invocation {@code gcd(0L, 0L)} is the only one which returns
+&nbsp;     * {@code 0L}.&lt;/li&gt;
+&nbsp;     * &lt;/ul&gt;
+&nbsp;     *
+&nbsp;     * &lt;p&gt;Two numbers are relatively prime, or coprime, if their gcd is 1.&lt;/p&gt;
+&nbsp;     *
+&nbsp;     * @param p Number.
+&nbsp;     * @param q Number.
+&nbsp;     * @return the greatest common divisor, never negative.
+&nbsp;     * @throws ArithmeticException if the result cannot be represented as
+&nbsp;     * a non-negative {@code long} value.
+&nbsp;     */
+&nbsp;    public static long gcd(final long p, final long q) {
+<b class="fc">&nbsp;        long u = p;</b>
+<b class="fc">&nbsp;        long v = q;</b>
+<b class="fc">&nbsp;        if (u == 0 || v == 0) {</b>
+<b class="fc">&nbsp;            if (u == Long.MIN_VALUE || v == Long.MIN_VALUE) {</b>
+<b class="fc">&nbsp;                throw new NumbersArithmeticException(OVERFLOW_GCD_MESSAGE_2_POWER_63,</b>
+<b class="fc">&nbsp;                                                  p, q);</b>
+&nbsp;            }
+<b class="fc">&nbsp;            return Math.abs(u) + Math.abs(v);</b>
+&nbsp;        }
+&nbsp;        // keep u and v negative, as negative integers range down to
+&nbsp;        // -2^63, while positive numbers can only be as large as 2^63-1
+&nbsp;        // (i.e. we can&#39;t necessarily negate a negative number without
+&nbsp;        // overflow)
+&nbsp;        /* assert u!=0 &amp;&amp; v!=0; */
+<b class="fc">&nbsp;        if (u &gt; 0) {</b>
+<b class="fc">&nbsp;            u = -u;</b>
+&nbsp;        } // make u negative
+<b class="fc">&nbsp;        if (v &gt; 0) {</b>
+<b class="fc">&nbsp;            v = -v;</b>
+&nbsp;        } // make v negative
+&nbsp;        // B1. [Find power of 2]
+<b class="fc">&nbsp;        int k = 0;</b>
+<b class="fc">&nbsp;        while ((u &amp; 1) == 0 &amp;&amp; (v &amp; 1) == 0 &amp;&amp; k &lt; 63) { // while u and v are</b>
+&nbsp;                                                            // both even...
+<b class="fc">&nbsp;            u /= 2;</b>
+<b class="fc">&nbsp;            v /= 2;</b>
+<b class="fc">&nbsp;            k++; // cast out twos.</b>
+&nbsp;        }
+<b class="fc">&nbsp;        if (k == 63) {</b>
+<b class="fc">&nbsp;            throw new NumbersArithmeticException(OVERFLOW_GCD_MESSAGE_2_POWER_63,</b>
+<b class="fc">&nbsp;                                              p, q);</b>
+&nbsp;        }
+&nbsp;        // B2. Initialize: u and v have been divided by 2^k and at least
+&nbsp;        // one is odd.
+<b class="fc">&nbsp;        long t = ((u &amp; 1) == 1) ? v : -(u / 2)/* B3 */;</b>
+&nbsp;        // t negative: u was odd, v may be even (t replaces v)
+&nbsp;        // t positive: u was even, v is odd (t replaces u)
+&nbsp;        do {
+&nbsp;            /* assert u&lt;0 &amp;&amp; v&lt;0; */
+&nbsp;            // B4/B3: cast out twos from t.
+<b class="fc">&nbsp;            while ((t &amp; 1) == 0) { // while t is even..</b>
+<b class="fc">&nbsp;                t /= 2; // cast out twos</b>
+&nbsp;            }
+&nbsp;            // B5 [reset max(u,v)]
+<b class="fc">&nbsp;            if (t &gt; 0) {</b>
+<b class="fc">&nbsp;                u = -t;</b>
+&nbsp;            } else {
+<b class="fc">&nbsp;                v = t;</b>
+&nbsp;            }
+&nbsp;            // B6/B3. at this point both u and v should be odd.
+<b class="fc">&nbsp;            t = (v - u) / 2;</b>
+&nbsp;            // |u| larger: t positive (replace u)
+&nbsp;            // |v| larger: t negative (replace v)
+<b class="fc">&nbsp;        } while (t != 0);</b>
+<b class="fc">&nbsp;        return -u * (1L &lt;&lt; k); // gcd is u*2^k</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * &lt;p&gt;
+&nbsp;     * Returns the least common multiple of the absolute value of two numbers,
+&nbsp;     * using the formula {@code lcm(a,b) = (a / gcd(a,b)) * b}.
+&nbsp;     * &lt;/p&gt;
+&nbsp;     * Special cases:
+&nbsp;     * &lt;ul&gt;
+&nbsp;     * &lt;li&gt;The invocations {@code lcm(Integer.MIN_VALUE, n)} and
+&nbsp;     * {@code lcm(n, Integer.MIN_VALUE)}, where {@code abs(n)} is a
+&nbsp;     * power of 2, throw an {@code ArithmeticException}, because the result
+&nbsp;     * would be 2^31, which is too large for an int value.&lt;/li&gt;
+&nbsp;     * &lt;li&gt;The result of {@code lcm(0, x)} and {@code lcm(x, 0)} is
+&nbsp;     * {@code 0} for any {@code x}.
+&nbsp;     * &lt;/ul&gt;
+&nbsp;     *
+&nbsp;     * @param a Number.
+&nbsp;     * @param b Number.
+&nbsp;     * @return the least common multiple, never negative.
+&nbsp;     * @throws ArithmeticException if the result cannot be represented as
+&nbsp;     * a non-negative {@code int} value.
+&nbsp;     */
+&nbsp;    public static int lcm(int a, int b) {
+<b class="fc">&nbsp;        if (a == 0 || b == 0) {</b>
+<b class="fc">&nbsp;            return 0;</b>
+&nbsp;        }
+<b class="fc">&nbsp;        final int lcm = Math.abs(Math.multiplyExact(a / gcd(a, b), b));</b>
+<b class="fc">&nbsp;        if (lcm == Integer.MIN_VALUE) {</b>
+<b class="fc">&nbsp;            throw new NumbersArithmeticException(&quot;overflow: lcm({0}, {1}) is 2^31&quot;,</b>
+<b class="fc">&nbsp;                                              a, b);</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return lcm;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * &lt;p&gt;
+&nbsp;     * Returns the least common multiple of the absolute value of two numbers,
+&nbsp;     * using the formula {@code lcm(a,b) = (a / gcd(a,b)) * b}.
+&nbsp;     * &lt;/p&gt;
+&nbsp;     * Special cases:
+&nbsp;     * &lt;ul&gt;
+&nbsp;     * &lt;li&gt;The invocations {@code lcm(Long.MIN_VALUE, n)} and
+&nbsp;     * {@code lcm(n, Long.MIN_VALUE)}, where {@code abs(n)} is a
+&nbsp;     * power of 2, throw an {@code ArithmeticException}, because the result
+&nbsp;     * would be 2^63, which is too large for an int value.&lt;/li&gt;
+&nbsp;     * &lt;li&gt;The result of {@code lcm(0L, x)} and {@code lcm(x, 0L)} is
+&nbsp;     * {@code 0L} for any {@code x}.
+&nbsp;     * &lt;/ul&gt;
+&nbsp;     *
+&nbsp;     * @param a Number.
+&nbsp;     * @param b Number.
+&nbsp;     * @return the least common multiple, never negative.
+&nbsp;     * @throws ArithmeticException if the result cannot be represented
+&nbsp;     * as a non-negative {@code long} value.
+&nbsp;     */
+&nbsp;    public static long lcm(long a, long b) {
+<b class="fc">&nbsp;        if (a == 0 || b == 0) {</b>
+<b class="fc">&nbsp;            return 0;</b>
+&nbsp;        }
+<b class="fc">&nbsp;        final long lcm = Math.abs(Math.multiplyExact(a / gcd(a, b), b));</b>
+<b class="fc">&nbsp;        if (lcm == Long.MIN_VALUE) {</b>
+<b class="fc">&nbsp;            throw new NumbersArithmeticException(&quot;overflow: lcm({0}, {1}) is 2^63&quot;,</b>
+<b class="fc">&nbsp;                                              a, b);</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return lcm;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Raise an int to an int power.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;Special cases:&lt;/p&gt;
+&nbsp;     * &lt;ul&gt;
+&nbsp;     *   &lt;li&gt;{@code k^0} returns {@code 1} (including {@code k=0})
+&nbsp;     *   &lt;li&gt;{@code k^1} returns {@code k} (including {@code k=0})
+&nbsp;     *   &lt;li&gt;{@code 0^0} returns {@code 1}
+&nbsp;     *   &lt;li&gt;{@code 0^e} returns {@code 0}
+&nbsp;     *   &lt;li&gt;{@code 1^e} returns {@code 1}
+&nbsp;     *   &lt;li&gt;{@code (-1)^e} returns {@code -1 or 1} if {@code e} is odd or even
+&nbsp;     * &lt;/ul&gt;
+&nbsp;     *
+&nbsp;     * @param k Number to raise.
+&nbsp;     * @param e Exponent (must be positive or zero).
+&nbsp;     * @return \( k^e \)
+&nbsp;     * @throws IllegalArgumentException if {@code e &lt; 0}.
+&nbsp;     * @throws ArithmeticException if the result would overflow.
+&nbsp;     */
+&nbsp;    public static int pow(final int k,
+&nbsp;                          final int e) {
+<b class="fc">&nbsp;        if (e &lt; 0) {</b>
+<b class="fc">&nbsp;            throw new IllegalArgumentException(NEGATIVE_EXPONENT_1 + e + NEGATIVE_EXPONENT_2);</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        if (k == 0) {</b>
+<b class="fc">&nbsp;            return e == 0 ? 1 : 0;</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        if (k == 1) {</b>
+<b class="fc">&nbsp;            return 1;</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        if (k == -1) {</b>
+<b class="fc">&nbsp;            return (e &amp; 1) == 0 ? 1 : -1;</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        if (e &gt;= 31) {</b>
+<b class="fc">&nbsp;            throw new ArithmeticException(&quot;integer overflow&quot;);</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        int exp = e;</b>
+<b class="fc">&nbsp;        int result = 1;</b>
+<b class="fc">&nbsp;        int k2p    = k;</b>
+&nbsp;        while (true) {
+<b class="fc">&nbsp;            if ((exp &amp; 0x1) != 0) {</b>
+<b class="fc">&nbsp;                result = Math.multiplyExact(result, k2p);</b>
+&nbsp;            }
+&nbsp;
+<b class="fc">&nbsp;            exp &gt;&gt;= 1;</b>
+<b class="fc">&nbsp;            if (exp == 0) {</b>
+<b class="fc">&nbsp;                break;</b>
+&nbsp;            }
+&nbsp;
+<b class="fc">&nbsp;            k2p = Math.multiplyExact(k2p, k2p);</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        return result;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Raise a long to an int power.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;Special cases:&lt;/p&gt;
+&nbsp;     * &lt;ul&gt;
+&nbsp;     *   &lt;li&gt;{@code k^0} returns {@code 1} (including {@code k=0})
+&nbsp;     *   &lt;li&gt;{@code k^1} returns {@code k} (including {@code k=0})
+&nbsp;     *   &lt;li&gt;{@code 0^0} returns {@code 1}
+&nbsp;     *   &lt;li&gt;{@code 0^e} returns {@code 0}
+&nbsp;     *   &lt;li&gt;{@code 1^e} returns {@code 1}
+&nbsp;     *   &lt;li&gt;{@code (-1)^e} returns {@code -1 or 1} if {@code e} is odd or even
+&nbsp;     * &lt;/ul&gt;
+&nbsp;     *
+&nbsp;     * @param k Number to raise.
+&nbsp;     * @param e Exponent (must be positive or zero).
+&nbsp;     * @return \( k^e \)
+&nbsp;     * @throws IllegalArgumentException if {@code e &lt; 0}.
+&nbsp;     * @throws ArithmeticException if the result would overflow.
+&nbsp;     */
+&nbsp;    public static long pow(final long k,
+&nbsp;                           final int e) {
+<b class="fc">&nbsp;        if (e &lt; 0) {</b>
+<b class="fc">&nbsp;            throw new IllegalArgumentException(NEGATIVE_EXPONENT_1 + e + NEGATIVE_EXPONENT_2);</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        if (k == 0L) {</b>
+<b class="fc">&nbsp;            return e == 0 ? 1L : 0L;</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        if (k == 1L) {</b>
+<b class="fc">&nbsp;            return 1L;</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        if (k == -1L) {</b>
+<b class="fc">&nbsp;            return (e &amp; 1) == 0 ? 1L : -1L;</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        if (e &gt;= 63) {</b>
+<b class="fc">&nbsp;            throw new ArithmeticException(&quot;long overflow&quot;);</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        int exp = e;</b>
+<b class="fc">&nbsp;        long result = 1;</b>
+<b class="fc">&nbsp;        long k2p    = k;</b>
+&nbsp;        while (true) {
+<b class="fc">&nbsp;            if ((exp &amp; 0x1) != 0) {</b>
+<b class="fc">&nbsp;                result = Math.multiplyExact(result, k2p);</b>
+&nbsp;            }
+&nbsp;
+<b class="fc">&nbsp;            exp &gt;&gt;= 1;</b>
+<b class="fc">&nbsp;            if (exp == 0) {</b>
+<b class="fc">&nbsp;                break;</b>
+&nbsp;            }
+&nbsp;
+<b class="fc">&nbsp;            k2p = Math.multiplyExact(k2p, k2p);</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        return result;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Raise a BigInteger to an int power.
+&nbsp;     *
+&nbsp;     * @param k Number to raise.
+&nbsp;     * @param e Exponent (must be positive or zero).
+&nbsp;     * @return k&lt;sup&gt;e&lt;/sup&gt;
+&nbsp;     * @throws IllegalArgumentException if {@code e &lt; 0}.
+&nbsp;     */
+&nbsp;    public static BigInteger pow(final BigInteger k, int e) {
+<b class="fc">&nbsp;        if (e &lt; 0) {</b>
+<b class="fc">&nbsp;            throw new IllegalArgumentException(NEGATIVE_EXPONENT_1 + e + NEGATIVE_EXPONENT_2);</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        return k.pow(e);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Raise a BigInteger to a long power.
+&nbsp;     *
+&nbsp;     * @param k Number to raise.
+&nbsp;     * @param e Exponent (must be positive or zero).
+&nbsp;     * @return k&lt;sup&gt;e&lt;/sup&gt;
+&nbsp;     * @throws IllegalArgumentException if {@code e &lt; 0}.
+&nbsp;     */
+&nbsp;    public static BigInteger pow(final BigInteger k, final long e) {
+<b class="fc">&nbsp;        if (e &lt; 0) {</b>
+<b class="fc">&nbsp;            throw new IllegalArgumentException(NEGATIVE_EXPONENT_1 + e + NEGATIVE_EXPONENT_2);</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        long exp = e;</b>
+<b class="fc">&nbsp;        BigInteger result = BigInteger.ONE;</b>
+<b class="fc">&nbsp;        BigInteger k2p    = k;</b>
+<b class="fc">&nbsp;        while (exp != 0) {</b>
+<b class="fc">&nbsp;            if ((exp &amp; 0x1) != 0) {</b>
+<b class="fc">&nbsp;                result = result.multiply(k2p);</b>
+&nbsp;            }
+<b class="fc">&nbsp;            k2p = k2p.multiply(k2p);</b>
+<b class="fc">&nbsp;            exp &gt;&gt;= 1;</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        return result;</b>
+&nbsp;
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Raise a BigInteger to a BigInteger power.
+&nbsp;     *
+&nbsp;     * @param k Number to raise.
+&nbsp;     * @param e Exponent (must be positive or zero).
+&nbsp;     * @return k&lt;sup&gt;e&lt;/sup&gt;
+&nbsp;     * @throws IllegalArgumentException if {@code e &lt; 0}.
+&nbsp;     */
+&nbsp;    public static BigInteger pow(final BigInteger k, final BigInteger e) {
+<b class="fc">&nbsp;        if (e.compareTo(BigInteger.ZERO) &lt; 0) {</b>
+<b class="fc">&nbsp;            throw new IllegalArgumentException(NEGATIVE_EXPONENT_1 + e + NEGATIVE_EXPONENT_2);</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        BigInteger exp = e;</b>
+<b class="fc">&nbsp;        BigInteger result = BigInteger.ONE;</b>
+<b class="fc">&nbsp;        BigInteger k2p    = k;</b>
+<b class="fc">&nbsp;        while (!BigInteger.ZERO.equals(exp)) {</b>
+<b class="fc">&nbsp;            if (exp.testBit(0)) {</b>
+<b class="fc">&nbsp;                result = result.multiply(k2p);</b>
+&nbsp;            }
+<b class="fc">&nbsp;            k2p = k2p.multiply(k2p);</b>
+<b class="fc">&nbsp;            exp = exp.shiftRight(1);</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        return result;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Returns true if the argument is a power of two.
+&nbsp;     *
+&nbsp;     * @param n the number to test
+&nbsp;     * @return true if the argument is a power of two
+&nbsp;     */
+&nbsp;    public static boolean isPowerOfTwo(long n) {
+<b class="fc">&nbsp;        return n &gt; 0 &amp;&amp; (n &amp; (n - 1)) == 0;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Returns the unsigned remainder from dividing the first argument
+&nbsp;     * by the second where each argument and the result is interpreted
+&nbsp;     * as an unsigned value.
+&nbsp;     * &lt;p&gt;This method does not use the {@code long} datatype.&lt;/p&gt;
+&nbsp;     *
+&nbsp;     * @param dividend the value to be divided
+&nbsp;     * @param divisor the value doing the dividing
+&nbsp;     * @return the unsigned remainder of the first argument divided by
+&nbsp;     * the second argument.
+&nbsp;     */
+&nbsp;    public static int remainderUnsigned(int dividend, int divisor) {
+<b class="fc">&nbsp;        if (divisor &gt;= 0) {</b>
+<b class="fc">&nbsp;            if (dividend &gt;= 0) {</b>
+<b class="fc">&nbsp;                return dividend % divisor;</b>
+&nbsp;            }
+&nbsp;            // The implementation is a Java port of algorithm described in the book
+&nbsp;            // &quot;Hacker&#39;s Delight&quot; (section &quot;Unsigned short division from signed division&quot;).
+<b class="fc">&nbsp;            final int q = ((dividend &gt;&gt;&gt; 1) / divisor) &lt;&lt; 1;</b>
+<b class="fc">&nbsp;            dividend -= q * divisor;</b>
+<b class="fc">&nbsp;            if (dividend &lt; 0 || dividend &gt;= divisor) {</b>
+<b class="fc">&nbsp;                dividend -= divisor;</b>
+&nbsp;            }
+<b class="fc">&nbsp;            return dividend;</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return dividend &gt;= 0 || dividend &lt; divisor ? dividend : dividend - divisor;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Returns the unsigned remainder from dividing the first argument
+&nbsp;     * by the second where each argument and the result is interpreted
+&nbsp;     * as an unsigned value.
+&nbsp;     * &lt;p&gt;This method does not use the {@code BigInteger} datatype.&lt;/p&gt;
+&nbsp;     *
+&nbsp;     * @param dividend the value to be divided
+&nbsp;     * @param divisor the value doing the dividing
+&nbsp;     * @return the unsigned remainder of the first argument divided by
+&nbsp;     * the second argument.
+&nbsp;     */
+&nbsp;    public static long remainderUnsigned(long dividend, long divisor) {
+<b class="fc">&nbsp;        if (divisor &gt;= 0L) {</b>
+<b class="fc">&nbsp;            if (dividend &gt;= 0L) {</b>
+<b class="fc">&nbsp;                return dividend % divisor;</b>
+&nbsp;            }
+&nbsp;            // The implementation is a Java port of algorithm described in the book
+&nbsp;            // &quot;Hacker&#39;s Delight&quot; (section &quot;Unsigned short division from signed division&quot;).
+<b class="fc">&nbsp;            final long q = ((dividend &gt;&gt;&gt; 1) / divisor) &lt;&lt; 1;</b>
+<b class="fc">&nbsp;            dividend -= q * divisor;</b>
+<b class="fc">&nbsp;            if (dividend &lt; 0L || dividend &gt;= divisor) {</b>
+<b class="fc">&nbsp;                dividend -= divisor;</b>
+&nbsp;            }
+<b class="fc">&nbsp;            return dividend;</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return dividend &gt;= 0L || dividend &lt; divisor ? dividend : dividend - divisor;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Returns the unsigned quotient of dividing the first argument by
+&nbsp;     * the second where each argument and the result is interpreted as
+&nbsp;     * an unsigned value.
+&nbsp;     * &lt;p&gt;Note that in two&#39;s complement arithmetic, the three other
+&nbsp;     * basic arithmetic operations of add, subtract, and multiply are
+&nbsp;     * bit-wise identical if the two operands are regarded as both
+&nbsp;     * being signed or both being unsigned. Therefore separate {@code
+&nbsp;     * addUnsigned}, etc. methods are not provided.&lt;/p&gt;
+&nbsp;     * &lt;p&gt;This method does not use the {@code long} datatype.&lt;/p&gt;
+&nbsp;     *
+&nbsp;     * @param dividend the value to be divided
+&nbsp;     * @param divisor the value doing the dividing
+&nbsp;     * @return the unsigned quotient of the first argument divided by
+&nbsp;     * the second argument
+&nbsp;     */
+&nbsp;    public static int divideUnsigned(int dividend, int divisor) {
+<b class="fc">&nbsp;        if (divisor &gt;= 0) {</b>
+<b class="fc">&nbsp;            if (dividend &gt;= 0) {</b>
+<b class="fc">&nbsp;                return dividend / divisor;</b>
+&nbsp;            }
+&nbsp;            // The implementation is a Java port of algorithm described in the book
+&nbsp;            // &quot;Hacker&#39;s Delight&quot; (section &quot;Unsigned short division from signed division&quot;).
+<b class="fc">&nbsp;            int q = ((dividend &gt;&gt;&gt; 1) / divisor) &lt;&lt; 1;</b>
+<b class="fc">&nbsp;            dividend -= q * divisor;</b>
+<b class="fc">&nbsp;            if (dividend &lt; 0L || dividend &gt;= divisor) {</b>
+<b class="fc">&nbsp;                q++;</b>
+&nbsp;            }
+<b class="fc">&nbsp;            return q;</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return dividend &gt;= 0 || dividend &lt; divisor ? 0 : 1;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Returns the unsigned quotient of dividing the first argument by
+&nbsp;     * the second where each argument and the result is interpreted as
+&nbsp;     * an unsigned value.
+&nbsp;     * &lt;p&gt;Note that in two&#39;s complement arithmetic, the three other
+&nbsp;     * basic arithmetic operations of add, subtract, and multiply are
+&nbsp;     * bit-wise identical if the two operands are regarded as both
+&nbsp;     * being signed or both being unsigned. Therefore separate {@code
+&nbsp;     * addUnsigned}, etc. methods are not provided.&lt;/p&gt;
+&nbsp;     * &lt;p&gt;This method does not use the {@code BigInteger} datatype.&lt;/p&gt;
+&nbsp;     *
+&nbsp;     * @param dividend the value to be divided
+&nbsp;     * @param divisor the value doing the dividing
+&nbsp;     * @return the unsigned quotient of the first argument divided by
+&nbsp;     * the second argument.
+&nbsp;     */
+&nbsp;    public static long divideUnsigned(long dividend, long divisor) {
+<b class="fc">&nbsp;        if (divisor &gt;= 0L) {</b>
+<b class="fc">&nbsp;            if (dividend &gt;= 0L) {</b>
+<b class="fc">&nbsp;                return dividend / divisor;</b>
+&nbsp;            }
+&nbsp;            // The implementation is a Java port of algorithm described in the book
+&nbsp;            // &quot;Hacker&#39;s Delight&quot; (section &quot;Unsigned short division from signed division&quot;).
+<b class="fc">&nbsp;            long q = ((dividend &gt;&gt;&gt; 1) / divisor) &lt;&lt; 1;</b>
+<b class="fc">&nbsp;            dividend -= q * divisor;</b>
+<b class="fc">&nbsp;            if (dividend &lt; 0L || dividend &gt;= divisor) {</b>
+<b class="fc">&nbsp;                q++;</b>
+&nbsp;            }
+<b class="fc">&nbsp;            return q;</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return dividend &gt;= 0L || dividend &lt; divisor ? 0L : 1L;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Exception.
+&nbsp;     */
+&nbsp;    private static class NumbersArithmeticException extends ArithmeticException {
+&nbsp;        /** Serializable version Id. */
+&nbsp;        private static final long serialVersionUID = 20180130L;
+&nbsp;
+&nbsp;        /**
+&nbsp;         * Constructor with a specific message.
+&nbsp;         *
+&nbsp;         * @param message Message pattern providing the specific context of
+&nbsp;         * the error.
+&nbsp;         * @param args Arguments.
+&nbsp;         */
+&nbsp;        NumbersArithmeticException(String message, Object... args) {
+<b class="fc">&nbsp;            super(MessageFormat.format(message, args));</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2023-08-18 14:27</div>
+</div>
+</body>
+</html>

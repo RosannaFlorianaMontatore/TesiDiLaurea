@@ -1,0 +1,1637 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=windows-1252"> 
+  <title>Coverage Report > KolmogorovSmirnovTest</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope:     <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">org.apache.commons.statistics.inference</a>
+</div>
+
+<h1>Coverage Summary for Class: KolmogorovSmirnovTest (org.apache.commons.statistics.inference)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">KolmogorovSmirnovTest</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/30)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/333)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">KolmogorovSmirnovTest$OneResult</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/3)
+  </span>
+</td>
+  </tr>
+  <tr>
+    <td class="name">KolmogorovSmirnovTest$TwoResult</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/5)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/8)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/37)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/344)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/*
+&nbsp; * Licensed to the Apache Software Foundation (ASF) under one or more
+&nbsp; * contributor license agreements.  See the NOTICE file distributed with
+&nbsp; * this work for additional information regarding copyright ownership.
+&nbsp; * The ASF licenses this file to You under the Apache License, Version 2.0
+&nbsp; * (the &quot;License&quot;); you may not use this file except in compliance with
+&nbsp; * the License.  You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *      http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package org.apache.commons.statistics.inference;
+&nbsp;
+&nbsp;import java.util.Arrays;
+&nbsp;import java.util.Objects;
+&nbsp;import java.util.function.DoubleSupplier;
+&nbsp;import java.util.function.DoubleUnaryOperator;
+&nbsp;import java.util.function.IntToDoubleFunction;
+&nbsp;import org.apache.commons.numbers.combinatorics.BinomialCoefficientDouble;
+&nbsp;import org.apache.commons.numbers.combinatorics.Factorial;
+&nbsp;import org.apache.commons.numbers.core.ArithmeticUtils;
+&nbsp;import org.apache.commons.numbers.core.Sum;
+&nbsp;import org.apache.commons.rng.UniformRandomProvider;
+&nbsp;
+&nbsp;/**
+&nbsp; * Implements the Kolmogorov-Smirnov (K-S) test for equality of continuous distributions.
+&nbsp; *
+&nbsp; * &lt;p&gt;The one-sample test uses a D statistic based on the maximum deviation of the empirical
+&nbsp; * distribution of sample data points from the distribution expected under the null hypothesis.
+&nbsp; *
+&nbsp; * &lt;p&gt;The two-sample test uses a D statistic based on the maximum deviation of the two empirical
+&nbsp; * distributions of sample data points. The two-sample tests evaluate the null hypothesis that
+&nbsp; * the two samples {@code x} and {@code y} come from the same underlying distribution.
+&nbsp; *
+&nbsp; * &lt;p&gt;References:
+&nbsp; * &lt;ol&gt;
+&nbsp; * &lt;li&gt;
+&nbsp; * Marsaglia, G., Tsang, W. W., &amp;amp; Wang, J. (2003).
+&nbsp; * &lt;a href=&quot;https://doi.org/10.18637/jss.v008.i18&quot;&gt;Evaluating Kolmogorov&#39;s Distribution.&lt;/a&gt;
+&nbsp; * Journal of Statistical Software, 8(18), 1–4.
+&nbsp; * &lt;li&gt;Simard, R., &amp;amp; L’Ecuyer, P. (2011).
+&nbsp; * &lt;a href=&quot;https://doi.org/10.18637/jss.v039.i11&quot;&gt;Computing the Two-Sided Kolmogorov-Smirnov Distribution.&lt;/a&gt;
+&nbsp; * Journal of Statistical Software, 39(11), 1–18.
+&nbsp; * &lt;li&gt;Sekhon, J. S. (2011).
+&nbsp; * &lt;a href=&quot;https://doi.org/10.18637/jss.v042.i07&quot;&gt;
+&nbsp; * Multivariate and Propensity Score Matching Software with Automated Balance Optimization:
+&nbsp; * The Matching package for R.&lt;/a&gt;
+&nbsp; * Journal of Statistical Software, 42(7), 1–52.
+&nbsp; * &lt;li&gt;Viehmann, T (2021).
+&nbsp; * &lt;a href=&quot;https://doi.org/10.48550/arXiv.2102.08037&quot;&gt;
+&nbsp; * Numerically more stable computation of the p-values for the two-sample Kolmogorov-Smirnov test.&lt;/a&gt;
+&nbsp; * arXiv:2102.08037
+&nbsp; * &lt;li&gt;Hodges, J. L. (1958).
+&nbsp; * &lt;a href=&quot;https://doi.org/10.1007/BF02589501&quot;&gt;
+&nbsp; * The significance probability of the smirnov two-sample test.&lt;/a&gt;
+&nbsp; * Arkiv for Matematik, 3(5), 469-486.
+&nbsp; * &lt;/ol&gt;
+&nbsp; *
+&nbsp; * &lt;p&gt;Note that [1] contains an error in computing h, refer to &lt;a
+&nbsp; * href=&quot;https://issues.apache.org/jira/browse/MATH-437&quot;&gt;MATH-437&lt;/a&gt; for details.
+&nbsp; *
+&nbsp; * @see &lt;a href=&quot;https://en.wikipedia.org/wiki/Kolmogorov-Smirnov_test&quot;&gt;
+&nbsp; * Kolmogorov-Smirnov (K-S) test (Wikipedia)&lt;/a&gt;
+&nbsp; * @since 1.1
+&nbsp; */
+&nbsp;public final class KolmogorovSmirnovTest {
+&nbsp;    /** Name for sample 1. */
+&nbsp;    private static final String SAMPLE_1_NAME = &quot;Sample 1&quot;;
+&nbsp;    /** Name for sample 2. */
+&nbsp;    private static final String SAMPLE_2_NAME = &quot;Sample 2&quot;;
+&nbsp;    /** When the largest sample size exceeds this value, 2-sample test AUTO p-value
+&nbsp;     * uses an asymptotic distribution to compute the p-value. */
+&nbsp;    private static final int LARGE_SAMPLE = 10000;
+&nbsp;    /** Maximum finite factorial. */
+&nbsp;    private static final int MAX_FACTORIAL = 170;
+&nbsp;    /** Maximum length of an array. This is used to determine if two arrays can be concatenated
+&nbsp;     * to create a sampler from the joint distribution. The limit is copied from the limit
+&nbsp;     * of java.util.ArrayList. */
+&nbsp;    private static final int MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8;
+&nbsp;    /** The maximum least common multiple (lcm) to attempt the exact p-value computation.
+&nbsp;     * The integral d value is in [0, n*m] in steps of the greatest common denominator (gcd),
+&nbsp;     * thus lcm = n*m/gcd is the number of possible different p-values.
+&nbsp;     * Some methods have a lower limit due to computation limits. This should be larger
+&nbsp;     * than LARGE_SAMPLE^2 so all AUTO p-values attempt an exact computation, i.e.
+&nbsp;     * at least 10000^2 ~ 2^26.56. */
+&nbsp;    private static final long MAX_LCM_TWO_SAMPLE_EXACT_P = 1L &lt;&lt; 31;
+&nbsp;    /** Placeholder to use for the two-sample sign array when the value can be ignored. */
+<b class="nc">&nbsp;    private static final int[] IGNORED_SIGN = new int[1];</b>
+&nbsp;    /** Placeholder to use for the two-sample ties D array when the value can be ignored. */
+<b class="nc">&nbsp;    private static final long[] IGNORED_D = new long[2];</b>
+&nbsp;    /** Default instance. */
+<b class="nc">&nbsp;    private static final KolmogorovSmirnovTest DEFAULT = new KolmogorovSmirnovTest(</b>
+&nbsp;        AlternativeHypothesis.TWO_SIDED, PValueMethod.AUTO, false, null, 1000);
+&nbsp;
+&nbsp;    /** Alternative hypothesis. */
+&nbsp;    private final AlternativeHypothesis alternative;
+&nbsp;    /** Method to compute the p-value. */
+&nbsp;    private final PValueMethod pValueMethod;
+&nbsp;    /** Use a strict inequality for the two-sample exact p-value. */
+&nbsp;    private final boolean strictInequality;
+&nbsp;    /** Source of randomness. */
+&nbsp;    private final UniformRandomProvider rng;
+&nbsp;    /** Number of iterations . */
+&nbsp;    private final int iterations;
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Result for the one-sample Kolmogorov-Smirnov test.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;This class is immutable.
+&nbsp;     *
+&nbsp;     * @since 1.1
+&nbsp;     */
+&nbsp;    public static class OneResult extends BaseSignificanceResult {
+&nbsp;        /** Sign of the statistic. */
+&nbsp;        private final int sign;
+&nbsp;
+&nbsp;        /**
+&nbsp;         * Create an instance.
+&nbsp;         *
+&nbsp;         * @param statistic Test statistic.
+&nbsp;         * @param sign Sign of the statistic.
+&nbsp;         * @param p Result p-value.
+&nbsp;         */
+&nbsp;        OneResult(double statistic, int sign, double p) {
+<b class="nc">&nbsp;            super(statistic, p);</b>
+<b class="nc">&nbsp;            this.sign = sign;</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        /**
+&nbsp;         * Gets the sign of the statistic. This is 1 for \(D^+\) and -1 for \(D^-\).
+&nbsp;         * For a two sided-test this is zero if the magnitude of \(D^+\) and \(D^-\) was equal;
+&nbsp;         * otherwise the sign indicates the larger of \(D^+\) or \(D^-\).
+&nbsp;         *
+&nbsp;         * @return the sign
+&nbsp;         */
+&nbsp;        public int getSign() {
+<b class="nc">&nbsp;            return sign;</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Result for the two-sample Kolmogorov-Smirnov test.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;This class is immutable.
+&nbsp;     *
+&nbsp;     * @since 1.1
+&nbsp;     */
+&nbsp;    public static final class TwoResult extends OneResult {
+&nbsp;        /** Flag to indicate there were significant ties.
+&nbsp;         * Note that in extreme cases there may be significant ties despite {@code upperD == D}
+&nbsp;         * due to rounding when converting the integral statistic to a double. For this
+&nbsp;         * reason the presence of ties is stored as a flag. */
+&nbsp;        private final boolean significantTies;
+&nbsp;        /** Upper bound of the D statistic from all possible paths through regions with ties. */
+&nbsp;        private final double upperD;
+&nbsp;        /** The p-value of the upper D value. */
+&nbsp;        private final double upperP;
+&nbsp;
+&nbsp;        /**
+&nbsp;         * Create an instance.
+&nbsp;         *
+&nbsp;         * @param statistic Test statistic.
+&nbsp;         * @param sign Sign of the statistic.
+&nbsp;         * @param p Result p-value.
+&nbsp;         * @param significantTies Flag to indicate there were significant ties.
+&nbsp;         * @param upperD Upper bound of the D statistic from all possible paths through
+&nbsp;         * regions with ties.
+&nbsp;         * @param upperP The p-value of the upper D value.
+&nbsp;         */
+&nbsp;        TwoResult(double statistic, int sign, double p, boolean significantTies, double upperD, double upperP) {
+<b class="nc">&nbsp;            super(statistic, sign, p);</b>
+<b class="nc">&nbsp;            this.significantTies = significantTies;</b>
+<b class="nc">&nbsp;            this.upperD = upperD;</b>
+<b class="nc">&nbsp;            this.upperP = upperP;</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        /**
+&nbsp;         * {@inheritDoc}
+&nbsp;         *
+&nbsp;         * &lt;p&gt;&lt;strong&gt;Ties&lt;/strong&gt;
+&nbsp;         *
+&nbsp;         * &lt;p&gt;The presence of ties in the data creates a distribution for the D values generated
+&nbsp;         * by all possible orderings of the tied regions. This statistic is computed using the
+&nbsp;         * path with the &lt;em&gt;minimum&lt;/em&gt; effect on the D statistic.
+&nbsp;         *
+&nbsp;         * &lt;p&gt;For a one-sided statistic \(D^+\) or \(D^-\), this is the lower bound of the D statistic.
+&nbsp;         *
+&nbsp;         * &lt;p&gt;For a two-sided statistic D, this may be &lt;em&gt;below&lt;/em&gt; the lower bound of the
+&nbsp;         * distribution of all possible D values. This case occurs when the number of ties
+&nbsp;         * is very high and is identified by a {@link #getPValue() p-value} of 1.
+&nbsp;         *
+&nbsp;         * &lt;p&gt;If the two-sided statistic is zero this only occurs in the presence of ties:
+&nbsp;         * either the two arrays are identical, are &#39;identical&#39; data of a single value
+&nbsp;         * (sample sizes may be different), or have a sequence of ties of &#39;identical&#39; data
+&nbsp;         * with a net zero effect on the D statistic, e.g.
+&nbsp;         * &lt;pre&gt;
+&nbsp;         *  [1,2,3]           vs [1,2,3]
+&nbsp;         *  [0,0,0,0]         vs [0,0,0]
+&nbsp;         *  [0,0,0,0,1,1,1,1] vs [0,0,0,1,1,1]
+&nbsp;         * &lt;/pre&gt;
+&nbsp;         */
+&nbsp;        @Override
+&nbsp;        public double getStatistic() {
+&nbsp;            // Note: This method is here for documentation
+<b class="nc">&nbsp;            return super.getStatistic();</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        /**
+&nbsp;         * Returns {@code true} if there were ties between samples that occurred
+&nbsp;         * in a region which could change the D statistic if the ties were resolved to
+&nbsp;         * a defined order.
+&nbsp;         *
+&nbsp;         * &lt;p&gt;Ties between the data can be interpreted as if the values were different
+&nbsp;         * but within machine epsilon. In this case the order within the tie region is not known.
+&nbsp;         * If the most extreme ordering of any tied regions (e.g. all tied values of {@code x}
+&nbsp;         * before all tied values of {@code y}) could create a larger D statistic this
+&nbsp;         * method will return {@code true}.
+&nbsp;         *
+&nbsp;         * &lt;p&gt;If there were no ties, or all possible orderings of tied regions create the same
+&nbsp;         * D statistic, this method returns {@code false}.
+&nbsp;         *
+&nbsp;         * &lt;p&gt;Note it is possible that this method returns {@code true} when {@code D == upperD}
+&nbsp;         * due to rounding when converting the computed D statistic to a double. This will
+&nbsp;         * only occur for large sample sizes {@code n} and {@code m} where the product
+&nbsp;         * {@code n*m &gt;= 2^53}.
+&nbsp;         *
+&nbsp;         * @return true if the D statistic could be changed by resolution of ties
+&nbsp;         * @see #getUpperD()
+&nbsp;         */
+&nbsp;        public boolean hasSignificantTies() {
+<b class="nc">&nbsp;            return significantTies;</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        /**
+&nbsp;         * Return the upper bound of the D statistic from all possible paths through regions with ties.
+&nbsp;         *
+&nbsp;         * &lt;p&gt;This will return a value equal to or greater than {@link #getStatistic()}.
+&nbsp;         *
+&nbsp;         * @return the upper bound of D
+&nbsp;         * @see #hasSignificantTies()
+&nbsp;         */
+&nbsp;        public double getUpperD() {
+<b class="nc">&nbsp;            return upperD;</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        /**
+&nbsp;         * Return the p-value of the upper bound of the D statistic.
+&nbsp;         *
+&nbsp;         * &lt;p&gt;If computed, this will return a value equal to or less than
+&nbsp;         * {@link #getPValue() getPValue}. It may be orders of magnitude smaller.
+&nbsp;         *
+&nbsp;         * &lt;p&gt;Note: This p-value corresponds to the most extreme p-value from all possible
+&nbsp;         * orderings of tied regions. It is &lt;strong&gt;not&lt;/strong&gt; recommended to use this to
+&nbsp;         * reject the null hypothesis. The upper bound of D and the corresponding p-value
+&nbsp;         * provide information that must be interpreted in the context of the sample data and
+&nbsp;         * used to inform a decision on the suitability of the test to the data.
+&nbsp;         *
+&nbsp;         * &lt;p&gt;This value is set to {@link Double#NaN NaN} if the {@link #getPValue() p-value} was
+&nbsp;         * {@linkplain PValueMethod#ESTIMATE estimated}. The estimated p-value will have been created
+&nbsp;         * using a distribution of possible D values given the underlying joint distribution of
+&nbsp;         * the sample data. Comparison of the p-value to the upper p-value is not applicable.
+&nbsp;         *
+&nbsp;         * @return the p-value of the upper bound of D (or NaN)
+&nbsp;         * @see #getUpperD()
+&nbsp;         */
+&nbsp;        public double getUpperPValue() {
+<b class="nc">&nbsp;            return upperP;</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * @param alternative Alternative hypothesis.
+&nbsp;     * @param method P-value method.
+&nbsp;     * @param strict true to use a strict inequality.
+&nbsp;     * @param rng Source of randomness.
+&nbsp;     * @param iterations Number of iterations.
+&nbsp;     */
+&nbsp;    private KolmogorovSmirnovTest(AlternativeHypothesis alternative, PValueMethod method, boolean strict,
+<b class="nc">&nbsp;        UniformRandomProvider rng, int iterations) {</b>
+<b class="nc">&nbsp;        this.alternative = alternative;</b>
+<b class="nc">&nbsp;        this.pValueMethod = method;</b>
+<b class="nc">&nbsp;        this.strictInequality = strict;</b>
+<b class="nc">&nbsp;        this.rng = rng;</b>
+<b class="nc">&nbsp;        this.iterations = iterations;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Return an instance using the default options.
+&nbsp;     *
+&nbsp;     * &lt;ul&gt;
+&nbsp;     * &lt;li&gt;{@link AlternativeHypothesis#TWO_SIDED}
+&nbsp;     * &lt;li&gt;{@link PValueMethod#AUTO}
+&nbsp;     * &lt;li&gt;{@link Inequality#NON_STRICT}
+&nbsp;     * &lt;li&gt;{@linkplain #with(UniformRandomProvider) RNG = none}
+&nbsp;     * &lt;li&gt;{@linkplain #withIterations(int) Iterations = 1000}
+&nbsp;     * &lt;/ul&gt;
+&nbsp;     *
+&nbsp;     * @return default instance
+&nbsp;     */
+&nbsp;    public static KolmogorovSmirnovTest withDefaults() {
+<b class="nc">&nbsp;        return DEFAULT;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Return an instance with the configured alternative hypothesis.
+&nbsp;     *
+&nbsp;     * @param v Value.
+&nbsp;     * @return an instance
+&nbsp;     */
+&nbsp;    public KolmogorovSmirnovTest with(AlternativeHypothesis v) {
+<b class="nc">&nbsp;        return new KolmogorovSmirnovTest(Objects.requireNonNull(v), pValueMethod, strictInequality, rng, iterations);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Return an instance with the configured p-value method.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;For the one-sample two-sided test Kolmogorov&#39;s asymptotic approximation can be used;
+&nbsp;     * otherwise the p-value uses the distribution of the D statistic.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;For the two-sample test the exact p-value can be computed for small sample sizes;
+&nbsp;     * otherwise the p-value resorts to the asymptotic approximation. Alternatively a p-value
+&nbsp;     * can be estimated from the combined distribution of the samples. This requires a source
+&nbsp;     * of randomness.
+&nbsp;     *
+&nbsp;     * @param v Value.
+&nbsp;     * @return an instance
+&nbsp;     * @see #with(UniformRandomProvider)
+&nbsp;     */
+&nbsp;    public KolmogorovSmirnovTest with(PValueMethod v) {
+<b class="nc">&nbsp;        return new KolmogorovSmirnovTest(alternative, Objects.requireNonNull(v), strictInequality, rng, iterations);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Return an instance with the configured inequality.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;Computes the p-value for the two-sample test as \(P(D_{n,m} &amp;gt; d)\) if strict;
+&nbsp;     * otherwise \(P(D_{n,m} \ge d)\), where \(D_{n,m}\) is the 2-sample
+&nbsp;     * Kolmogorov-Smirnov statistic, either the two-sided \(D_{n,m}\) or one-sided
+&nbsp;     * \(D_{n,m}^+\) or \(D_{n,m}^-\).
+&nbsp;     *
+&nbsp;     * @param v Value.
+&nbsp;     * @return an instance
+&nbsp;     */
+&nbsp;    public KolmogorovSmirnovTest with(Inequality v) {
+<b class="nc">&nbsp;        return new KolmogorovSmirnovTest(alternative, pValueMethod,</b>
+<b class="nc">&nbsp;            Objects.requireNonNull(v) == Inequality.STRICT, rng, iterations);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Return an instance with the configured source of randomness.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;Applies to the two-sample test when the p-value method is set to
+&nbsp;     * {@link PValueMethod#ESTIMATE ESTIMATE}. The randomness
+&nbsp;     * is used for sampling of the combined distribution.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;There is no default source of randomness. If the randomness is not
+&nbsp;     * set then estimation is not possible and an {@link IllegalStateException} will be
+&nbsp;     * raised in the two-sample test.
+&nbsp;     *
+&nbsp;     * @param v Value.
+&nbsp;     * @return an instance
+&nbsp;     * @see #with(PValueMethod)
+&nbsp;     */
+&nbsp;    public KolmogorovSmirnovTest with(UniformRandomProvider v) {
+<b class="nc">&nbsp;        return new KolmogorovSmirnovTest(alternative, pValueMethod, strictInequality,</b>
+<b class="nc">&nbsp;            Objects.requireNonNull(v), iterations);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Return an instance with the configured number of iterations.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;Applies to the two-sample test when the p-value method is set to
+&nbsp;     * {@link PValueMethod#ESTIMATE ESTIMATE}. This is the number of sampling iterations
+&nbsp;     * used to estimate the p-value. The p-value is a fraction using the {@code iterations}
+&nbsp;     * as the denominator. The number of significant digits in the p-value is
+&nbsp;     * upper bounded by log&lt;sub&gt;10&lt;/sub&gt;(iterations); small p-values have fewer significant
+&nbsp;     * digits. A large number of iterations is recommended when using a small critical
+&nbsp;     * value to reject the null hypothesis.
+&nbsp;     *
+&nbsp;     * @param v Value.
+&nbsp;     * @return an instance
+&nbsp;     * @throws IllegalArgumentException if the number of iterations is not strictly positive
+&nbsp;     */
+&nbsp;    public KolmogorovSmirnovTest withIterations(int v) {
+<b class="nc">&nbsp;        return new KolmogorovSmirnovTest(alternative, pValueMethod, strictInequality, rng,</b>
+<b class="nc">&nbsp;            Arguments.checkStrictlyPositive(v));</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Computes the one-sample Kolmogorov-Smirnov test statistic.
+&nbsp;     *
+&nbsp;     * &lt;ul&gt;
+&nbsp;     * &lt;li&gt;two-sided: \(D_n=\sup_x |F_n(x)-F(x)|\)
+&nbsp;     * &lt;li&gt;greater: \(D_n^+=\sup_x (F_n(x)-F(x))\)
+&nbsp;     * &lt;li&gt;less: \(D_n^-=\sup_x (F(x)-F_n(x))\)
+&nbsp;     * &lt;/ul&gt;
+&nbsp;     *
+&nbsp;     * &lt;p&gt;where \(F\) is the distribution cumulative density function ({@code cdf}),
+&nbsp;     * \(n\) is the length of {@code x} and \(F_n\) is the empirical distribution that puts
+&nbsp;     * mass \(1/n\) at each of the values in {@code x}.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;The cumulative distribution function should map a real value {@code x} to a probability
+&nbsp;     * in [0, 1]. To use a reference distribution the CDF can be passed using a method reference:
+&nbsp;     * &lt;pre&gt;
+&nbsp;     * UniformContinuousDistribution dist = UniformContinuousDistribution.of(0, 1);
+&nbsp;     * UniformRandomProvider rng = RandomSource.KISS.create(123);
+&nbsp;     * double[] x = dist.sampler(rng).samples(100);
+&nbsp;     * double d = KolmogorovSmirnovTest.withDefaults().statistic(x, dist::cumulativeProbability);
+&nbsp;     * &lt;/pre&gt;
+&nbsp;     *
+&nbsp;     * @param cdf Reference cumulative distribution function.
+&nbsp;     * @param x Sample being evaluated.
+&nbsp;     * @return Kolmogorov-Smirnov statistic
+&nbsp;     * @throws IllegalArgumentException if {@code data} does not have length at least 2; or contains NaN values.
+&nbsp;     * @see #test(double[], DoubleUnaryOperator)
+&nbsp;     */
+&nbsp;    public double statistic(double[] x, DoubleUnaryOperator cdf) {
+<b class="nc">&nbsp;        return computeStatistic(x, cdf, IGNORED_SIGN);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Computes the two-sample Kolmogorov-Smirnov test statistic.
+&nbsp;     *
+&nbsp;     * &lt;ul&gt;
+&nbsp;     * &lt;li&gt;two-sided: \(D_{n,m}=\sup_x |F_n(x)-F_m(x)|\)
+&nbsp;     * &lt;li&gt;greater: \(D_{n,m}^+=\sup_x (F_n(x)-F_m(x))\)
+&nbsp;     * &lt;li&gt;less: \(D_{n,m}^-=\sup_x (F_m(x)-F_n(x))\)
+&nbsp;     * &lt;/ul&gt;
+&nbsp;     *
+&nbsp;     * &lt;p&gt;where \(n\) is the length of {@code x}, \(m\) is the length of {@code y}, \(F_n\) is the
+&nbsp;     * empirical distribution that puts mass \(1/n\) at each of the values in {@code x} and \(F_m\)
+&nbsp;     * is the empirical distribution that puts mass \(1/m\) at each of the values in {@code y}.
+&nbsp;     *
+&nbsp;     * @param x First sample.
+&nbsp;     * @param y Second sample.
+&nbsp;     * @return Kolmogorov-Smirnov statistic
+&nbsp;     * @throws IllegalArgumentException if either {@code x} or {@code y} does not
+&nbsp;     * have length at least 2; or contain NaN values.
+&nbsp;     * @see #test(double[], double[])
+&nbsp;     */
+&nbsp;    public double statistic(double[] x, double[] y) {
+<b class="nc">&nbsp;        final int n = checkArrayLength(x);</b>
+<b class="nc">&nbsp;        final int m = checkArrayLength(y);</b>
+&nbsp;        // Clone to avoid destructive modification of input
+<b class="nc">&nbsp;        final long dnm = computeIntegralKolmogorovSmirnovStatistic(x.clone(), y.clone(),</b>
+&nbsp;                IGNORED_SIGN, IGNORED_D);
+&nbsp;        // Re-use the method to compute D in [0, 1] for consistency
+<b class="nc">&nbsp;        return computeD(dnm, n, m, ArithmeticUtils.gcd(n, m));</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Performs a one-sample Kolmogorov-Smirnov test evaluating the null hypothesis
+&nbsp;     * that {@code x} conforms to the distribution cumulative density function ({@code cdf}).
+&nbsp;     *
+&nbsp;     * &lt;p&gt;The test is defined by the {@link AlternativeHypothesis}:
+&nbsp;     * &lt;ul&gt;
+&nbsp;     * &lt;li&gt;Two-sided evaluates the null hypothesis that the two distributions are
+&nbsp;     * identical, \(F_n(i) = F(i)\) for all \( i \); the alternative is that the are not
+&nbsp;     * identical. The statistic is \( max(D_n^+, D_n^-) \) and the sign of \( D \) is provided.
+&nbsp;     * &lt;li&gt;Greater evaluates the null hypothesis that the \(F_n(i) &amp;lt;= F(i)\) for all \( i \);
+&nbsp;     * the alternative is \(F_n(i) &amp;gt; F(i)\) for at least one \( i \). The statistic is \( D_n^+ \).
+&nbsp;     * &lt;li&gt;Less evaluates the null hypothesis that the \(F_n(i) &amp;gt;= F(i)\) for all \( i \);
+&nbsp;     * the alternative is \(F_n(i) &amp;lt; F(i)\) for at least one \( i \). The statistic is \( D_n^- \).
+&nbsp;     * &lt;/ul&gt;
+&nbsp;     *
+&nbsp;     * &lt;p&gt;The p-value method defaults to exact. The one-sided p-value uses Smirnov&#39;s stable formula:
+&nbsp;     *
+&nbsp;     * &lt;p&gt;\[ P(D_n^+ \ge x) = x \sum_{j=0}^{\lfloor n(1-x) \rfloor} \binom{n}{j} \left(\frac{j}{n} + x\right)^{j-1} \left(1-x-\frac{j}{n} \right)^{n-j} \]
+&nbsp;     *
+&nbsp;     * &lt;p&gt;The two-sided p-value is computed using methods described in
+&nbsp;     * Simard &amp;amp; L’Ecuyer (2011). The two-sided test supports an asymptotic p-value
+&nbsp;     * using Kolmogorov&#39;s formula:
+&nbsp;     *
+&nbsp;     * &lt;p&gt;\[ \lim_{n\to\infty} P(\sqrt{n}D_n &amp;gt; z) = 2 \sum_{i=1}^\infty (-1)^{i-1} e^{-2 i^2 z^2} \]
+&nbsp;     *
+&nbsp;     * @param x Sample being being evaluated.
+&nbsp;     * @param cdf Reference cumulative distribution function.
+&nbsp;     * @return test result
+&nbsp;     * @throws IllegalArgumentException if {@code data} does not have length at least 2; or contains NaN values.
+&nbsp;     * @see #statistic(double[], DoubleUnaryOperator)
+&nbsp;     */
+&nbsp;    public OneResult test(double[] x, DoubleUnaryOperator cdf) {
+<b class="nc">&nbsp;        final int[] sign = {0};</b>
+<b class="nc">&nbsp;        final double d = computeStatistic(x, cdf, sign);</b>
+&nbsp;        double p;
+<b class="nc">&nbsp;        if (alternative == AlternativeHypothesis.TWO_SIDED) {</b>
+<b class="nc">&nbsp;            PValueMethod method = pValueMethod;</b>
+<b class="nc">&nbsp;            if (method == PValueMethod.AUTO) {</b>
+&nbsp;                // No switch to the asymptotic for large n
+<b class="nc">&nbsp;                method = PValueMethod.EXACT;</b>
+&nbsp;            }
+<b class="nc">&nbsp;            if (method == PValueMethod.ASYMPTOTIC) {</b>
+&nbsp;                // Kolmogorov&#39;s asymptotic formula using z = sqrt(n) * d
+<b class="nc">&nbsp;                p = KolmogorovSmirnovDistribution.ksSum(Math.sqrt(x.length) * d);</b>
+&nbsp;            } else {
+&nbsp;                // exact
+<b class="nc">&nbsp;                p = KolmogorovSmirnovDistribution.Two.sf(d, x.length);</b>
+&nbsp;            }
+<b class="nc">&nbsp;        } else {</b>
+&nbsp;            // one-sided: always use exact
+<b class="nc">&nbsp;            p = KolmogorovSmirnovDistribution.One.sf(d, x.length);</b>
+&nbsp;        }
+<b class="nc">&nbsp;        return new OneResult(d, sign[0], p);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Performs a two-sample Kolmogorov-Smirnov test on samples {@code x} and {@code y}.
+&nbsp;     * Test the empirical distributions \(F_n\) and \(F_m\) where \(n\) is the length
+&nbsp;     * of {@code x}, \(m\) is the length of {@code y}, \(F_n\) is the empirical distribution
+&nbsp;     * that puts mass \(1/n\) at each of the values in {@code x} and \(F_m\) is the empirical
+&nbsp;     * distribution that puts mass \(1/m\) of the {@code y} values.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;The test is defined by the {@link AlternativeHypothesis}:
+&nbsp;     * &lt;ul&gt;
+&nbsp;     * &lt;li&gt;Two-sided evaluates the null hypothesis that the two distributions are
+&nbsp;     * identical, \(F_n(i) = F_m(i)\) for all \( i \); the alternative is that they are not
+&nbsp;     * identical. The statistic is \( max(D_n^+, D_n^-) \) and the sign of \( D \) is provided.
+&nbsp;     * &lt;li&gt;Greater evaluates the null hypothesis that the \(F_n(i) &amp;lt;= F_m(i)\) for all \( i \);
+&nbsp;     * the alternative is \(F_n(i) &amp;gt; F_m(i)\) for at least one \( i \). The statistic is \( D_n^+ \).
+&nbsp;     * &lt;li&gt;Less evaluates the null hypothesis that the \(F_n(i) &amp;gt;= F_m(i)\) for all \( i \);
+&nbsp;     * the alternative is \(F_n(i) &amp;lt; F_m(i)\) for at least one \( i \). The statistic is \( D_n^- \).
+&nbsp;     * &lt;/ul&gt;
+&nbsp;     *
+&nbsp;     * &lt;p&gt;If the {@linkplain PValueMethod p-value method} is auto, then an exact p computation
+&nbsp;     * is attempted if both sample sizes are less than 10000 using the methods presented in
+&nbsp;     * Viehmann (2021) and Hodges (1958); otherwise an asymptotic p-value is returned.
+&nbsp;     * The two-sided p-value is \(\overline{F}(d, \sqrt{mn / (m + n)})\) where \(\overline{F}\)
+&nbsp;     * is the complementary cumulative density function of the two-sided one-sample
+&nbsp;     * Kolmogorov-Smirnov distribution. The one-sided p-value uses an approximation from
+&nbsp;     * Hodges (1958) Eq 5.3.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;\(D_{n,m}\) has a discrete distribution. This makes the p-value associated with the
+&nbsp;     * null hypothesis \(H_0 : D_{n,m} \gt d \) differ from \(H_0 : D_{n,m} \ge d \)
+&nbsp;     * by the mass of the observed value \(d\). These can be distinguished using an
+&nbsp;     * {@link Inequality} parameter. This is ignored for large samples.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;If the data contains ties there is no defined ordering in the tied region to use
+&nbsp;     * for the difference between the two empirical distributions. Each ordering of the
+&nbsp;     * tied region &lt;em&gt;may&lt;/em&gt; create a different D statistic. All possible orderings
+&nbsp;     * generate a distribution for the D value. In this case the tied region is traversed
+&nbsp;     * entirely and the effect on the D value evaluated at the end of the tied region.
+&nbsp;     * This is the path with the least change on the D statistic. The path with the
+&nbsp;     * greatest change on the D statistic is also computed as the upper bound on D.
+&nbsp;     * If these two values are different then the tied region is known to generate a
+&nbsp;     * distribution for the D statistic and the p-value is an over estimate for the cases
+&nbsp;     * with a larger D statistic. The presence of any significant tied regions is returned
+&nbsp;     * in the result.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;If the p-value method is {@link PValueMethod#ESTIMATE ESTIMATE} then the p-value is
+&nbsp;     * estimated by repeat sampling of the joint distribution of {@code x} and {@code y}.
+&nbsp;     * The p-value is the frequency that a sample creates a D statistic
+&nbsp;     * greater than or equal to (or greater than for strict inequality) the observed value.
+&nbsp;     * In this case a source of randomness must be configured or an {@link IllegalStateException}
+&nbsp;     * will be raised. The p-value for the upper bound on D will not be estimated and is set to
+&nbsp;     * {@link Double#NaN NaN}. This estimation procedure is not affected by ties in the data
+&nbsp;     * and is increasingly robust for larger datasets. The method is modeled after
+&nbsp;     * &lt;a href=&quot;https://sekhon.berkeley.edu/matching/ks.boot.html&quot;&gt;ks.boot&lt;/a&gt;
+&nbsp;     * in the R {@code Matching} package (Sekhon (2011)).
+&nbsp;     *
+&nbsp;     * @param x First sample.
+&nbsp;     * @param y Second sample.
+&nbsp;     * @return test result
+&nbsp;     * @throws IllegalArgumentException if either {@code x} or {@code y} does not
+&nbsp;     * have length at least 2; or contain NaN values.
+&nbsp;     * @throws IllegalStateException if the p-value method is {@link PValueMethod#ESTIMATE ESTIMATE}
+&nbsp;     * and there is no source of randomness.
+&nbsp;     * @see #statistic(double[], double[])
+&nbsp;     */
+&nbsp;    public TwoResult test(double[] x, double[] y) {
+<b class="nc">&nbsp;        final int n = checkArrayLength(x);</b>
+<b class="nc">&nbsp;        final int m = checkArrayLength(y);</b>
+<b class="nc">&nbsp;        PValueMethod method = pValueMethod;</b>
+<b class="nc">&nbsp;        final int[] sign = {0};</b>
+<b class="nc">&nbsp;        final long[] tiesD = {0, 0};</b>
+&nbsp;
+<b class="nc">&nbsp;        final double[] sx = x.clone();</b>
+<b class="nc">&nbsp;        final double[] sy = y.clone();</b>
+<b class="nc">&nbsp;        final long dnm = computeIntegralKolmogorovSmirnovStatistic(sx, sy, sign, tiesD);</b>
+&nbsp;
+&nbsp;        // Compute p-value. Note that the p-value is not invalidated by ties; it is the
+&nbsp;        // D statistic that could be invalidated by resolution of the ties. So compute
+&nbsp;        // the exact p even if ties are present.
+<b class="nc">&nbsp;        if (method == PValueMethod.AUTO) {</b>
+&nbsp;            // Use exact for small samples
+<b class="nc">&nbsp;            method = Math.max(n, m) &lt; LARGE_SAMPLE ?</b>
+<b class="nc">&nbsp;                PValueMethod.EXACT :</b>
+<b class="nc">&nbsp;                PValueMethod.ASYMPTOTIC;</b>
+&nbsp;        }
+<b class="nc">&nbsp;        final int gcd = ArithmeticUtils.gcd(n, m);</b>
+<b class="nc">&nbsp;        final double d = computeD(dnm, n, m, gcd);</b>
+<b class="nc">&nbsp;        final boolean significantTies = tiesD[1] &gt; dnm;</b>
+<b class="nc">&nbsp;        final double d2 = significantTies ? computeD(tiesD[1], n, m, gcd) : d;</b>
+&nbsp;
+&nbsp;        double p;
+&nbsp;        double p2;
+&nbsp;
+&nbsp;        // Allow bootstrap estimation of the p-value
+<b class="nc">&nbsp;        if (method == PValueMethod.ESTIMATE) {</b>
+<b class="nc">&nbsp;            p = estimateP(sx, sy, dnm);</b>
+<b class="nc">&nbsp;            p2 = Double.NaN;</b>
+&nbsp;        } else {
+<b class="nc">&nbsp;            final boolean exact = method == PValueMethod.EXACT;</b>
+<b class="nc">&nbsp;            p = p2 = twoSampleP(dnm, n, m, gcd, d, exact);</b>
+<b class="nc">&nbsp;            if (significantTies) {</b>
+&nbsp;                // Compute the upper bound on D.
+&nbsp;                // The p-value is also computed. The alternative is to save the options
+&nbsp;                // in the result with (upper dnm, n, m) and compute it on-demand.
+&nbsp;                // Note detection of whether the exact P computation is possible is based on
+&nbsp;                // n and m, thus this will use the same computation.
+<b class="nc">&nbsp;                p2 = twoSampleP(tiesD[1], n, m, gcd, d2, exact);</b>
+&nbsp;            }
+&nbsp;        }
+<b class="nc">&nbsp;        return new TwoResult(d, sign[0], p, significantTies, d2, p2);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Estimates the &lt;i&gt;p-value&lt;/i&gt; of a two-sample Kolmogorov-Smirnov test evaluating the
+&nbsp;     * null hypothesis that {@code x} and {@code y} are samples drawn from the same
+&nbsp;     * probability distribution.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;This method will destructively modify the input arrays (via a sort).
+&nbsp;     *
+&nbsp;     * &lt;p&gt;This method estimates the p-value by repeatedly sampling sets of size
+&nbsp;     * {@code x.length} and {@code y.length} from the empirical distribution
+&nbsp;     * of the combined sample. The memory requirement is an array copy of each of
+&nbsp;     * the input arguments.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;When using strict inequality, this is equivalent to the algorithm implemented in
+&nbsp;     * the R function {@code ks.boot} as described in Sekhon (2011) Journal of Statistical
+&nbsp;     * Software, 42(7), 1–52 [3].
+&nbsp;     *
+&nbsp;     * @param x First sample.
+&nbsp;     * @param y Second sample.
+&nbsp;     * @param dnm Integral D statistic.
+&nbsp;     * @return p-value
+&nbsp;     * @throws IllegalStateException if the source of randomness is null.
+&nbsp;     */
+&nbsp;    private double estimateP(double[] x, double[] y, long dnm) {
+<b class="nc">&nbsp;        if (rng == null) {</b>
+<b class="nc">&nbsp;            throw new IllegalStateException(&quot;No source of randomness&quot;);</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        // Test if the random statistic is greater (strict), or greater or equal to d
+<b class="nc">&nbsp;        final long d = strictInequality ? dnm : dnm - 1;</b>
+&nbsp;
+&nbsp;        long plus;
+&nbsp;        long minus;
+<b class="nc">&nbsp;        if (alternative == AlternativeHypothesis.GREATER_THAN) {</b>
+<b class="nc">&nbsp;            plus = d;</b>
+<b class="nc">&nbsp;            minus = Long.MIN_VALUE;</b>
+<b class="nc">&nbsp;        } else if (alternative == AlternativeHypothesis.LESS_THAN) {</b>
+<b class="nc">&nbsp;            plus = Long.MAX_VALUE;</b>
+<b class="nc">&nbsp;            minus = -d;</b>
+&nbsp;        } else {
+&nbsp;            // two-sided
+<b class="nc">&nbsp;            plus = d;</b>
+<b class="nc">&nbsp;            minus = -d;</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        // Test dnm=0. This occurs for example when x == y.
+<b class="nc">&nbsp;        if (0 &lt; minus || 0 &gt; plus) {</b>
+&nbsp;            // Edge case where all possible d will be outside the inclusive bounds
+<b class="nc">&nbsp;            return 1;</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        // Sample randomly with replacement from the combined distribution.
+<b class="nc">&nbsp;        final DoubleSupplier gen = createSampler(x, y, rng);</b>
+<b class="nc">&nbsp;        int count = 0;</b>
+<b class="nc">&nbsp;        for (int i = iterations; i &gt; 0; i--) {</b>
+<b class="nc">&nbsp;            for (int j = 0; j &lt; x.length; j++) {</b>
+<b class="nc">&nbsp;                x[j] = gen.getAsDouble();</b>
+&nbsp;            }
+<b class="nc">&nbsp;            for (int j = 0; j &lt; y.length; j++) {</b>
+<b class="nc">&nbsp;                y[j] = gen.getAsDouble();</b>
+&nbsp;            }
+<b class="nc">&nbsp;            if (testIntegralKolmogorovSmirnovStatistic(x, y, plus, minus)) {</b>
+<b class="nc">&nbsp;                count++;</b>
+&nbsp;            }
+&nbsp;        }
+<b class="nc">&nbsp;        return count / (double) iterations;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Computes the magnitude of the one-sample Kolmogorov-Smirnov test statistic.
+&nbsp;     * The sign of the statistic is optionally returned in {@code sign}. For the two-sided case
+&nbsp;     * the sign is 0 if the magnitude of D+ and D- was equal; otherwise it indicates which D
+&nbsp;     * had the larger magnitude.
+&nbsp;     *
+&nbsp;     * @param x Sample being evaluated.
+&nbsp;     * @param cdf Reference cumulative distribution function.
+&nbsp;     * @param sign Sign of the statistic (non-zero length).
+&nbsp;     * @return Kolmogorov-Smirnov statistic
+&nbsp;     * @throws IllegalArgumentException if {@code data} does not have length at least 2;
+&nbsp;     * or contains NaN values.
+&nbsp;     */
+&nbsp;    private double computeStatistic(double[] x, DoubleUnaryOperator cdf, int[] sign) {
+<b class="nc">&nbsp;        final int n = checkArrayLength(x);</b>
+<b class="nc">&nbsp;        final double nd = n;</b>
+<b class="nc">&nbsp;        final double[] sx = sort(x.clone(), &quot;Sample&quot;);</b>
+&nbsp;        // Note: ties in the data do not matter as we compare the empirical CDF
+&nbsp;        // immediately before the value (i/n) and at the value (i+1)/n. For ties
+&nbsp;        // of length m this would be (i-m+1)/n and (i+1)/n and the result is the same.
+<b class="nc">&nbsp;        double d = 0;</b>
+<b class="nc">&nbsp;        if (alternative == AlternativeHypothesis.GREATER_THAN) {</b>
+&nbsp;            // Compute D+
+<b class="nc">&nbsp;            for (int i = 0; i &lt; n; i++) {</b>
+<b class="nc">&nbsp;                final double yi = cdf.applyAsDouble(sx[i]);</b>
+<b class="nc">&nbsp;                final double dp = (i + 1) / nd - yi;</b>
+<b class="nc">&nbsp;                d = dp &gt; d ? dp : d;</b>
+&nbsp;            }
+<b class="nc">&nbsp;            sign[0] = 1;</b>
+<b class="nc">&nbsp;        } else if (alternative == AlternativeHypothesis.LESS_THAN) {</b>
+&nbsp;            // Compute D-
+<b class="nc">&nbsp;            for (int i = 0; i &lt; n; i++) {</b>
+<b class="nc">&nbsp;                final double yi = cdf.applyAsDouble(sx[i]);</b>
+<b class="nc">&nbsp;                final double dn = yi - i / nd;</b>
+<b class="nc">&nbsp;                d = dn &gt; d ? dn : d;</b>
+&nbsp;            }
+<b class="nc">&nbsp;            sign[0] = -1;</b>
+&nbsp;        } else {
+&nbsp;            // Two sided.
+&nbsp;            // Compute both (as unsigned) and return the sign indicating the largest result.
+<b class="nc">&nbsp;            double plus = 0;</b>
+<b class="nc">&nbsp;            double minus = 0;</b>
+<b class="nc">&nbsp;            for (int i = 0; i &lt; n; i++) {</b>
+<b class="nc">&nbsp;                final double yi = cdf.applyAsDouble(sx[i]);</b>
+<b class="nc">&nbsp;                final double dn = yi - i / nd;</b>
+<b class="nc">&nbsp;                final double dp = (i + 1) / nd - yi;</b>
+<b class="nc">&nbsp;                minus = dn &gt; minus ? dn : minus;</b>
+<b class="nc">&nbsp;                plus = dp &gt; plus ? dp : plus;</b>
+&nbsp;            }
+<b class="nc">&nbsp;            sign[0] = Double.compare(plus, minus);</b>
+<b class="nc">&nbsp;            d = Math.max(plus, minus);</b>
+&nbsp;        }
+<b class="nc">&nbsp;        return d;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Computes the two-sample Kolmogorov-Smirnov test statistic. The statistic is integral
+&nbsp;     * and has a value in {@code [0, n*m]}. Not all values are possible; the smallest
+&nbsp;     * increment is the greatest common divisor of {@code n} and {@code m}.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;This method will destructively modify the input arrays (via a sort).
+&nbsp;     *
+&nbsp;     * &lt;p&gt;The sign of the statistic is returned in {@code sign}. For the two-sided case
+&nbsp;     * the sign is 0 if the magnitude of D+ and D- was equal; otherwise it indicates which D
+&nbsp;     * had the larger magnitude. If the two-sided statistic is zero the two arrays are
+&nbsp;     * identical, or are &#39;identical&#39; data of a single value (sample sizes may be different),
+&nbsp;     * or have a sequence of ties of &#39;identical&#39; data with a net zero effect on the D statistic
+&nbsp;     * e.g.
+&nbsp;     * &lt;pre&gt;
+&nbsp;     *  [1,2,3]           vs [1,2,3]
+&nbsp;     *  [0,0,0,0]         vs [0,0,0]
+&nbsp;     *  [0,0,0,0,1,1,1,1] vs [0,0,0,1,1,1]
+&nbsp;     * &lt;/pre&gt;
+&nbsp;     *
+&nbsp;     * &lt;p&gt;This method detects ties in the input data. Not all ties will invalidate the returned
+&nbsp;     * statistic. Ties between the data can be interpreted as if the values were different
+&nbsp;     * but within machine epsilon. In this case the path through the tie region is not known.
+&nbsp;     * All paths through the tie region end at the same point. This method will compute the
+&nbsp;     * most extreme path through each tie region and the D statistic for these paths. If the
+&nbsp;     * ties D statistic is a larger magnitude than the returned D statistic then at least
+&nbsp;     * one tie region lies at a point on the full path that could result in a different
+&nbsp;     * statistic in the absence of ties. This signals the P-value computed using the returned
+&nbsp;     * D statistic is one of many possible p-values given the data and how ties are resolved.
+&nbsp;     * Note: The tiesD value may be smaller than the returned D statistic as it is not set
+&nbsp;     * to the maximum of D or tiesD. The only result of interest is when {@code tiesD &gt; D}
+&nbsp;     * due to a tie region that can change the output D. On output {@code tiesD[0] != 0}
+&nbsp;     * if there were ties between samples and {@code tiesD[1] = D} of the most extreme path
+&nbsp;     * through the ties.
+&nbsp;     *
+&nbsp;     * @param x First sample (destructively modified by sort).
+&nbsp;     * @param y Second sample  (destructively modified by sort).
+&nbsp;     * @param sign Sign of the statistic (non-zero length).
+&nbsp;     * @param tiesD Integral statistic for the most extreme path through any ties (length at least 2).
+&nbsp;     * @return integral Kolmogorov-Smirnov statistic
+&nbsp;     * @throws IllegalArgumentException if either {@code x} or {@code y} contain NaN values.
+&nbsp;     */
+&nbsp;    private long computeIntegralKolmogorovSmirnovStatistic(double[] x, double[] y, int[] sign, long[] tiesD) {
+&nbsp;        // Sort the sample arrays
+<b class="nc">&nbsp;        sort(x, SAMPLE_1_NAME);</b>
+<b class="nc">&nbsp;        sort(y, SAMPLE_2_NAME);</b>
+<b class="nc">&nbsp;        final int n = x.length;</b>
+<b class="nc">&nbsp;        final int m = y.length;</b>
+&nbsp;
+&nbsp;        // CDFs range from 0 to 1 using increments of 1/n and 1/m for x and y respectively.
+&nbsp;        // Scale by n*m to use increments of m and n for x and y.
+&nbsp;        // Find the max difference between cdf_x and cdf_y.
+<b class="nc">&nbsp;        int i = 0;</b>
+<b class="nc">&nbsp;        int j = 0;</b>
+<b class="nc">&nbsp;        long d = 0;</b>
+<b class="nc">&nbsp;        long plus = 0;</b>
+<b class="nc">&nbsp;        long minus = 0;</b>
+&nbsp;        // Ties: store the D+,D- for most extreme path though tie region(s)
+<b class="nc">&nbsp;        long tplus = 0;</b>
+<b class="nc">&nbsp;        long tminus = 0;</b>
+&nbsp;        do {
+&nbsp;            // No NaNs so compare using &lt; and &gt;
+<b class="nc">&nbsp;            if (x[i] &lt; y[j]) {</b>
+<b class="nc">&nbsp;                final double z = x[i];</b>
+&nbsp;                do {
+<b class="nc">&nbsp;                    i++;</b>
+<b class="nc">&nbsp;                    d += m;</b>
+<b class="nc">&nbsp;                } while (i &lt; n &amp;&amp; x[i] == z);</b>
+<b class="nc">&nbsp;                plus = d &gt; plus ? d : plus;</b>
+<b class="nc">&nbsp;            } else if (x[i] &gt; y[j]) {</b>
+<b class="nc">&nbsp;                final double z = y[j];</b>
+&nbsp;                do {
+<b class="nc">&nbsp;                    j++;</b>
+<b class="nc">&nbsp;                    d -= n;</b>
+<b class="nc">&nbsp;                } while (j &lt; m &amp;&amp; y[j] == z);</b>
+<b class="nc">&nbsp;                minus = d &lt; minus ? d : minus;</b>
+<b class="nc">&nbsp;            } else {</b>
+&nbsp;                // Traverse to the end of the tied section for d.
+&nbsp;                // Also compute the most extreme path through the tied region.
+<b class="nc">&nbsp;                final double z = x[i];</b>
+<b class="nc">&nbsp;                final long dd = d;</b>
+<b class="nc">&nbsp;                int k = i;</b>
+&nbsp;                do {
+<b class="nc">&nbsp;                    i++;</b>
+<b class="nc">&nbsp;                } while (i &lt; n &amp;&amp; x[i] == z);</b>
+<b class="nc">&nbsp;                k = i - k;</b>
+<b class="nc">&nbsp;                d += k * (long) m;</b>
+&nbsp;                // Extreme D+ path
+<b class="nc">&nbsp;                tplus = d &gt; tplus ? d : tplus;</b>
+<b class="nc">&nbsp;                k = j;</b>
+&nbsp;                do {
+<b class="nc">&nbsp;                    j++;</b>
+<b class="nc">&nbsp;                } while (j &lt; m &amp;&amp; y[j] == z);</b>
+<b class="nc">&nbsp;                k = j - k;</b>
+<b class="nc">&nbsp;                d -= k * (long) n;</b>
+&nbsp;                // Extreme D- path must start at the original d
+<b class="nc">&nbsp;                tminus = Math.min(tminus, dd - k * (long) n);</b>
+&nbsp;                // End of tied section
+<b class="nc">&nbsp;                if (d &gt; plus) {</b>
+<b class="nc">&nbsp;                    plus = d;</b>
+<b class="nc">&nbsp;                } else if (d &lt; minus) {</b>
+<b class="nc">&nbsp;                    minus = d;</b>
+&nbsp;                }
+&nbsp;            }
+<b class="nc">&nbsp;        } while (i &lt; n &amp;&amp; j &lt; m);</b>
+&nbsp;        // The presence of any ties is flagged by a non-zero value for D+ or D-.
+&nbsp;        // Note we cannot use the selected tiesD value as in the one-sided case it may be zero
+&nbsp;        // and the non-selected D value will be non-zero.
+<b class="nc">&nbsp;        tiesD[0] = tplus | tminus;</b>
+&nbsp;        // For simplicity the correct tiesD is not returned (correct value is commented).
+&nbsp;        // The only case that matters is tiesD &gt; D which is evaluated by the caller.
+&nbsp;        // Note however that the distance of tiesD &lt; D is a measure of how little the
+&nbsp;        // tied region matters.
+<b class="nc">&nbsp;        if (alternative == AlternativeHypothesis.GREATER_THAN) {</b>
+<b class="nc">&nbsp;            sign[0] = 1;</b>
+&nbsp;            // correct = max(tplus, plus)
+<b class="nc">&nbsp;            tiesD[1] = tplus;</b>
+<b class="nc">&nbsp;            return plus;</b>
+<b class="nc">&nbsp;        } else if (alternative == AlternativeHypothesis.LESS_THAN) {</b>
+<b class="nc">&nbsp;            sign[0] = -1;</b>
+&nbsp;            // correct = -min(tminus, minus)
+<b class="nc">&nbsp;            tiesD[1] = -tminus;</b>
+<b class="nc">&nbsp;            return -minus;</b>
+&nbsp;        } else {
+&nbsp;            // Two sided.
+<b class="nc">&nbsp;            sign[0] = Double.compare(plus, -minus);</b>
+<b class="nc">&nbsp;            d = Math.max(plus, -minus);</b>
+&nbsp;            // correct = max(d, max(tplus, -tminus))
+<b class="nc">&nbsp;            tiesD[1] = Math.max(tplus, -tminus);</b>
+<b class="nc">&nbsp;            return d;</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Test if the two-sample integral Kolmogorov-Smirnov statistic is strictly greater
+&nbsp;     * than the specified values for D+ and D-. Note that D- should have a negative sign
+&nbsp;     * to impose an inclusive lower bound.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;This method will destructively modify the input arrays (via a sort).
+&nbsp;     *
+&nbsp;     * &lt;p&gt;For a two-sided alternative hypothesis {@code plus} and {@code minus} should have the
+&nbsp;     * same magnitude with opposite signs.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;For a one-sided alternative hypothesis the value of {@code plus} or {@code minus}
+&nbsp;     * should have the expected value of the statistic, and the opposite D should have the maximum
+&nbsp;     * or minimum long value. The {@code minus} should be negatively signed:
+&nbsp;     *
+&nbsp;     * &lt;ul&gt;
+&nbsp;     * &lt;li&gt;greater: {@code plus} = D, {@code minus} = {@link Long#MIN_VALUE}
+&nbsp;     * &lt;li&gt;greater: {@code minus} = -D, {@code plus} = {@link Long#MAX_VALUE}
+&nbsp;     * &lt;/ul&gt;
+&nbsp;     *
+&nbsp;     * &lt;p&gt;Note: This method has not been specialized for the one-sided case. Specialization
+&nbsp;     * would eliminate a conditional branch for {@code d &gt; Long.MAX_VALUE} or
+&nbsp;     * {@code d &lt; Long.MIN_VALUE}. Since these branches are never possible in the one-sided case
+&nbsp;     * this should be efficiently chosen by branch prediction in a processor pipeline.
+&nbsp;     *
+&nbsp;     * @param x First sample (destructively modified by sort; must not contain NaN).
+&nbsp;     * @param y Second sample (destructively modified by sort; must not contain NaN).
+&nbsp;     * @param plus Limit on D+ (inclusive upper bound).
+&nbsp;     * @param minus Limit on D- (inclusive lower bound).
+&nbsp;     * @return true if the D value exceeds the provided limits
+&nbsp;     */
+&nbsp;    private static boolean testIntegralKolmogorovSmirnovStatistic(double[] x, double[] y, long plus, long minus) {
+&nbsp;        // Sort the sample arrays
+<b class="nc">&nbsp;        Arrays.sort(x);</b>
+<b class="nc">&nbsp;        Arrays.sort(y);</b>
+<b class="nc">&nbsp;        final int n = x.length;</b>
+<b class="nc">&nbsp;        final int m = y.length;</b>
+&nbsp;
+&nbsp;        // CDFs range from 0 to 1 using increments of 1/n and 1/m for x and y respectively.
+&nbsp;        // Scale by n*m to use increments of m and n for x and y.
+&nbsp;        // Find the any difference that exceeds the specified bounds.
+<b class="nc">&nbsp;        int i = 0;</b>
+<b class="nc">&nbsp;        int j = 0;</b>
+<b class="nc">&nbsp;        long d = 0;</b>
+&nbsp;        do {
+&nbsp;            // No NaNs so compare using &lt; and &gt;
+<b class="nc">&nbsp;            if (x[i] &lt; y[j]) {</b>
+<b class="nc">&nbsp;                final double z = x[i];</b>
+&nbsp;                do {
+<b class="nc">&nbsp;                    i++;</b>
+<b class="nc">&nbsp;                    d += m;</b>
+<b class="nc">&nbsp;                } while (i &lt; n &amp;&amp; x[i] == z);</b>
+<b class="nc">&nbsp;                if (d &gt; plus) {</b>
+<b class="nc">&nbsp;                    return true;</b>
+&nbsp;                }
+<b class="nc">&nbsp;            } else if (x[i] &gt; y[j]) {</b>
+<b class="nc">&nbsp;                final double z = y[j];</b>
+&nbsp;                do {
+<b class="nc">&nbsp;                    j++;</b>
+<b class="nc">&nbsp;                    d -= n;</b>
+<b class="nc">&nbsp;                } while (j &lt; m &amp;&amp; y[j] == z);</b>
+<b class="nc">&nbsp;                if (d &lt; minus) {</b>
+<b class="nc">&nbsp;                    return true;</b>
+&nbsp;                }
+<b class="nc">&nbsp;            } else {</b>
+&nbsp;                // Traverse to the end of the tied section for d.
+<b class="nc">&nbsp;                final double z = x[i];</b>
+&nbsp;                do {
+<b class="nc">&nbsp;                    i++;</b>
+<b class="nc">&nbsp;                    d += m;</b>
+<b class="nc">&nbsp;                } while (i &lt; n &amp;&amp; x[i] == z);</b>
+&nbsp;                do {
+<b class="nc">&nbsp;                    j++;</b>
+<b class="nc">&nbsp;                    d -= n;</b>
+<b class="nc">&nbsp;                } while (j &lt; m &amp;&amp; y[j] == z);</b>
+&nbsp;                // End of tied section
+<b class="nc">&nbsp;                if (d &gt; plus || d &lt; minus) {</b>
+<b class="nc">&nbsp;                    return true;</b>
+&nbsp;                }
+&nbsp;            }
+<b class="nc">&nbsp;        } while (i &lt; n &amp;&amp; j &lt; m);</b>
+&nbsp;        // Note: Here d requires returning to zero. This is applicable to the one-sided
+&nbsp;        // cases since d may have always been above zero (favours D+) or always below zero
+&nbsp;        // (favours D-). This is ignored as the method is not called when dnm=0 is
+&nbsp;        // outside the inclusive bounds.
+<b class="nc">&nbsp;        return false;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Creates a sampler to sample randomly from the combined distribution of the two samples.
+&nbsp;     *
+&nbsp;     * @param x First sample.
+&nbsp;     * @param y Second sample.
+&nbsp;     * @param rng Source of randomness.
+&nbsp;     * @return the sampler
+&nbsp;     */
+&nbsp;    private static DoubleSupplier createSampler(double[] x, double[] y,
+&nbsp;                                                UniformRandomProvider rng) {
+<b class="nc">&nbsp;        return createSampler(x, y, rng, MAX_ARRAY_SIZE);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Creates a sampler to sample randomly from the combined distribution of the two
+&nbsp;     * samples. This will copy the input data for the sampler.
+&nbsp;     *
+&nbsp;     * @param x First sample.
+&nbsp;     * @param y Second sample.
+&nbsp;     * @param rng Source of randomness.
+&nbsp;     * @param maxArraySize Maximum size of a single array.
+&nbsp;     * @return the sampler
+&nbsp;     */
+&nbsp;    static DoubleSupplier createSampler(double[] x, double[] y,
+&nbsp;                                        UniformRandomProvider rng,
+&nbsp;                                        int maxArraySize) {
+<b class="nc">&nbsp;        final int n = x.length;</b>
+<b class="nc">&nbsp;        final int m = y.length;</b>
+<b class="nc">&nbsp;        final int len = n + m;</b>
+&nbsp;        // Overflow safe: len &gt; maxArraySize
+<b class="nc">&nbsp;        if (len - maxArraySize &gt; 0) {</b>
+&nbsp;            // Support sampling with maximum length arrays
+&nbsp;            // (where a concatenated array is not possible)
+&nbsp;            // by choosing one or the other.
+&nbsp;            // - generate i in [-n, m)
+&nbsp;            // - return i &lt; 0 ? x[n + i] : y[i]
+&nbsp;            // The sign condition is a 50-50 branch.
+&nbsp;            // Perform branchless by extracting the sign bit to pick the array.
+&nbsp;            // Copy the source data.
+<b class="nc">&nbsp;            final double[] xx = x.clone();</b>
+<b class="nc">&nbsp;            final double[] yy = y.clone();</b>
+<b class="nc">&nbsp;            final IntToDoubleFunction nextX = i -&gt; xx[n + i];</b>
+<b class="nc">&nbsp;            final IntToDoubleFunction nextY = i -&gt; yy[i];</b>
+&nbsp;            // Arrange function which accepts the negative index at position [1]
+<b class="nc">&nbsp;            final IntToDoubleFunction[] next = {nextY, nextX};</b>
+<b class="nc">&nbsp;            return () -&gt; {</b>
+<b class="nc">&nbsp;                final int i = rng.nextInt(-n, m);</b>
+<b class="nc">&nbsp;                return next[i &gt;&gt;&gt; 31].applyAsDouble(i);</b>
+&nbsp;            };
+&nbsp;        }
+&nbsp;        // Concatenate arrays
+<b class="nc">&nbsp;        final double[] z = new double[len];</b>
+<b class="nc">&nbsp;        System.arraycopy(x, 0, z, 0, n);</b>
+<b class="nc">&nbsp;        System.arraycopy(y, 0, z, n, m);</b>
+<b class="nc">&nbsp;        return () -&gt; z[rng.nextInt(len)];</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Compute the D statistic from the integral D value.
+&nbsp;     *
+&nbsp;     * @param dnm Integral D-statistic value (in [0, n*m]).
+&nbsp;     * @param n First sample size.
+&nbsp;     * @param m Second sample size.
+&nbsp;     * @param gcd Greatest common divisor of n and m.
+&nbsp;     * @return D-statistic value (in [0, 1]).
+&nbsp;     */
+&nbsp;    private static double computeD(long dnm, int n, int m, int gcd) {
+&nbsp;        // Note: Integer division using the gcd is intentional
+<b class="nc">&nbsp;        final long a = dnm / gcd;</b>
+<b class="nc">&nbsp;        final int b = m / gcd;</b>
+<b class="nc">&nbsp;        return a / ((double) n * b);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Computes \(P(D_{n,m} &amp;gt; d)\) for the 2-sample Kolmogorov-Smirnov statistic.
+&nbsp;     *
+&nbsp;     * @param dnm Integral D-statistic value (in [0, n*m]).
+&nbsp;     * @param n First sample size.
+&nbsp;     * @param m Second sample size.
+&nbsp;     * @param gcd Greatest common divisor of n and m.
+&nbsp;     * @param d D-statistic value (in [0, 1]).
+&nbsp;     * @param exact whether to compute the exact probability; otherwise approximate.
+&nbsp;     * @return probability
+&nbsp;     * @see #twoSampleExactP(long, int, int, int, boolean, boolean)
+&nbsp;     * @see #twoSampleApproximateP(double, int, int, boolean)
+&nbsp;     */
+&nbsp;    private double twoSampleP(long dnm, int n, int m, int gcd, double d, boolean exact) {
+&nbsp;        // Exact computation returns -1 if it cannot compute.
+<b class="nc">&nbsp;        double p = -1;</b>
+<b class="nc">&nbsp;        if (exact) {</b>
+<b class="nc">&nbsp;            p = twoSampleExactP(dnm, n, m, gcd, strictInequality, alternative == AlternativeHypothesis.TWO_SIDED);</b>
+&nbsp;        }
+<b class="nc">&nbsp;        if (p &lt; 0) {</b>
+<b class="nc">&nbsp;            p = twoSampleApproximateP(d, n, m, alternative == AlternativeHypothesis.TWO_SIDED);</b>
+&nbsp;        }
+<b class="nc">&nbsp;        return p;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Computes \(P(D_{n,m} &amp;gt; d)\) if {@code strict} is {@code true}; otherwise \(P(D_{n,m} \ge
+&nbsp;     * d)\), where \(D_{n,m}\) is the 2-sample Kolmogorov-Smirnov statistic, either the two-sided
+&nbsp;     * \(D_{n,m}\) or one-sided \(D_{n,m}^+\}. See
+&nbsp;     * {@link #statistic(double[], double[])} for the definition of \(D_{n,m}\).
+&nbsp;     *
+&nbsp;     * &lt;p&gt;The returned probability is exact. If the value cannot be computed this returns -1.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;Note: This requires the greatest common divisor of n and m. The integral D statistic
+&nbsp;     * in the range [0, n*m] is separated by increments of the gcd. The method will only
+&nbsp;     * compute p-values for valid values of D by calculating for D/gcd.
+&nbsp;     * Strict inquality is performed using the next valid value for D.
+&nbsp;     *
+&nbsp;     * @param dnm Integral D-statistic value (in [0, n*m]).
+&nbsp;     * @param n First sample size.
+&nbsp;     * @param m Second sample size.
+&nbsp;     * @param gcd Greatest common divisor of n and m.
+&nbsp;     * @param strict whether or not the probability to compute is expressed as a strict inequality.
+&nbsp;     * @param twoSided whether D refers to D or D+.
+&nbsp;     * @return probability that a randomly selected m-n partition of m + n generates D
+&nbsp;     *         greater than (resp. greater than or equal to) {@code d} (or -1)
+&nbsp;     */
+&nbsp;    static double twoSampleExactP(long dnm, int n, int m, int gcd, boolean strict, boolean twoSided) {
+&nbsp;        // Create the statistic in [0, lcm]
+&nbsp;        // For strict inequality D &gt; d the result is the same if we compute for D &gt;= (d+1)
+<b class="nc">&nbsp;        final long d = dnm / gcd + (strict ? 1 : 0);</b>
+&nbsp;
+&nbsp;        // P-value methods compute for d &lt;= lcm (least common multiple)
+<b class="nc">&nbsp;        final long lcm = (long) n * (m / gcd);</b>
+<b class="nc">&nbsp;        if (d &gt; lcm) {</b>
+<b class="nc">&nbsp;            return 0;</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        // Note: Some methods require m &gt;= n, others n &gt;= m
+<b class="nc">&nbsp;        final int a = Math.min(n, m);</b>
+<b class="nc">&nbsp;        final int b = Math.max(n, m);</b>
+&nbsp;
+<b class="nc">&nbsp;        if (twoSided) {</b>
+&nbsp;            // Any two-sided statistic dnm cannot be less than min(n, m) in the absence of ties.
+<b class="nc">&nbsp;            if (d * gcd &lt;= a) {</b>
+<b class="nc">&nbsp;                return 1;</b>
+&nbsp;            }
+&nbsp;            // Here d in [2, lcm]
+<b class="nc">&nbsp;            if (n == m) {</b>
+<b class="nc">&nbsp;                return twoSampleTwoSidedPOutsideSquare(d, n);</b>
+&nbsp;            }
+<b class="nc">&nbsp;            return twoSampleTwoSidedPStabilizedInner(d, b, a, gcd);</b>
+&nbsp;        }
+&nbsp;        // Any one-sided statistic cannot be less than 0
+<b class="nc">&nbsp;        if (d &lt;= 0) {</b>
+<b class="nc">&nbsp;            return 1;</b>
+&nbsp;        }
+&nbsp;        // Here d in [1, lcm]
+<b class="nc">&nbsp;        if (n == m) {</b>
+<b class="nc">&nbsp;            return twoSampleOneSidedPOutsideSquare(d, n);</b>
+&nbsp;        }
+<b class="nc">&nbsp;        return twoSampleOneSidedPOutside(d, a, b, gcd);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Computes \(P(D_{n,m} \ge d)\), where \(D_{n,m}\) is the 2-sample Kolmogorov-Smirnov statistic.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;The returned probability is exact, implemented using the stabilized inner method
+&nbsp;     * presented in Viehmann (2021).
+&nbsp;     *
+&nbsp;     * &lt;p&gt;This is optimized for {@code m &lt;= n}. If {@code m &gt; n} and index-out-of-bounds
+&nbsp;     * exception can occur.
+&nbsp;     *
+&nbsp;     * @param d Integral D-statistic value (in [2, lcm])
+&nbsp;     * @param n Larger sample size.
+&nbsp;     * @param m Smaller sample size.
+&nbsp;     * @param gcd Greatest common divisor of n and m.
+&nbsp;     * @return probability that a randomly selected m-n partition of m + n generates \(D_{n,m}\)
+&nbsp;     *         greater than or equal to {@code d}
+&nbsp;     */
+&nbsp;    private static double twoSampleTwoSidedPStabilizedInner(long d, int n, int m, int gcd) {
+&nbsp;        // Check the computation is possible.
+&nbsp;        // Note that the possible paths is binom(m+n, n).
+&nbsp;        // However the computation is stable above this limit.
+&nbsp;        // Possible d values (requiring a unique p-value) = max(dnm) / gcd = lcm(n, m).
+&nbsp;        // Possible terms to compute &lt;= n * size(cij)
+&nbsp;        // Simple limit based on the number of possible different p-values
+<b class="nc">&nbsp;        if ((long) n * (m / gcd) &gt; MAX_LCM_TWO_SAMPLE_EXACT_P) {</b>
+<b class="nc">&nbsp;            return -1;</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        // This could be updated to use d in [1, lcm].
+&nbsp;        // Currently it uses d in [gcd, n*m].
+&nbsp;        // Largest intermediate value is (dnm + im + n) which is within 2^63
+&nbsp;        // if n and m are 2^31-1, i = n, dnm = n*m: (2^31-1)^2 + (2^31-1)^2 + 2^31-1 &lt; 2^63
+<b class="nc">&nbsp;        final long dnm = d * gcd;</b>
+&nbsp;
+&nbsp;        // Viehmann (2021): Updated for i in [0, n], j in [0, m]
+&nbsp;        // C_i,j = 1                                      if |i/n - j/m| &gt;= d
+&nbsp;        //       = 0                                      if |i/n - j/m| &lt; d and (i=0 or j=0)
+&nbsp;        //       = C_i-1,j * i/(i+j) + C_i,j-1 * j/(i+j)  otherwise
+&nbsp;        // P2 = C_n,m
+&nbsp;        // Note: The python listing in Viehmann used d in [0, 1]. This uses dnm in [0, nm]
+&nbsp;        // so updates the scaling to compute the ranges. Also note that the listing uses
+&nbsp;        // dist &gt; d or dist &lt; -d where this uses |dist| &gt;= d to compute P(D &gt;= d) (non-strict inequality).
+&nbsp;        // The provided listing is explicit in the values for each j in the range.
+&nbsp;        // It can be optimized given the known start and end j for each iteration as only
+&nbsp;        // j where |i/n - j/m| &lt; d must be processed:
+&nbsp;        // startJ where: im - jn &lt; dnm : jn &gt; im - dnm
+&nbsp;        // j = floor((im - dnm) / n) + 1      in [0, m]
+&nbsp;        // endJ where: jn - im &gt;= dnm
+&nbsp;        // j = ceil((dnm + im) / n)           in [0, m+1]
+&nbsp;
+&nbsp;        // First iteration with i = 0
+&nbsp;        // j = ceil(dnm / n)
+<b class="nc">&nbsp;        int endJ = Math.min(m + 1, (int) ((dnm + n - 1) / n));</b>
+&nbsp;
+&nbsp;        // Only require 1 array to store C_i-1,j as the startJ only ever increases
+&nbsp;        // and we update lower indices using higher ones.
+&nbsp;        // The maximum value *written* is j=m or less using j/m &lt;= 2*d : j = ceil(2*d*m)
+&nbsp;        // Viehmann uses: size = int(2*m*d + 2) == ceil(2*d*m) + 1
+&nbsp;        // The maximum value *read* is j/m &lt;= 2*d. This may be above m. This occurs when
+&nbsp;        // j - lastStartJ &gt; m and C_i-1,j = 1. This can be avoided if (startJ - lastStartJ) &lt;= 1
+&nbsp;        // which occurs if m &lt;= n, i.e. the window only slides 0 or 1 in j for each increment i
+&nbsp;        // and we can maintain Cij as 1 larger than ceil(2*d*m) + 1.
+<b class="nc">&nbsp;        final double[] cij = new double[Math.min(m + 1, 2 * endJ + 2)];</b>
+&nbsp;
+&nbsp;        // Each iteration fills C_i,j with values and the remaining values are
+&nbsp;        // kept as 1 for |i/n - j/m| &gt;= d
+&nbsp;        //assert (endJ - 1) * (long) n &lt; dnm : &quot;jn &gt;= dnm for j &lt; endJ&quot;;
+<b class="nc">&nbsp;        for (int j = endJ; j &lt; cij.length; j++) {</b>
+&nbsp;            //assert j * (long) n &gt;= dnm : &quot;jn &lt; dnm for j &gt;= endJ&quot;;
+<b class="nc">&nbsp;            cij[j] = 1;</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        int startJ = 0;</b>
+<b class="nc">&nbsp;        int length = endJ;</b>
+<b class="nc">&nbsp;        double val = -1;</b>
+<b class="nc">&nbsp;        long im = 0;</b>
+<b class="nc">&nbsp;        for (int i = 1; i &lt;= n; i++) {</b>
+<b class="nc">&nbsp;            im += m;</b>
+<b class="nc">&nbsp;            final int lastStartJ = startJ;</b>
+&nbsp;
+&nbsp;            // Compute C_i,j for startJ &lt;= j &lt; endJ
+&nbsp;            // startJ = floor((im - dnm) / n) + 1      in [0, m]
+&nbsp;            // endJ   = ceil((dnm + im) / n)           in [0, m+1]
+<b class="nc">&nbsp;            startJ = im &lt; dnm ? 0 : Math.min(m, (int) ((im - dnm) / n) + 1);</b>
+<b class="nc">&nbsp;            endJ = Math.min(m + 1, (int) ((dnm + im + n - 1) / n));</b>
+&nbsp;
+<b class="nc">&nbsp;            if (startJ &gt;= endJ) {</b>
+&nbsp;                // No possible paths inside the boundary
+<b class="nc">&nbsp;                return 1;</b>
+&nbsp;            }
+&nbsp;
+&nbsp;            //assert startJ - lastStartJ &lt;= 1 : &quot;startJ - lastStartJ &gt; 1&quot;;
+&nbsp;
+&nbsp;            // Initialize previous value C_i,j-1
+<b class="nc">&nbsp;            val = startJ == 0 ? 0 : 1;</b>
+&nbsp;
+&nbsp;            //assert startJ == 0 || Math.abs(im - (startJ - 1) * (long) n) &gt;= dnm : &quot;|im - jn| &lt; dnm for j &lt; startJ&quot;;
+&nbsp;            //assert endJ &gt; m || Math.abs(im - endJ * (long) n) &gt;= dnm : &quot;|im - jn| &lt; dnm for j &gt;= endJ&quot;;
+<b class="nc">&nbsp;            for (int j = startJ; j &lt; endJ; j++) {</b>
+&nbsp;                //assert j == 0 || Math.abs(im - j * (long) n) &lt; dnm : &quot;|im - jn| &gt;= dnm for startJ &lt;= j &lt; endJ&quot;;
+&nbsp;                // C_i,j = C_i-1,j * i/(i+j) + C_i,j-1 * j/(i+j)
+&nbsp;                // Note: if (j - lastStartJ) &gt;= cij.length this creates an IOOB exception.
+&nbsp;                // In this case cij[j - lastStartJ] == 1. Only happens when m &gt;= n.
+&nbsp;                // Fixed using c_i-1,j = (j - lastStartJ &gt;= cij.length ? 1 : cij[j - lastStartJ]
+<b class="nc">&nbsp;                val = (cij[j - lastStartJ] * i + val * j) / ((double) i + j);</b>
+<b class="nc">&nbsp;                cij[j - startJ] = val;</b>
+&nbsp;            }
+&nbsp;
+&nbsp;            // Must keep the remaining values in C_i,j as 1 to allow
+&nbsp;            // cij[j - lastStartJ] * i == i when (j - lastStartJ) &gt; lastLength
+<b class="nc">&nbsp;            final int lastLength = length;</b>
+<b class="nc">&nbsp;            length = endJ - startJ;</b>
+<b class="nc">&nbsp;            for (int j = lastLength - length - 1; j &gt;= 0; j--) {</b>
+<b class="nc">&nbsp;                cij[length + j] = 1;</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;        // Return the most recently written value: C_n,m
+<b class="nc">&nbsp;        return val;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Computes \(P(D_{n,m}^+ \ge d)\), where \(D_{n,m}^+\) is the 2-sample one-sided
+&nbsp;     * Kolmogorov-Smirnov statistic.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;The returned probability is exact, implemented using the outer method
+&nbsp;     * presented in Hodges (1958).
+&nbsp;     *
+&nbsp;     * &lt;p&gt;This method will fail-fast and return -1 if the computation of the
+&nbsp;     * numbers of paths overflows.
+&nbsp;     *
+&nbsp;     * @param d Integral D-statistic value (in [0, lcm])
+&nbsp;     * @param n First sample size.
+&nbsp;     * @param m Second sample size.
+&nbsp;     * @param gcd Greatest common divisor of n and m.
+&nbsp;     * @return probability that a randomly selected m-n partition of m + n generates \(D_{n,m}\)
+&nbsp;     *         greater than or equal to {@code d}
+&nbsp;     */
+&nbsp;    private static double twoSampleOneSidedPOutside(long d, int n, int m, int gcd) {
+&nbsp;        // Hodges, Fig.2
+&nbsp;        // Lower boundary: (nx - my)/nm &gt;= d : (nx - my) &gt;= dnm
+&nbsp;        // B(x, y) is the number of ways from (0, 0) to (x, y) without previously
+&nbsp;        // reaching the boundary.
+&nbsp;        // B(x, y) = binom(x+y, y) - [number of ways which previously reached the boundary]
+&nbsp;        // Total paths:
+&nbsp;        // sum_y { B(x, y) binom(m+n-x-y, n-y) }
+&nbsp;
+&nbsp;        // Normalized by binom(m+n, n). Check this is possible.
+<b class="nc">&nbsp;        final long lm = m;</b>
+<b class="nc">&nbsp;        if (n + lm &gt; Integer.MAX_VALUE) {</b>
+<b class="nc">&nbsp;            return -1;</b>
+&nbsp;        }
+<b class="nc">&nbsp;        final double binom = binom(m + n, n);</b>
+<b class="nc">&nbsp;        if (binom == Double.POSITIVE_INFINITY) {</b>
+<b class="nc">&nbsp;            return -1;</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        // This could be updated to use d in [1, lcm].
+&nbsp;        // Currently it uses d in [gcd, n*m].
+<b class="nc">&nbsp;        final long dnm = d * gcd;</b>
+&nbsp;
+&nbsp;        // Visit all x in [0, m] where (nx - my) &gt;= d for each increasing y in [0, n].
+&nbsp;        // x = ceil( (d + my) / n ) = (d + my + n - 1) / n
+&nbsp;        // y = ceil( (nx - d) / m ) = (nx - d + m - 1) / m
+&nbsp;        // Note: n m integer, d in [0, nm], the intermediate cannot overflow a long.
+&nbsp;        // x | y=0 = (d + n - 1) / n
+<b class="nc">&nbsp;        final int x0 = (int) ((dnm + n - 1) / n);</b>
+<b class="nc">&nbsp;        if (x0 &gt;= m) {</b>
+<b class="nc">&nbsp;            return 1 / binom;</b>
+&nbsp;        }
+&nbsp;        // The y above is the y *on* the boundary. Set the limit as the next y above:
+&nbsp;        // y | x=m = 1 + floor( (nx - d) / m ) = 1 + (nm - d) / m
+<b class="nc">&nbsp;        final int maxy = (int) ((n * lm - dnm + m) / m);</b>
+&nbsp;        // Compute x and B(x, y) for visited B(x,y)
+<b class="nc">&nbsp;        final int[] xy = new int[maxy];</b>
+<b class="nc">&nbsp;        final double[] bxy = new double[maxy];</b>
+<b class="nc">&nbsp;        xy[0] = x0;</b>
+<b class="nc">&nbsp;        bxy[0] = 1;</b>
+<b class="nc">&nbsp;        for (int y = 1; y &lt; maxy; y++) {</b>
+<b class="nc">&nbsp;            final int x = (int) ((dnm + lm * y + n - 1) / n);</b>
+&nbsp;            // B(x, y) = binom(x+y, y) - [number of ways which previously reached the boundary]
+&nbsp;            // Add the terms to subtract as a negative sum.
+<b class="nc">&nbsp;            final Sum b = Sum.create();</b>
+<b class="nc">&nbsp;            for (int yy = 0; yy &lt; y; yy++) {</b>
+&nbsp;                // Here: previousX = x - xy[yy] : previousY = y - yy
+&nbsp;                // bxy[yy] is the paths to (previousX, previousY)
+&nbsp;                // binom represent the paths from (previousX, previousY) to (x, y)
+<b class="nc">&nbsp;                b.addProduct(bxy[yy], -binom(x - xy[yy] + y - yy, y - yy));</b>
+&nbsp;            }
+<b class="nc">&nbsp;            b.add(binom(x + y, y));</b>
+<b class="nc">&nbsp;            xy[y] = x;</b>
+<b class="nc">&nbsp;            bxy[y] = b.getAsDouble();</b>
+&nbsp;        }
+&nbsp;        // sum_y { B(x, y) binom(m+n-x-y, n-y) }
+<b class="nc">&nbsp;        final Sum sum = Sum.create();</b>
+<b class="nc">&nbsp;        for (int y = 0; y &lt; maxy; y++) {</b>
+<b class="nc">&nbsp;            sum.addProduct(bxy[y], binom(m + n - xy[y] - y, n - y));</b>
+&nbsp;        }
+&nbsp;        // No individual term should have overflowed since binom is finite.
+&nbsp;        // Any sum above 1 is floating-point error.
+<b class="nc">&nbsp;        return KolmogorovSmirnovDistribution.clipProbability(sum.getAsDouble() / binom);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Computes \(P(D_{n,n}^+ \ge d)\), where \(D_{n,n}^+\) is the 2-sample one-sided
+&nbsp;     * Kolmogorov-Smirnov statistic.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;The returned probability is exact, implemented using the outer method
+&nbsp;     * presented in Hodges (1958).
+&nbsp;     *
+&nbsp;     * @param d Integral D-statistic value (in [1, lcm])
+&nbsp;     * @param n Sample size.
+&nbsp;     * @return probability that a randomly selected m-n partition of m + n generates \(D_{n,m}\)
+&nbsp;     *         greater than or equal to {@code d}
+&nbsp;     */
+&nbsp;    private static double twoSampleOneSidedPOutsideSquare(long d, int n) {
+&nbsp;        // Hodges (1958) Eq. 2.3:
+&nbsp;        // p = binom(2n, n-a) / binom(2n, n)
+&nbsp;        // a in [1, n] == d * n == dnm / n
+<b class="nc">&nbsp;        final int a = (int) d;</b>
+&nbsp;
+&nbsp;        // Rearrange:
+&nbsp;        // p = ( 2n! / ((n-a)! (n+a)!) ) / ( 2n! / (n! n!) )
+&nbsp;        //   = n! n! / ( (n-a)! (n+a)! )
+&nbsp;        // Perform using pre-computed factorials if possible.
+<b class="nc">&nbsp;        if (n + a &lt;= MAX_FACTORIAL) {</b>
+<b class="nc">&nbsp;            final double x = Factorial.doubleValue(n);</b>
+<b class="nc">&nbsp;            final double y = Factorial.doubleValue(n - a);</b>
+<b class="nc">&nbsp;            final double z = Factorial.doubleValue(n + a);</b>
+<b class="nc">&nbsp;            return (x / y) * (x / z);</b>
+&nbsp;        }
+&nbsp;        // p = n! / (n-a)!  *  n! / (n+a)!
+&nbsp;        //       n * (n-1) * ... * (n-a+1)
+&nbsp;        //   = -----------------------------
+&nbsp;        //     (n+a) * (n+a-1) * ... * (n+1)
+&nbsp;
+<b class="nc">&nbsp;        double p = 1;</b>
+<b class="nc">&nbsp;        for (int i = 0; i &lt; a &amp;&amp; p != 0; i++) {</b>
+<b class="nc">&nbsp;            p *= (n - i) / (1.0 + n + i);</b>
+&nbsp;        }
+<b class="nc">&nbsp;        return p;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Computes \(P(D_{n,n}^+ \ge d)\), where \(D_{n,n}^+\) is the 2-sample two-sided
+&nbsp;     * Kolmogorov-Smirnov statistic.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;The returned probability is exact, implemented using the outer method
+&nbsp;     * presented in Hodges (1958).
+&nbsp;     *
+&nbsp;     * @param d Integral D-statistic value (in [1, n])
+&nbsp;     * @param n Sample size.
+&nbsp;     * @return probability that a randomly selected m-n partition of n + n generates \(D_{n,n}\)
+&nbsp;     *         greater than or equal to {@code d}
+&nbsp;     */
+&nbsp;    private static double twoSampleTwoSidedPOutsideSquare(long d, int n) {
+&nbsp;        // Hodges (1958) Eq. 2.4:
+&nbsp;        // p = 2 [ binom(2n, n-a) - binom(2n, n-2a) + binom(2n, n-3a) - ... ] / binom(2n, n)
+&nbsp;        // a in [1, n] == d * n == dnm / n
+&nbsp;
+&nbsp;        // As per twoSampleOneSidedPOutsideSquare, divide by binom(2n, n) and each term
+&nbsp;        // can be expressed as a product:
+&nbsp;        //         (             n - i                    n - i                   n - i         )
+&nbsp;        // p = 2 * ( prod_i=0^a --------- - prod_i=0^2a --------- + prod_i=0^3a --------- + ... )
+&nbsp;        //         (           1 + n + i                1 + n + i               1 + n + i       )
+&nbsp;        // for ja in [1, ..., n/a]
+&nbsp;        // Avoid repeat computation of terms by extracting common products:
+&nbsp;        // p = 2 * ( p0a * (1 - p1a * (1 - p2a * (1 - ... ))) )
+&nbsp;        // where each term pja is prod_i={ja}^{ja+a} for all j in [1, n / a]
+&nbsp;
+&nbsp;        // The first term is the one-sided p.
+<b class="nc">&nbsp;        final double p0a = twoSampleOneSidedPOutsideSquare(d, n);</b>
+<b class="nc">&nbsp;        if (p0a == 0) {</b>
+&nbsp;            // Underflow - nothing more to do
+<b class="nc">&nbsp;            return 0;</b>
+&nbsp;        }
+&nbsp;        // Compute the inner-terms from small to big.
+&nbsp;        // j = n / (d/n) ~ n*n / d
+&nbsp;        // j is a measure of how extreme the d value is (small j is extreme d).
+&nbsp;        // When j is above 0 a path may traverse from the lower boundary to the upper boundary.
+<b class="nc">&nbsp;        final int a = (int) d;</b>
+<b class="nc">&nbsp;        double p = 0;</b>
+<b class="nc">&nbsp;        for (int j = n / a; j &gt; 0; j--) {</b>
+<b class="nc">&nbsp;            double pja = 1;</b>
+<b class="nc">&nbsp;            final int jaa = j * a + a;</b>
+&nbsp;            // Since p0a did not underflow we avoid the check for pj != 0
+<b class="nc">&nbsp;            for (int i = j * a; i &lt; jaa; i++) {</b>
+<b class="nc">&nbsp;                pja *= (n - i) / (1.0 + n + i);</b>
+&nbsp;            }
+<b class="nc">&nbsp;            p = pja * (1 - p);</b>
+&nbsp;        }
+<b class="nc">&nbsp;        p = p0a * (1 - p);</b>
+<b class="nc">&nbsp;        return Math.min(1, 2 * p);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Compute the binomial coefficient binom(n, k).
+&nbsp;     *
+&nbsp;     * @param n N.
+&nbsp;     * @param k K.
+&nbsp;     * @return binom(n, k)
+&nbsp;     */
+&nbsp;    private static double binom(int n, int k) {
+<b class="nc">&nbsp;        return BinomialCoefficientDouble.value(n, k);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Uses the Kolmogorov-Smirnov distribution to approximate \(P(D_{n,m} &amp;gt; d)\) where \(D_{n,m}\)
+&nbsp;     * is the 2-sample Kolmogorov-Smirnov statistic. See
+&nbsp;     * {@link #statistic(double[], double[])} for the definition of \(D_{n,m}\).
+&nbsp;     *
+&nbsp;     * &lt;p&gt;Specifically, what is returned is \(1 - CDF(d, \sqrt{mn / (m + n)})\) where CDF
+&nbsp;     * is the cumulative density function of the two-sided one-sample Kolmogorov-Smirnov
+&nbsp;     * distribution.
+&nbsp;     *
+&nbsp;     * @param d D-statistic value.
+&nbsp;     * @param n First sample size.
+&nbsp;     * @param m Second sample size.
+&nbsp;     * @param twoSided True to compute the two-sided p-value; else one-sided.
+&nbsp;     * @return approximate probability that a randomly selected m-n partition of m + n generates
+&nbsp;     *         \(D_{n,m}\) greater than {@code d}
+&nbsp;     */
+&nbsp;    static double twoSampleApproximateP(double d, int n, int m, boolean twoSided) {
+<b class="nc">&nbsp;        final double nn = Math.min(n, m);</b>
+<b class="nc">&nbsp;        final double mm = Math.max(n, m);</b>
+<b class="nc">&nbsp;        if (twoSided) {</b>
+&nbsp;            // Smirnov&#39;s asymptotic formula:
+&nbsp;            // P(sqrt(N) D_n &gt; x)
+&nbsp;            // N = m*n/(m+n)
+<b class="nc">&nbsp;            return KolmogorovSmirnovDistribution.Two.sf(d, (int) Math.round(mm * nn / (mm + nn)));</b>
+&nbsp;        }
+&nbsp;        // one-sided
+&nbsp;        // Use Hodges Eq 5.3. Requires m &gt;= n
+&nbsp;        // Correct for m=n, m an integral multiple of n, and &#39;on the average&#39; for m nearly equal to n
+<b class="nc">&nbsp;        final double z = d * Math.sqrt(nn * mm / (nn + mm));</b>
+<b class="nc">&nbsp;        return Math.exp(-2 * z * z - 2 * z * (mm + 2 * nn) / Math.sqrt(mm * nn * (mm + nn)) / 3);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Verifies that {@code array} has length at least 2.
+&nbsp;     *
+&nbsp;     * @param array Array to test.
+&nbsp;     * @return the length
+&nbsp;     * @throws IllegalArgumentException if array is too short
+&nbsp;     */
+&nbsp;    private static int checkArrayLength(double[] array) {
+<b class="nc">&nbsp;        final int n = array.length;</b>
+<b class="nc">&nbsp;        if (n &lt;= 1) {</b>
+<b class="nc">&nbsp;            throw new InferenceException(InferenceException.TWO_VALUES_REQUIRED, n);</b>
+&nbsp;        }
+<b class="nc">&nbsp;        return n;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Sort the input array. Throws an exception if NaN values are
+&nbsp;     * present. It is assumed the array is non-zero length.
+&nbsp;     *
+&nbsp;     * @param x Input array.
+&nbsp;     * @param name Name of the array.
+&nbsp;     * @return a reference to the input (sorted) array
+&nbsp;     * @throws IllegalArgumentException if {@code x} contains NaN values.
+&nbsp;     */
+&nbsp;    private static double[] sort(double[] x, String name) {
+<b class="nc">&nbsp;        Arrays.sort(x);</b>
+&nbsp;        // NaN will be at the end
+<b class="nc">&nbsp;        if (Double.isNaN(x[x.length - 1])) {</b>
+<b class="nc">&nbsp;            throw new InferenceException(name + &quot; contains NaN&quot;);</b>
+&nbsp;        }
+<b class="nc">&nbsp;        return x;</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2023-09-04 19:44</div>
+</div>
+</body>
+</html>

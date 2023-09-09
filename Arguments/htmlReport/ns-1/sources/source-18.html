@@ -1,0 +1,638 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=windows-1252"> 
+  <title>Coverage Report > TTest</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope:     <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">org.apache.commons.statistics.inference</a>
+</div>
+
+<h1>Coverage Summary for Class: TTest (org.apache.commons.statistics.inference)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">TTest</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/22)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/82)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">TTest$Result</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/3)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/24)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/85)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/*
+&nbsp; * Licensed to the Apache Software Foundation (ASF) under one or more
+&nbsp; * contributor license agreements.  See the NOTICE file distributed with
+&nbsp; * this work for additional information regarding copyright ownership.
+&nbsp; * The ASF licenses this file to You under the Apache License, Version 2.0
+&nbsp; * (the &quot;License&quot;); you may not use this file except in compliance with
+&nbsp; * the License.  You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *      http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;package org.apache.commons.statistics.inference;
+&nbsp;
+&nbsp;import java.util.Objects;
+&nbsp;import org.apache.commons.statistics.distribution.TDistribution;
+&nbsp;
+&nbsp;/**
+&nbsp; * Implements Student&#39;s t-test statistics.
+&nbsp; *
+&nbsp; * &lt;p&gt;Tests can be:
+&nbsp; * &lt;ul&gt;
+&nbsp; * &lt;li&gt;One-sample or two-sample
+&nbsp; * &lt;li&gt;One-sided or two-sided
+&nbsp; * &lt;li&gt;Paired or unpaired (for two-sample tests)
+&nbsp; * &lt;li&gt;Homoscedastic (equal variance assumption) or heteroscedastic (for two sample tests)
+&nbsp; * &lt;/ul&gt;
+&nbsp; *
+&nbsp; * &lt;p&gt;Input to tests can be either {@code double[]} arrays or the mean, variance, and size
+&nbsp; * of the sample.
+&nbsp; *
+&nbsp; * @see &lt;a href=&quot;https://en.wikipedia.org/wiki/Student%27s_t-test&quot;&gt;Student&amp;#39;s t-test (Wikipedia)&lt;/a&gt;
+&nbsp; * @since 1.1
+&nbsp; */
+&nbsp;public final class TTest {
+&nbsp;    /** Default instance. */
+<b class="nc">&nbsp;    private static final TTest DEFAULT = new TTest(AlternativeHypothesis.TWO_SIDED, false, 0);</b>
+&nbsp;
+&nbsp;    /** Alternative hypothesis. */
+&nbsp;    private final AlternativeHypothesis alternative;
+&nbsp;    /** Assume the two samples have the same population variance. */
+&nbsp;    private final boolean equalVariances;
+&nbsp;    /** The true value of the mean (or difference in means for a two sample test). */
+&nbsp;    private final double mu;
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Result for the t-test.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;This class is immutable.
+&nbsp;     */
+&nbsp;    public static final class Result extends BaseSignificanceResult {
+&nbsp;        /** Degrees of freedom. */
+&nbsp;        private final double degreesOfFreedom;
+&nbsp;
+&nbsp;        /**
+&nbsp;         * Create an instance.
+&nbsp;         *
+&nbsp;         * @param statistic Test statistic.
+&nbsp;         * @param degreesOfFreedom Degrees of freedom.
+&nbsp;         * @param p Result p-value.
+&nbsp;         */
+&nbsp;        Result(double statistic, double degreesOfFreedom, double p) {
+<b class="nc">&nbsp;            super(statistic, p);</b>
+<b class="nc">&nbsp;            this.degreesOfFreedom = degreesOfFreedom;</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        /**
+&nbsp;         * Gets the degrees of freedom.
+&nbsp;         *
+&nbsp;         * @return the degrees of freedom
+&nbsp;         */
+&nbsp;        public double getDegreesOfFreedom() {
+<b class="nc">&nbsp;            return degreesOfFreedom;</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * @param alternative Alternative hypothesis.
+&nbsp;     * @param equalVariances Assume the two samples have the same population variance.
+&nbsp;     * @param mu true value of the mean (or difference in means for a two sample test).
+&nbsp;     */
+<b class="nc">&nbsp;    private TTest(AlternativeHypothesis alternative, boolean equalVariances, double mu) {</b>
+<b class="nc">&nbsp;        this.alternative = alternative;</b>
+<b class="nc">&nbsp;        this.equalVariances = equalVariances;</b>
+<b class="nc">&nbsp;        this.mu = mu;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Return an instance using the default options.
+&nbsp;     *
+&nbsp;     * &lt;ul&gt;
+&nbsp;     * &lt;li&gt;{@link AlternativeHypothesis#TWO_SIDED}
+&nbsp;     * &lt;li&gt;{@link DataDispersion#HETEROSCEDASTIC}
+&nbsp;     * &lt;li&gt;{@linkplain #withMu(double) mu = 0}
+&nbsp;     * &lt;/ul&gt;
+&nbsp;     *
+&nbsp;     * @return default instance
+&nbsp;     */
+&nbsp;    public static TTest withDefaults() {
+<b class="nc">&nbsp;        return DEFAULT;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Return an instance with the configured alternative hypothesis.
+&nbsp;     *
+&nbsp;     * @param v Value.
+&nbsp;     * @return an instance
+&nbsp;     */
+&nbsp;    public TTest with(AlternativeHypothesis v) {
+<b class="nc">&nbsp;        return new TTest(Objects.requireNonNull(v), equalVariances, mu);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Return an instance with the configured assumption on the data dispersion.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;Applies to the two-sample independent t-test.
+&nbsp;     * The statistic can compare the means without the assumption of equal
+&nbsp;     * sub-population variances (heteroscedastic); otherwise the means are compared
+&nbsp;     * under the assumption of equal sub-population variances (homoscedastic).
+&nbsp;     *
+&nbsp;     * @param v Value.
+&nbsp;     * @return an instance
+&nbsp;     * @see #test(double[], double[])
+&nbsp;     * @see #test(double, double, long, double, double, long)
+&nbsp;     */
+&nbsp;    public TTest with(DataDispersion v) {
+<b class="nc">&nbsp;        return new TTest(alternative, Objects.requireNonNull(v) == DataDispersion.HOMOSCEDASTIC, mu);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Return an instance with the configured {@code mu}.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;For the one-sample test this is the expected mean.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;For the two-sample test this is the expected difference between the means.
+&nbsp;     *
+&nbsp;     * @param v Value.
+&nbsp;     * @return an instance
+&nbsp;     * @throws IllegalArgumentException if the value is not finite
+&nbsp;     */
+&nbsp;    public TTest withMu(double v) {
+<b class="nc">&nbsp;        return new TTest(alternative, equalVariances, Arguments.checkFinite(v));</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Computes a one-sample t statistic comparing the mean of the dataset to {@code mu}.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;The returned t-statistic is:
+&nbsp;     *
+&nbsp;     * &lt;p&gt;\[ t = \frac{m - \mu}{ \sqrt{ \frac{v}{n} } } \]
+&nbsp;     *
+&nbsp;     * @param m Sample mean.
+&nbsp;     * @param v Sample variance.
+&nbsp;     * @param n Sample size.
+&nbsp;     * @return t statistic
+&nbsp;     * @throws IllegalArgumentException if the number of samples is {@code &lt; 2}; or the
+&nbsp;     * variance is negative
+&nbsp;     * @see #withMu(double)
+&nbsp;     */
+&nbsp;    public double statistic(double m, double v, long n) {
+<b class="nc">&nbsp;        Arguments.checkNonNegative(v);</b>
+<b class="nc">&nbsp;        checkSampleSize(n);</b>
+<b class="nc">&nbsp;        return computeT(m - mu, v, n);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Computes a one-sample t statistic comparing the mean of the sample to {@code mu}.
+&nbsp;     *
+&nbsp;     * @param x Sample values.
+&nbsp;     * @return t statistic
+&nbsp;     * @throws IllegalArgumentException if the number of samples is {@code &lt; 2}
+&nbsp;     * @see #statistic(double, double, long)
+&nbsp;     * @see #withMu(double)
+&nbsp;     */
+&nbsp;    public double statistic(double[] x) {
+<b class="nc">&nbsp;        final long n = checkSampleSize(x.length);</b>
+<b class="nc">&nbsp;        final double m = StatisticUtils.mean(x);</b>
+<b class="nc">&nbsp;        final double v = StatisticUtils.variance(x, m);</b>
+<b class="nc">&nbsp;        return computeT(m - mu, v, n);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Computes a paired two-sample t-statistic on related samples comparing the mean difference
+&nbsp;     * between the samples to {@code mu}.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;The t-statistic returned is functionally equivalent to what would be returned by computing
+&nbsp;     * the one-sample t-statistic {@link #statistic(double[])}, with
+&nbsp;     * the sample array consisting of the (signed) differences between corresponding
+&nbsp;     * entries in {@code x} and {@code y}.
+&nbsp;     *
+&nbsp;     * @param x First sample values.
+&nbsp;     * @param y Second sample values.
+&nbsp;     * @return t statistic
+&nbsp;     * @throws IllegalArgumentException if the number of samples is {@code &lt; 2}; or the
+&nbsp;     * the size of the samples is not equal
+&nbsp;     * @see #withMu(double)
+&nbsp;     */
+&nbsp;    public double pairedStatistic(double[] x, double[] y) {
+<b class="nc">&nbsp;        final long n = checkSampleSize(x.length);</b>
+<b class="nc">&nbsp;        final double m = StatisticUtils.meanDifference(x, y);</b>
+<b class="nc">&nbsp;        final double v = StatisticUtils.varianceDifference(x, y, m);</b>
+<b class="nc">&nbsp;        return computeT(m - mu, v, n);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Computes a two-sample t statistic on independent samples comparing the difference in means
+&nbsp;     * of the datasets to {@code mu}.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;Use the {@link DataDispersion} to control the computation of the variance.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;The heteroscedastic t-statistic is:
+&nbsp;     *
+&nbsp;     * &lt;p&gt;\[ t = \frac{m1 - m2 - \mu}{ \sqrt{ \frac{v_1}{n_1} + \frac{v_2}{n_2} } } \]
+&nbsp;     *
+&nbsp;     * &lt;p&gt;The homoscedastic t-statistic is:
+&nbsp;     *
+&nbsp;     * &lt;p&gt;\[ t = \frac{m1 - m2 - \mu}{ \sqrt{ v (\frac{1}{n_1} + \frac{1}{n_2}) } } \]
+&nbsp;     *
+&nbsp;     * &lt;p&gt;where \( v \) is the pooled variance estimate:
+&nbsp;     *
+&nbsp;     * &lt;p&gt;\[ v = \frac{(n_1-1)v_1 + (n_2-1)v_2}{n_1 + n_2 - 2} \]
+&nbsp;     *
+&nbsp;     * @param m1 First sample mean.
+&nbsp;     * @param v1 First sample variance.
+&nbsp;     * @param n1 First sample size.
+&nbsp;     * @param m2 Second sample mean.
+&nbsp;     * @param v2 Second sample variance.
+&nbsp;     * @param n2 Second sample size.
+&nbsp;     * @return t statistic
+&nbsp;     * @throws IllegalArgumentException if the number of samples in either dataset is
+&nbsp;     * {@code &lt; 2}; or the variances are negative.
+&nbsp;     * @see #withMu(double)
+&nbsp;     * @see #with(DataDispersion)
+&nbsp;     */
+&nbsp;    public double statistic(double m1, double v1, long n1,
+&nbsp;                            double m2, double v2, long n2) {
+<b class="nc">&nbsp;        Arguments.checkNonNegative(v1);</b>
+<b class="nc">&nbsp;        Arguments.checkNonNegative(v2);</b>
+<b class="nc">&nbsp;        checkSampleSize(n1);</b>
+<b class="nc">&nbsp;        checkSampleSize(n2);</b>
+<b class="nc">&nbsp;        return equalVariances ?</b>
+<b class="nc">&nbsp;            computeHomoscedasticT(mu, m1, v1, n1, m2, v2, n2) :</b>
+<b class="nc">&nbsp;            computeT(mu, m1, v1, n1, m2, v2, n2);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Computes a two-sample t statistic on independent samples comparing the difference
+&nbsp;     * in means of the samples to {@code mu}.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;Use the {@link DataDispersion} to control the computation of the variance.
+&nbsp;     *
+&nbsp;     * @param x First sample values.
+&nbsp;     * @param y Second sample values.
+&nbsp;     * @return t statistic
+&nbsp;     * @throws IllegalArgumentException if the number of samples in either dataset is {@code &lt; 2}
+&nbsp;     * @see #withMu(double)
+&nbsp;     * @see #with(DataDispersion)
+&nbsp;     */
+&nbsp;    public double statistic(double[] x, double[] y) {
+<b class="nc">&nbsp;        final long n1 = checkSampleSize(x.length);</b>
+<b class="nc">&nbsp;        final long n2 = checkSampleSize(y.length);</b>
+<b class="nc">&nbsp;        final double m1 = StatisticUtils.mean(x);</b>
+<b class="nc">&nbsp;        final double m2 = StatisticUtils.mean(y);</b>
+<b class="nc">&nbsp;        final double v1 = StatisticUtils.variance(x, m1);</b>
+<b class="nc">&nbsp;        final double v2 = StatisticUtils.variance(y, m2);</b>
+<b class="nc">&nbsp;        return equalVariances ?</b>
+<b class="nc">&nbsp;            computeHomoscedasticT(mu, m1, v1, n1, m2, v2, n2) :</b>
+<b class="nc">&nbsp;            computeT(mu, m1, v1, n1, m2, v2, n2);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Perform a one-sample t-test comparing the mean of the dataset to {@code mu}.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;Degrees of freedom are \( v = n - 1 \).
+&nbsp;     *
+&nbsp;     * @param m Sample mean.
+&nbsp;     * @param v Sample variance.
+&nbsp;     * @param n Sample size.
+&nbsp;     * @return test result
+&nbsp;     * @throws IllegalArgumentException if the number of samples is {@code &lt; 2}; or the
+&nbsp;     * variance is negative
+&nbsp;     * @see #statistic(double, double, long)
+&nbsp;     */
+&nbsp;    public Result test(double m, double v, long n) {
+<b class="nc">&nbsp;        final double t = statistic(m, v, n);</b>
+<b class="nc">&nbsp;        final double df = n - 1.0;</b>
+<b class="nc">&nbsp;        final double p = computeP(t, df);</b>
+<b class="nc">&nbsp;        return new Result(t, df, p);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Performs a one-sample t-test comparing the mean of the sample to {@code mu}.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;Degrees of freedom are \( v = n - 1 \).
+&nbsp;     *
+&nbsp;     * @param sample Sample values.
+&nbsp;     * @return the test result
+&nbsp;     * @throws IllegalArgumentException if the number of samples is {@code &lt; 2}; or the
+&nbsp;     * the size of the samples is not equal
+&nbsp;     * @see #statistic(double[])
+&nbsp;     */
+&nbsp;    public Result test(double[] sample) {
+<b class="nc">&nbsp;        final double t = statistic(sample);</b>
+<b class="nc">&nbsp;        final double df = sample.length - 1.0;</b>
+<b class="nc">&nbsp;        final double p = computeP(t, df);</b>
+<b class="nc">&nbsp;        return new Result(t, df, p);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Performs a paired two-sample t-test on related samples comparing the mean difference between
+&nbsp;     * the samples to {@code mu}.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;The test is functionally equivalent to what would be returned by computing
+&nbsp;     * the one-sample t-test {@link #test(double[])}, with
+&nbsp;     * the sample array consisting of the (signed) differences between corresponding
+&nbsp;     * entries in {@code x} and {@code y}.
+&nbsp;     *
+&nbsp;     * @param x First sample values.
+&nbsp;     * @param y Second sample values.
+&nbsp;     * @return the test result
+&nbsp;     * @throws IllegalArgumentException if the number of samples is {@code &lt; 2}; or the
+&nbsp;     * the size of the samples is not equal
+&nbsp;     * @see #pairedStatistic(double[], double[])
+&nbsp;     */
+&nbsp;    public Result pairedTest(double[] x, double[] y) {
+<b class="nc">&nbsp;        final double t = pairedStatistic(x, y);</b>
+<b class="nc">&nbsp;        final double df = x.length - 1.0;</b>
+<b class="nc">&nbsp;        final double p = computeP(t, df);</b>
+<b class="nc">&nbsp;        return new Result(t, df, p);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Performs a two-sample t-test on independent samples comparing the difference in means of the
+&nbsp;     * datasets to {@code mu}.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;Use the {@link DataDispersion} to control the computation of the variance.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;The heteroscedastic degrees of freedom are estimated using the
+&nbsp;     * Welch-Satterthwaite approximation:
+&nbsp;     *
+&nbsp;     * &lt;p&gt;\[ v = \frac{ (\frac{v_1}{n_1} + \frac{v_2}{n_2})^2 }
+&nbsp;     *                { \frac{(v_1/n_1)^2}{n_1-1} + \frac{(v_2/n_2)^2}{n_2-1} } \]
+&nbsp;     *
+&nbsp;     * &lt;p&gt;The homoscedastic degrees of freedom are \( v = n_1 + n_2 - 2 \).
+&nbsp;     *
+&nbsp;     * @param m1 First sample mean.
+&nbsp;     * @param v1 First sample variance.
+&nbsp;     * @param n1 First sample size.
+&nbsp;     * @param m2 Second sample mean.
+&nbsp;     * @param v2 Second sample variance.
+&nbsp;     * @param n2 Second sample size.
+&nbsp;     * @return test result
+&nbsp;     * @throws IllegalArgumentException if the number of samples in either dataset is
+&nbsp;     * {@code &lt; 2}; or the variances are negative.
+&nbsp;     * @see #statistic(double, double, long, double, double, long)
+&nbsp;     */
+&nbsp;    public Result test(double m1, double v1, long n1,
+&nbsp;                       double m2, double v2, long n2) {
+<b class="nc">&nbsp;        final double t = statistic(m1, v1, n1, m2, v2, n2);</b>
+<b class="nc">&nbsp;        final double df = equalVariances ?</b>
+<b class="nc">&nbsp;                -2.0 + n1 + n2 :</b>
+<b class="nc">&nbsp;                computeDf(v1, n1, v2, n2);</b>
+<b class="nc">&nbsp;        final double p = computeP(t, df);</b>
+<b class="nc">&nbsp;        return new Result(t, df, p);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Performs a two-sample t-test on independent samples comparing the difference in means of
+&nbsp;     * the samples to {@code mu}.
+&nbsp;     *
+&nbsp;     * &lt;p&gt;Use the {@link DataDispersion} to control the computation of the variance.
+&nbsp;     *
+&nbsp;     * @param x First sample values.
+&nbsp;     * @param y Second sample values.
+&nbsp;     * @return the test result
+&nbsp;     * @throws IllegalArgumentException if the number of samples in either dataset
+&nbsp;     * is {@code &lt; 2}
+&nbsp;     * @see #statistic(double[], double[])
+&nbsp;     * @see #test(double, double, long, double, double, long)
+&nbsp;     */
+&nbsp;    public Result test(double[] x, double[] y) {
+&nbsp;        // Here we do not call statistic(double[], double[]) because the degreesOfFreedom
+&nbsp;        // requires the variance. So repeat the computation and compute p.
+<b class="nc">&nbsp;        final long n1 = checkSampleSize(x.length);</b>
+<b class="nc">&nbsp;        final long n2 = checkSampleSize(y.length);</b>
+<b class="nc">&nbsp;        final double m1 = StatisticUtils.mean(x);</b>
+<b class="nc">&nbsp;        final double m2 = StatisticUtils.mean(y);</b>
+<b class="nc">&nbsp;        final double v1 = StatisticUtils.variance(x, m1);</b>
+<b class="nc">&nbsp;        final double v2 = StatisticUtils.variance(y, m2);</b>
+&nbsp;        double t;
+&nbsp;        double df;
+<b class="nc">&nbsp;        if (equalVariances) {</b>
+<b class="nc">&nbsp;            t = computeHomoscedasticT(mu, m1, v1, n1, m2, v2, n2);</b>
+<b class="nc">&nbsp;            df = -2.0 + n1 + n2;</b>
+&nbsp;        } else {
+<b class="nc">&nbsp;            t = computeT(mu, m1, v1, n1, m2, v2, n2);</b>
+<b class="nc">&nbsp;            df = computeDf(v1, n1, v2, n2);</b>
+&nbsp;        }
+<b class="nc">&nbsp;        final double p = computeP(t, df);</b>
+<b class="nc">&nbsp;        return new Result(t, df, p);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Computes t statistic for one-sample t-test.
+&nbsp;     *
+&nbsp;     * @param m Sample mean.
+&nbsp;     * @param v Sample variance.
+&nbsp;     * @param n Sample size.
+&nbsp;     * @return t test statistic
+&nbsp;     */
+&nbsp;    private static double computeT(double m, double v, long n) {
+<b class="nc">&nbsp;        return m / Math.sqrt(v / n);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Computes t statistic for two-sample t-test without the assumption of equal
+&nbsp;     * samples sizes or sub-population variances.
+&nbsp;     *
+&nbsp;     * @param mu Expected difference between means.
+&nbsp;     * @param m1 First sample mean.
+&nbsp;     * @param v1 First sample variance.
+&nbsp;     * @param n1 First sample size.
+&nbsp;     * @param m2 Second sample mean.
+&nbsp;     * @param v2 Second sample variance.
+&nbsp;     * @param n2 Second sample size.
+&nbsp;     * @return t test statistic
+&nbsp;     */
+&nbsp;    private static double computeT(double mu,
+&nbsp;                                   double m1, double v1, long n1,
+&nbsp;                                   double m2, double v2, long n2)  {
+<b class="nc">&nbsp;        return (m1 - m2 - mu) / Math.sqrt((v1 / n1) + (v2 / n2));</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Computes approximate degrees of freedom for two-sample t-test without the
+&nbsp;     * assumption of equal samples sizes or sub-population variances.
+&nbsp;     *
+&nbsp;     * @param v1 First sample variance.
+&nbsp;     * @param n1 First sample size.
+&nbsp;     * @param v2 Second sample variance.
+&nbsp;     * @param n2 Second sample size.
+&nbsp;     * @return approximate degrees of freedom
+&nbsp;     */
+&nbsp;    private static double computeDf(double v1, long n1,
+&nbsp;                                    double v2, long n2) {
+&nbsp;        // Sample sizes are specified as a double to avoid integer overflow
+<b class="nc">&nbsp;        final double d1 = n1;</b>
+<b class="nc">&nbsp;        final double d2 = n2;</b>
+<b class="nc">&nbsp;        return (((v1 / d1) + (v2 / d2)) * ((v1 / d1) + (v2 / d2))) /</b>
+&nbsp;            ((v1 * v1) / (d1 * d1 * (n1 - 1)) + (v2 * v2) / (d2 * d2 * (n2 - 1)));
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Computes t statistic for two-sample t-test under the hypothesis of equal
+&nbsp;     * sub-population variances.
+&nbsp;     *
+&nbsp;     * @param mu Expected difference between means.
+&nbsp;     * @param m1 First sample mean.
+&nbsp;     * @param v1 First sample variance.
+&nbsp;     * @param n1 First sample size.
+&nbsp;     * @param m2 Second sample mean.
+&nbsp;     * @param v2 Second sample variance.
+&nbsp;     * @param n2 Second sample size.
+&nbsp;     * @return t test statistic
+&nbsp;     */
+&nbsp;    private static double computeHomoscedasticT(double mu,
+&nbsp;                                                double m1, double v1, long n1,
+&nbsp;                                                double m2, double v2, long n2)  {
+<b class="nc">&nbsp;        final double pooledVariance = ((n1 - 1) * v1 + (n2 - 1) * v2) / (-2.0 + n1 + n2);</b>
+<b class="nc">&nbsp;        return (m1 - m2 - mu) / Math.sqrt(pooledVariance * (1.0 / n1 + 1.0 / n2));</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Computes p-value for the specified t statistic.
+&nbsp;     *
+&nbsp;     * @param t T statistic.
+&nbsp;     * @param degreesOfFreedom Degrees of freedom.
+&nbsp;     * @return p-value for t-test
+&nbsp;     */
+&nbsp;    private double computeP(double t, double degreesOfFreedom) {
+<b class="nc">&nbsp;        if (alternative == AlternativeHypothesis.LESS_THAN) {</b>
+<b class="nc">&nbsp;            return TDistribution.of(degreesOfFreedom).cumulativeProbability(t);</b>
+&nbsp;        }
+<b class="nc">&nbsp;        if (alternative == AlternativeHypothesis.GREATER_THAN) {</b>
+<b class="nc">&nbsp;            return TDistribution.of(degreesOfFreedom).survivalProbability(t);</b>
+&nbsp;        }
+&nbsp;        // two-sided
+<b class="nc">&nbsp;        return 2.0 * TDistribution.of(degreesOfFreedom).survivalProbability(Math.abs(t));</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Check sample data size.
+&nbsp;     *
+&nbsp;     * @param n Data size.
+&nbsp;     * @return the sample size
+&nbsp;     * @throws IllegalArgumentException if the number of samples {@code &lt; 2}
+&nbsp;     */
+&nbsp;    private static long checkSampleSize(long n) {
+<b class="nc">&nbsp;        if (n &lt;= 1) {</b>
+<b class="nc">&nbsp;            throw new InferenceException(InferenceException.TWO_VALUES_REQUIRED, n);</b>
+&nbsp;        }
+<b class="nc">&nbsp;        return n;</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2023-09-04 19:44</div>
+</div>
+</body>
+</html>

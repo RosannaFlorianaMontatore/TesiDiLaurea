@@ -1,0 +1,221 @@
+<?xml version="1.0"?>
+<!--
+   Licensed to the Apache Software Foundation (ASF) under one or more
+   contributor license agreements.  See the NOTICE file distributed with
+   this work for additional information regarding copyright ownership.
+   The ASF licenses this file to You under the Apache License, Version 2.0
+   (the "License"); you may not use this file except in compliance with
+   the License.  You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+-->
+<ruleset name="commons-statistics-customized"
+    xmlns="http://pmd.sourceforge.net/ruleset/2.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://pmd.sourceforge.net/ruleset/2.0.0 http://pmd.sourceforge.net/ruleset_2_0_0.xsd">
+  <description>
+    This ruleset checks the code for discouraged programming constructs.
+  </description>
+
+  <rule ref="category/java/bestpractices.xml">
+    <exclude name="UseVarargs" />
+    <!-- Inference 'Test' classes are not JUnit 4 tests. -->
+    <exclude name="JUnit4TestShouldUseTestAnnotation" />
+  </rule>
+  <rule ref="category/java/codestyle.xml">
+    <exclude name="MethodArgumentCouldBeFinal" />
+    <exclude name="ShortVariable" />
+    <exclude name="LongVariable" />
+    <exclude name="CommentDefaultAccessModifier" />
+    <exclude name="DefaultPackage" />
+    <exclude name="CallSuperInConstructor" />
+    <exclude name="AbstractNaming" />
+    <!-- We do use extra parentheses there as most people do not recall operator precedence,
+         this means even if the parentheses are useless for the compiler, we don't consider
+         them useless for the developer. This is the reason why we disable this rule. -->
+    <exclude name="UselessParentheses" />
+    <exclude name="AtLeastOneConstructor" />
+    <exclude name="GenericsNaming" />
+    <exclude name="OnlyOneReturn" />
+    <exclude name="UseUnderscoresInNumericLiterals" />
+
+    <!-- Disable this rule in favour of the more configurable rule in checkstyle. -->
+    <exclude name="LocalVariableNamingConventions" />
+  </rule>
+  <rule ref="category/java/design.xml">
+    <exclude name="TooManyMethods" />
+    <exclude name="LawOfDemeter" />
+    <exclude name="LoosePackageCoupling" />
+  </rule>
+  <rule ref="category/java/documentation.xml">
+    <exclude name="CommentSize" />
+  </rule>
+  <rule ref="category/java/errorprone.xml">
+    <!-- This rule is known to be poor with Java 5 and later:
+      https://github.com/pmd/pmd/issues/873 -->
+    <exclude name="DataflowAnomalyAnalysis" />
+  </rule>
+  <rule ref="category/java/multithreading.xml">
+    <!-- <exclude name="..." /> -->
+  </rule>
+  <rule ref="category/java/performance.xml">
+    <!-- <exclude name="..." /> -->
+  </rule>
+
+  <!-- Rule customisations. -->
+
+  <rule ref="category/java/bestpractices.xml/ArrayIsStoredDirectly">
+    <properties>
+      <!-- Array is generated internally in this case. -->
+      <property name="violationSuppressXPath" value="./ancestor-or-self::ClassOrInterfaceDeclaration[@SimpleName='DistributionException'
+        or @SimpleName='ArrayRealSquareMatrix']"/>
+    </properties>
+  </rule>
+
+  <rule ref="category/java/codestyle.xml/ShortMethodName">
+    <properties>
+      <!-- Allow 'of' for factory constructors. -->
+      <property name="violationSuppressXPath"
+        value="./ancestor-or-self::ClassOrInterfaceDeclaration[matches(@SimpleName, '^.*Distribution$')]
+          or ../MethodDeclaration[@Name='sf']"/>
+    </properties>
+  </rule>
+  <rule ref="category/java/codestyle.xml/ShortClassName">
+    <properties>
+      <property name="violationSuppressXPath"
+        value="./ancestor-or-self::ClassOrInterfaceDeclaration[@SimpleName='DD'
+          or @SimpleName='Two' or @SimpleName='One' or @SimpleName='Min' or @SimpleName='Max'
+          or @SimpleName='Sum' or @SimpleName='Mean']"/>
+    </properties>
+  </rule>
+  <rule ref="category/java/codestyle.xml/PrematureDeclaration">
+    <properties>
+      <!-- False positive as lastStartJ must be stored before startJ is recomputed -->
+      <property name="violationSuppressXPath"
+        value="./ancestor-or-self::MethodDeclaration[@Name='twoSampleTwoSidedPStabilizedInner']"/>
+    </properties>
+  </rule>
+
+  <rule ref="category/java/documentation.xml/CommentSize">
+    <properties>
+      <property name="maxLines"      value="200"/>
+      <property name="maxLineLength" value="256"/>
+    </properties>
+  </rule>
+
+  <rule ref="category/java/design.xml/NPathComplexity">
+    <properties>
+      <property name="violationSuppressXPath"
+        value="./ancestor-or-self::ClassOrInterfaceDeclaration[@SimpleName='AbstractContinuousDistribution'
+          or @SimpleName='KolmogorovSmirnovTest' or @SimpleName='KolmogorovSmirnovDistribution'
+          or @SimpleName='MannWhitneyUTest' or @SimpleName='BrentOptimizer']"/>
+    </properties>
+  </rule>
+  <rule ref="category/java/design.xml/CyclomaticComplexity">
+    <properties>
+      <!-- Increase from default of 10. -->
+      <property name="methodReportLevel" value="20"/>
+      <property name="violationSuppressXPath"
+        value="./ancestor-or-self::ClassOrInterfaceDeclaration[@SimpleName='KolmogorovSmirnovTest'
+            or @SimpleName='DD' or @SimpleName='BrentOptimizer']"/>
+    </properties>
+  </rule>
+  <rule ref="category/java/design.xml/AvoidDeeplyNestedIfStmts">
+    <properties>
+      <property name="violationSuppressXPath"
+        value="./ancestor-or-self::ClassOrInterfaceDeclaration[@SimpleName='AbstractContinuousDistribution']"/>
+    </properties>
+  </rule>
+  <rule ref="category/java/design.xml/NcssCount">
+    <properties>
+      <!-- Method length is due to comments. -->
+      <property name="violationSuppressXPath"
+        value="./ancestor-or-self::ClassOrInterfaceDeclaration[@SimpleName='KolmogorovSmirnovTest'
+          or @SimpleName='KolmogorovSmirnovDistribution' or @SimpleName='DD'
+          or @SimpleName='BracketFinder' or @SimpleName='BrentOptimizer']"/>
+    </properties>
+  </rule>
+  <rule ref="category/java/design.xml/CognitiveComplexity">
+    <properties>
+      <!-- Methods AbstractContinuousDistribution inverseProbability (21) and
+        searchPlateau (26) exceed threshold of 15. -->
+      <property name="violationSuppressXPath"
+        value="./ancestor-or-self::ClassOrInterfaceDeclaration[@SimpleName='AbstractContinuousDistribution'
+          or @SimpleName='KolmogorovSmirnovTest' or @SimpleName='KolmogorovSmirnovDistribution'
+          or @SimpleName='MannWhitneyUTest' or @SimpleName='BracketFinder'
+          or @SimpleName='BrentOptimizer' or @SimpleName='UnconditionedExactTest']"/>
+    </properties>
+  </rule>
+  <rule ref="category/java/design.xml/GodClass">
+    <properties>
+      <!-- Inference tests that compute p-values using complex methods trigger God class warnings. -->
+      <property name="violationSuppressXPath"
+        value="./ancestor-or-self::ClassOrInterfaceDeclaration[@SimpleName='NaturalRanking'
+          or @SimpleName='KolmogorovSmirnovTest' or @SimpleName='DD' or @SimpleName='Arguments'
+          or @SimpleName='MannWhitneyUTest' or @SimpleName='WilcoxonSignedRankTest'
+          or @SimpleName='HypergeometricDistribution' or @SimpleName='UnconditionedExactTest']"/>
+    </properties>
+  </rule>
+  <rule ref="category/java/design.xml/LogicInversion">
+    <properties>
+      <!-- Logic inversion allows detection of NaN for parameters that are expected in a range -->
+      <property name="violationSuppressXPath"
+        value="./ancestor-or-self::ClassOrInterfaceDeclaration[@SimpleName='Arguments']"/>
+    </properties>
+  </rule>
+  <rule ref="category/java/design.xml/UselessOverridingMethod">
+    <properties>
+      <!-- overridden in the inference module for documentation -->
+      <property name="violationSuppressXPath"
+        value="./ancestor-or-self::ClassOrInterfaceDeclaration[matches(@SimpleName, '^.*Result$')]"/>
+    </properties>
+  </rule>
+
+  <rule ref="category/java/errorprone.xml/AvoidLiteralsInIfCondition">
+    <properties>
+      <!-- Add 1 as a magic number. -->
+      <property name="ignoreMagicNumbers" value="-1,0,1" />
+      <property name="violationSuppressXPath"
+        value="./ancestor-or-self::MethodDeclaration[@Name='ldexp']"/>
+    </properties>
+  </rule>
+  <rule ref="category/java/errorprone.xml/AvoidFieldNameMatchingMethodName">
+    <properties>
+      <!-- size() method return the list size.
+        DD methods are hi() and lo() for the two parts of the double-double number. -->
+      <property name="violationSuppressXPath"
+        value="./ancestor-or-self::ClassOrInterfaceDeclaration[@SimpleName='IntList'
+          or @SimpleName='DD' or @SimpleName='XYList' ]"/>
+    </properties>
+  </rule>
+  <rule ref="category/java/errorprone.xml/TestClassWithoutTestCases">
+    <properties>
+      <property name="violationSuppressRegex"
+        value=".*'BinomialTest'.*|.*'ChiSquareTest'.*|.*'FisherExactTest'.*|.*'GTest'.*|.*'KolmogorovSmirnovTest'.*|.*'MannWhitneyUTest'.*|.*'TTest'.*|.*'WilcoxonSignedRankTest'.*|.*'UnconditionedExactTest'.*"/>
+    </properties>
+  </rule>
+
+  <rule ref="category/java/performance.xml/AvoidArrayLoops">
+    <properties>
+      <!-- False positive -->
+      <property name="violationSuppressXPath"
+        value="./ancestor-or-self::ClassOrInterfaceDeclaration[@SimpleName='ArrayRealSquareMatrix']"/>
+    </properties>
+  </rule>
+  <rule ref="category/java/performance.xml/AvoidInstantiatingObjectsInLoops">
+    <properties>
+      <!-- MannWhitneyUTest: The resized array f is created inside a loop.
+        UnconditionedExactTest: Creates a distribution in outer loop to control an inner loop.  -->
+      <property name="violationSuppressXPath"
+        value="./ancestor-or-self::ClassOrInterfaceDeclaration[@SimpleName='MannWhitneyUTest'
+          or @SimpleName='UnconditionedExactTest']"/>
+    </properties>
+  </rule>
+
+</ruleset>
